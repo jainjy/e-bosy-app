@@ -26,6 +26,7 @@ import ScheduleLiveSessionPage from './pages/ScheduleLiveSessionPage';
 import LiveSessionPage from './pages/LiveSessionPage';
 import EventsPage from './pages/teacher/EventsPage';
 import Analytics from './pages/teacher/Analytics';
+import LessonFormPage from './components/LessonFormPage';
 
 
 function App() {
@@ -70,6 +71,8 @@ function App() {
               {/* Route pour le formulaire de planification de session live */}
               <Route path="live-sessions/schedule" element={<ScheduleLiveSessionPage />} />
               {/* Route pour la page de session live en cours (avec un ID dynamique) */}
+              <Route path="courses/:courseId/lessons/:lessonId/edit" element={<LessonFormPage />} />
+              <Route path="courses/:courseId/lessons/add" element={<LessonFormPage />} />
           </Route>
           <Route path="/live-session/:sessionId" element={<LiveSessionPage />} />
           <Route path="/course/:courseId/lesson/:lessonId" element={<LessonPage />} />

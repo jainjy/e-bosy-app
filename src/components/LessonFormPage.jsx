@@ -1,7 +1,7 @@
 // src/components/LessonFormPage.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useDropzone } from "react-dropzone"; // Import useDropzone
+import { useDropzone } from "react-dropzone";
 import {
   ArrowLeftIcon,
   VideoCameraIcon,
@@ -10,24 +10,24 @@ import {
   EyeIcon,
   EyeSlashIcon,
   PlusCircleIcon,
-  CubeIcon, // For AR content type
-  CloudArrowUpIcon, // For upload icon
+  CubeIcon,
+  CloudArrowUpIcon,
 } from "@heroicons/react/24/outline";
 
 const LessonFormPage = () => {
-  const { courseId, lessonId } = useParams(); // lessonId will be present for edits
+  const { courseId, lessonId } = useParams();
   const navigate = useNavigate();
 
   const [lesson, setLesson] = useState({
     title: "",
     description: "", // Corresponds to Lessons.content
-    video_url: "",
+    video_url: "", // Used specifically for external video URLs
     content_type: "text", // Default type
-    content_value: "", // Will hold file URL or text content
+    content_value: "", // Will hold file URL or text content (or internal video URL)
     module_id: "",
     is_preview: false,
   });
-  const [modules, setModules] = useState([]); // To populate module dropdown
+  const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [file, setFile] = useState(null); // State to hold the uploaded file object
@@ -36,7 +36,6 @@ const LessonFormPage = () => {
   useEffect(() => {
     const fetchCourseModulesAndLesson = async () => {
       try {
-        // Simulate API call for modules
         const mockModules = [
           { id: "module-1", title: "Introduction to React" },
           { id: "module-2", title: "Advanced State Management" },
@@ -50,14 +49,20 @@ const LessonFormPage = () => {
             id: lessonId,
             title: "Understanding React Hooks",
             description: "A deep dive into useState, useEffect, and custom hooks.",
-            video_url: "https://www.youtube.com/watch?v=mockvideoid123", // Example video URL
-            content_type: "video", // Assuming it's a video lesson by default
-            content_value: "https://www.youtube.com/embed/mockvideoid123", // Or relevant content path
+            // Example: Lesson with external video URL
+            // video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            // content_type: "external_video_url",
+            // content_value: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Embed URL for external video
+
+            // Example: Lesson with uploaded video file
+            video_url: "", // Not used for uploaded video
+            content_type: "uploaded_video_file",
+            content_value: "/uploads/my_react_hooks_lesson.mp4", // Conceptual path to uploaded file
             module_id: "module-1",
             is_preview: true,
           };
           setLesson(mockExistingLesson);
-          if (mockExistingLesson.content_type !== "text") {
+          if (mockExistingLesson.content_type === "uploaded_video_file" || mockExistingLesson.content_type === "image" || mockExistingLesson.content_type === "pdf" || mockExistingLesson.content_type === "ar" || mockExistingLesson.content_type === "other_file") {
             // If it's a file type, we might need to display its name
             setFile({ name: mockExistingLesson.content_value.split('/').pop() || 'Existing File' });
           }
@@ -71,62 +76,89 @@ const LessonFormPage = () => {
     };
 
     fetchCourseModulesAndLesson();
-  }, [courseId, lessonId]); // Depend on courseId and lessonId
+  }, [courseId, lessonId]);
 
   // --- File Dropzone Logic ---
   const onDrop = useCallback((acceptedFiles) => {
-    const uploadedFile = acceptedFiles[0]; // Take only the first file
+    const uploadedFile = acceptedFiles[0];
     if (uploadedFile) {
       setFile(uploadedFile);
-      // Determine content_type based on file type
-      if (uploadedFile.type.startsWith("video/")) {
-        setLesson((prev) => ({ ...prev, content_type: "video" }));
+      let newContentType = lesson.content_type; // Keep current content type by default
+
+      // Determine content_type based on file type if not already set or specifically for files
+      if (uploadedFile.type.startsWith("video/") && lesson.content_type !== "external_video_url") {
+        newContentType = "uploaded_video_file"; // Set to our new specific type for uploaded videos
       } else if (uploadedFile.type.startsWith("image/")) {
-        setLesson((prev) => ({ ...prev, content_type: "image" }));
+        newContentType = "image";
       } else if (uploadedFile.type === "application/pdf") {
-        setLesson((prev) => ({ ...prev, content_type: "pdf" }));
+        newContentType = "pdf";
+      } else if (uploadedFile.type.includes("glb") || uploadedFile.type.includes("usdz")) { // Basic check for AR
+        newContentType = "ar";
       } else {
-        // Fallback or specific handling for other file types (e.g., AR)
-        setLesson((prev) => ({ ...prev, content_type: "other_file" }));
+        newContentType = "other_file"; // General fallback for other files
       }
-      // In a real app: upload the file to storage (S3, etc.) and get its URL
-      // For now, we'll just conceptually store a placeholder URL
-      setLesson((prev) => ({ ...prev, content_value: `/${uploadedFile.name}` }));
+
+      setLesson((prev) => ({
+        ...prev,
+        content_type: newContentType,
+        content_value: `/uploads/${uploadedFile.name}`, // Conceptual URL for the uploaded file
+        video_url: "", // Clear video_url if a file is uploaded
+      }));
     }
-  }, []);
+  }, [lesson.content_type]); // Re-run if lesson.content_type changes
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   // --- Form Handlers ---
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setLesson((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+
+    setLesson((prev) => {
+      let newState = {
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      };
+
+      // Special handling for content_type change
+      if (name === "content_type") {
+        // Clear content_value and video_url when type changes
+        newState.content_value = "";
+        newState.video_url = "";
+        setFile(null); // Clear any previously selected file
+
+        // If the new content type is 'text', ensure description is the main content
+        if (value === 'text') {
+            newState.description = prev.description || ""; // Keep existing description or make empty
+        } else {
+            // If changing from 'text' to a file/video type, clear description if it was used as primary content
+            // This logic might need refinement based on how 'description' maps to 'content' in your DB
+            // For now, let's keep it as is, as 'description' is separate from 'content_value' in the DB.
+        }
+      }
+      return newState;
+    });
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    // In a real application, you would send this 'lesson' data to your backend API
-    // The backend would then save it to the database.
-
     try {
+      // In a real app, you'd handle file upload to backend first
+      // If `file` exists and content_type is 'uploaded_video_file', 'image', 'pdf', 'ar', 'other_file':
+      //   const fileUrl = await uploadFile(file); // Call your backend upload API
+      //   lesson.content_value = fileUrl; // Update content_value with actual URL
+
       if (lessonId) {
-        // API call to update existing lesson
         console.log("Updating lesson:", lesson);
-        // await fetch(`/api/lessons/${lessonId}`, { method: 'PUT', body: JSON.stringify(lesson), headers: { 'Content-Type': 'application/json' } });
         alert("Leçon mise à jour avec succès !");
       } else {
-        // API call to create new lesson
         console.log("Creating new lesson:", lesson);
-        // await fetch(`/api/courses/${courseId}/lessons`, { method: 'POST', body: JSON.stringify(lesson), headers: { 'Content-Type': 'application/json' } });
         alert("Leçon créée avec succès !");
       }
-      navigate(`/dashboard/courses/${courseId}/lessons`); // Redirect back to lessons list
+      navigate(`/dashboard/courses/${courseId}/lessons`);
     } catch (err) {
       setError("Failed to save lesson.");
       console.error(err);
@@ -214,11 +246,12 @@ const LessonFormPage = () => {
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
           >
             <option value="text">Texte</option>
-            <option value="video">Vidéo (URL YouTube/Vimeo)</option>
+            <option value="external_video_url">Vidéo (URL YouTube/Vimeo)</option>
+            <option value="uploaded_video_file">Fichier Vidéo (Upload)</option> {/* New option */}
             <option value="image">Image</option>
             <option value="pdf">PDF</option>
             <option value="ar">Réalité Augmentée (AR)</option>
-            {/* Add other types as needed */}
+            <option value="other_file">Autre Fichier</option>
           </select>
         </div>
 
@@ -237,15 +270,16 @@ const LessonFormPage = () => {
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
               placeholder="Écrivez le contenu de la leçon ici..."
             ></textarea>
-            {/* Lessons.content maps to description here */}
-            {/* Lessons.content_value will be empty or null for text type */}
+            <p className="mt-2 text-sm text-gray-500">
+                Le texte de la leçon sera stocké dans la colonne `content` de votre base de données.
+            </p>
           </div>
         )}
 
-        {lesson.content_type === "video" && (
+        {lesson.content_type === "external_video_url" && (
           <div>
             <label htmlFor="video_url" className="block text-sm font-medium text-gray-700 mb-1">
-              URL Vidéo (YouTube/Vimeo)
+              URL Vidéo Externe (YouTube/Vimeo)
             </label>
             <input
               type="url"
@@ -254,19 +288,19 @@ const LessonFormPage = () => {
               value={lesson.video_url}
               onChange={handleChange}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
-              placeholder="Ex: https://www.youtube.com/watch?v=yourvideo"
+              placeholder="Ex: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
               required
             />
             <p className="mt-2 text-sm text-gray-500">
-                L'URL de la vidéo sera le `video_url`. Le `content_value` sera potentiellement l'embed URL.
+                L'URL de la vidéo sera stockée dans la colonne `video_url`.
             </p>
           </div>
         )}
 
-        {(lesson.content_type === "image" || lesson.content_type === "pdf" || lesson.content_type === "ar" || lesson.content_type === "other_file") && (
+        {(lesson.content_type === "uploaded_video_file" || lesson.content_type === "image" || lesson.content_type === "pdf" || lesson.content_type === "ar" || lesson.content_type === "other_file") && (
           <div>
             <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700 mb-1">
-              Télécharger un fichier ({lesson.content_type.toUpperCase()})
+              Télécharger un fichier ({lesson.content_type.replace(/_/g, ' ').toUpperCase()})
             </label>
             <div
               {...getRootProps()}
@@ -276,11 +310,15 @@ const LessonFormPage = () => {
               <div className="text-center">
                 {file ? (
                   <>
-                    <p className="text-e-bosy-purple text-lg font-medium">
-                      <CloudArrowUpIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />
+                    {lesson.content_type === "uploaded_video_file" && <VideoCameraIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />}
+                    {lesson.content_type === "image" && <PhotoIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />}
+                    {lesson.content_type === "pdf" && <DocumentTextIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />}
+                    {lesson.content_type === "ar" && <CubeIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />}
+                    {lesson.content_type === "other_file" && <CloudArrowUpIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />}
+                    <p className="text-e-bosy-purple text-lg font-medium mt-2">
                       Fichier sélectionné: {file.name}
                     </p>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-gray-500 mt-1">
                       Cliquez ou déposez un autre fichier pour le remplacer.
                     </p>
                   </>
@@ -294,10 +332,11 @@ const LessonFormPage = () => {
                       ou glissez-déposez ici
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
+                      {lesson.content_type === "uploaded_video_file" && "MP4, MOV, AVI (max 100MB)"}
                       {lesson.content_type === "image" && "PNG, JPG, GIF (max 10MB)"}
                       {lesson.content_type === "pdf" && "PDF (max 20MB)"}
                       {lesson.content_type === "ar" && "GLB, USDZ (max 50MB)"}
-                      {lesson.content_type === "other_file" && "Any file type"}
+                      {lesson.content_type === "other_file" && "Tout type de fichier"}
                     </p>
                   </>
                 )}
@@ -306,7 +345,7 @@ const LessonFormPage = () => {
             {isDragActive && <p className="text-center text-e-bosy-purple mt-2">Déposez le fichier ici...</p>}
             {file && (
                 <p className="mt-2 text-sm text-gray-500">
-                    Le `content_value` sera l'URL de ce fichier après téléchargement sur le serveur.
+                    L'URL de ce fichier sera stockée dans la colonne `content_value` après téléchargement sur le serveur.
                 </p>
             )}
           </div>
