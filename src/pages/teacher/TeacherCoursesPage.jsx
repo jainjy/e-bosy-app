@@ -3,18 +3,16 @@ import {
   PlusIcon,
   VideoCameraIcon,
   MagnifyingGlassIcon,
-  BookOpenIcon, // Not used in this version but kept from original
   UsersIcon,
   StarIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
-  Bars3BottomLeftIcon, // For Manage Lessons
-  ArrowPathIcon, // For Refresh or general action
+  Bars3BottomLeftIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
-import CreateCourseModal from "../../components/CreateCourseModal"; // We'll create this
-import EditCourseModal from "../../components/EditCourseModal"; // We'll create this
+import CourseFormModal from "../../components/CourseFormModal"; // Import the combined modal
 
 const TeacherCoursesPage = () => {
   const [courses, setCourses] = useState([
@@ -110,12 +108,10 @@ const TeacherCoursesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("All Courses");
 
-  // State for Create Course Modal
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // State for Edit Course Modal
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [currentCourse, setCurrentCourse] = useState(null); // Stores the course being edited
+  // State to control visibility of the single CourseFormModal
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  // State to hold the course data when editing (null for creation)
+  const [courseToEdit, setCourseToEdit] = useState(null);
 
   const filteredCourses = courses.filter((course) => {
     const matchesSearch = course.title
@@ -144,49 +140,56 @@ const TeacherCoursesPage = () => {
     console.log(`Publishing course with ID: ${id}`);
   };
 
-  // Functions to open/close modals
-  const openCreateModal = () => setIsCreateModalOpen(true);
-  const closeCreateModal = () => setIsCreateModalOpen(false);
-
-  const openEditModal = (course) => {
-    setCurrentCourse(course);
-    setIsEditModalOpen(true);
-  };
-  const closeEditModal = () => {
-    setCurrentCourse(null);
-    setIsEditModalOpen(false);
+  // Function to open the form modal for creation
+  const openCreateCourseForm = () => {
+    setCourseToEdit(null); // Ensure no course is set for editing
+    setIsFormModalOpen(true);
   };
 
-  const handleCreateCourse = (newCourseData) => {
-    const newId = `course-${courses.length + 1}`; // Simple ID generation
-    setCourses([
-      ...courses,
-      {
-        id: newId,
-        status: "Draft", // New courses start as Draft
-        studentsEnrolled: 0,
-        rating: 0,
-        lessonsCount: 0,
-        isLiveSession: false,
-        completionPercentage: 0,
-        updatedDate: new Date().toISOString().slice(0, 10), // Current date
-        ...newCourseData,
-      },
-    ]);
-    closeCreateModal();
-    console.log("New Course Created:", newCourseData);
+  // Function to open the form modal for editing
+  const openEditCourseForm = (course) => {
+    setCourseToEdit(course); // Set the course to be edited
+    setIsFormModalOpen(true);
   };
 
-  const handleUpdateCourse = (updatedCourseData) => {
-    setCourses(
-      courses.map((course) =>
-        course.id === updatedCourseData.id
-          ? { ...course, ...updatedCourseData }
-          : course
-      )
-    );
-    closeEditModal();
-    console.log("Course Updated:", updatedCourseData);
+  // Function to close the form modal
+  const closeFormModal = () => {
+    setIsFormModalOpen(false);
+    setCourseToEdit(null); // Clear the courseToEdit state
+  };
+
+  // Function to handle form submission (for both create and update)
+  const handleFormSubmit = (submittedCourseData) => {
+    if (submittedCourseData.id) {
+      // It's an update operation
+      setCourses(
+        courses.map((course) =>
+          course.id === submittedCourseData.id
+            ? { ...course, ...submittedCourseData }
+            : course
+        )
+      );
+      console.log("Course Updated:", submittedCourseData);
+    } else {
+      // It's a create operation
+      const newId = `course-${courses.length + 1}`; // Simple ID generation
+      setCourses([
+        ...courses,
+        {
+          id: newId,
+          status: "Draft", // New courses start as Draft
+          studentsEnrolled: 0,
+          rating: 0,
+          lessonsCount: 0,
+          isLiveSession: false,
+          completionPercentage: 0,
+          updatedDate: new Date().toISOString().slice(0, 10), // Current date
+          ...submittedCourseData,
+        },
+      ]);
+      console.log("New Course Created:", submittedCourseData);
+    }
+    closeFormModal();
   };
 
   return (
@@ -216,7 +219,7 @@ const TeacherCoursesPage = () => {
 
         <div className="flex space-x-3 w-full sm:w-auto justify-end">
           <button
-            onClick={openCreateModal} // Use onClick to open modal
+            onClick={openCreateCourseForm} // Call the new function
             className="flex items-center px-4 py-2 bg-e-bosy-purple text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
             <PlusIcon className="h-5 w-5 mr-2" />
@@ -344,7 +347,7 @@ const TeacherCoursesPage = () => {
                 </Link>
 
                 <Link
-                  to={`/courses/${course.id}`} // Link to the public course view
+                  to={`/courses/${course.id}`}
                   className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent"
                 >
                   <EyeIcon className="h-4 w-4 mr-1" />
@@ -352,7 +355,7 @@ const TeacherCoursesPage = () => {
                 </Link>
 
                 <button
-                  onClick={() => openEditModal(course)} // Use onClick to open edit modal
+                  onClick={() => openEditCourseForm(course)} // Call the new function for editing
                   className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent"
                 >
                   <PencilIcon className="h-4 w-4 mr-1" />
@@ -386,20 +389,12 @@ const TeacherCoursesPage = () => {
         )}
       </div>
 
-      {/* Create Course Modal */}
-      {isCreateModalOpen && (
-        <CreateCourseModal
-          onClose={closeCreateModal}
-          onCreateCourse={handleCreateCourse}
-        />
-      )}
-
-      {/* Edit Course Modal */}
-      {isEditModalOpen && (
-        <EditCourseModal
-          course={currentCourse}
-          onClose={closeEditModal}
-          onUpdateCourse={handleUpdateCourse}
+      {/* Course Form Modal (combined for create/edit) */}
+      {isFormModalOpen && (
+        <CourseFormModal
+          onClose={closeFormModal}
+          onSubmit={handleFormSubmit}
+          course={courseToEdit} // Pass the course data for editing, or null for creation
         />
       )}
     </div>

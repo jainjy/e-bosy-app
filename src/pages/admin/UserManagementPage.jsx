@@ -1,11 +1,9 @@
 // src/pages/UserManagementPage.jsx
 import React, { useState } from 'react';
 import { MagnifyingGlassIcon, PlusIcon, EllipsisVerticalIcon, PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
-import DashboardLayout from '../layouts/DashboardLayout';
 // Import the new unified modal component
-import UserFormModal from '../components/UserFormModal';
-import ViewUserModal from '../components/ViewUserModal';
-
+import UserFormModal from '../../components/UserFormModal';
+import ViewUserModal from '../../components/ViewUserModal';
 const UserManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState('All Users');

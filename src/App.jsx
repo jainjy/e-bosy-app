@@ -6,8 +6,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 import MyCoursesPage from './pages/MyCoursesPage';
 import CertificatesPage from './pages/CertificatesPage';
 import SettingsPage from './pages/SettingsPage';
-import UserManagementPage from './pages/UserManagementPage';
-import ManageCoursesPage from './pages/ManageCoursesPage';
+import UserManagementPage from './pages/admin/UserManagementPage';
 import MessagesPage from './pages/MessagesPage';
 import LessonPage from './pages/LessonPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -25,10 +24,12 @@ import TeacherCoursesPage from './pages/teacher/TeacherCoursesPage';
 import TeacherLessonsPage from './pages/teacher/TeacherLessonsPage';
 import ScheduleLiveSessionPage from './pages/ScheduleLiveSessionPage';
 import LiveSessionPage from './pages/LiveSessionPage';
+import EventsPage from './pages/teacher/EventsPage';
+import Analytics from './pages/teacher/Analytics';
 
 
 function App() {
-  const currentUserRole = 'admin'; // Set to 'admin' for testing this page
+  const currentUserRole = 'teacher'; // Set to 'admin' for testing this page
   const currentUserName = 'Admin User';
   const currentUserEmail = 'admin@example.com';
 
@@ -64,6 +65,8 @@ function App() {
               <Route path="messages" element={<MessagesPage />} />
               <Route path="users" element={<UserManagementPage />} />
               <Route path="reports" element={<ReportsPage />} /> {/* Add Reports Page route */}
+              <Route path="events" element={<EventsPage />} /> {/* Add Reports Page route */}
+              <Route path="analytics" element={<Analytics />} /> {/* Add Reports Page route */}
               {/* Route pour le formulaire de planification de session live */}
               <Route path="live-sessions/schedule" element={<ScheduleLiveSessionPage />} />
               {/* Route pour la page de session live en cours (avec un ID dynamique) */}
