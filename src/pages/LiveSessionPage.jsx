@@ -20,6 +20,7 @@ import {
   Cog6ToothIcon,
   CloudArrowUpIcon,
 } from "@heroicons/react/24/outline";
+import { webSocketService } from "../services/WebSocketService";
 
 const LiveSessionPage = () => {
   const { sessionId } = useParams();
@@ -30,8 +31,6 @@ const LiveSessionPage = () => {
   const recordedChunksRef = useRef([]);
   const recordingIntervalRef = useRef(null);
 
-  const [session, setSession] = useState(null);
-  const [activeTab, setActiveTab] = useState("video");
   const [isMicrophoneMuted, setIsMicrophoneMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -41,6 +40,131 @@ const LiveSessionPage = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState("");
 
+  //web socket
+
+  const [remoteStreams, setRemoteStreams] = useState([]);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const currentUser = { id: 1, name: "Teacher (You)", role: "Host" }; // À remplacer par vos données utilisateur
+  const [session, setSession] = useState(null);
+  const [activeTab, setActiveTab] = useState("video");
+// Initialiser WebSocket
+useEffect(() => {
+  webSocketService.connect(sessionId, currentUser.id);
+  
+  // Configurer les écouteurs
+  webSocketService.addListener('connection', handleConnectionChange);
+  webSocketService.addListener('signal', handleSignal);
+  webSocketService.addListener('chat', handleChatMessage);
+  webSocketService.addListener('control', handleControlMessage);
+
+  return () => {
+    webSocketService.disconnect();
+    webSocketService.removeListener('connection', handleConnectionChange);
+    webSocketService.removeListener('signal', handleSignal);
+    webSocketService.removeListener('chat', handleChatMessage);
+    webSocketService.removeListener('control', handleControlMessage);
+  };
+}, [sessionId]);
+
+  const toggleCamera = () => {
+    const newCameraState = !isCameraOff;
+    setIsCameraOff(newCameraState);
+    
+    webSocketService.sendMessage('control', {
+      type: 'video',
+      state: newCameraState ? 'off' : 'on',
+      userId: currentUser.id
+    });
+  };
+// Ajouter une section de chat
+const renderChat = () => (
+  <div className="h-full flex flex-col">
+    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      {chatMessages.map((msg, i) => (
+        <div key={i} className={`flex ${msg.sender.id === currentUser.id ? 'justify-end' : 'justify-start'}`}>
+          <div className={`max-w-xs p-3 rounded-lg ${msg.sender.id === currentUser.id ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>
+            <p className="text-sm">{msg.text}</p>
+            <p className="text-xs opacity-70 mt-1">
+              {msg.sender.name} • {new Date(msg.timestamp).toLocaleTimeString()}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div className="p-4 border-t">
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        const message = e.target.message.value.trim();
+        if (message) {
+          sendChatMessage(message);
+          e.target.message.value = '';
+        }
+      }}>
+        <div className="flex">
+          <input
+            name="message"
+            type="text"
+            placeholder="Envoyer un message..."
+            className="flex-1 border rounded-l-lg px-4 py-2 focus:outline-none"
+            disabled={!isConnected}
+          />
+          <button
+            type="submit"
+            className="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 disabled:opacity-50"
+            disabled={!isConnected}
+          >
+            Envoyer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+);
+
+  const handleConnectionChange = ({ status }) => {
+    setIsConnected(status === 'connected');
+    if (status === 'connected') {
+      // Envoyer l'offre SDP initiale si nécessaire
+    }
+  };
+
+  const handleSignal = (data) => {
+    // Gérer les signaux WebRTC (offre, réponse, ICE candidates)
+    console.log('Signal received:', data);
+    // Implémentation WebRTC ici...
+  };
+
+  const handleChatMessage = (message) => {
+    setChatMessages(prev => [...prev, message]);
+  };
+
+  const handleControlMessage = (control) => {
+    // Gérer les messages de contrôle (mute, partage d'écran, etc.)
+    console.log('Control message:', control);
+  };
+
+  const sendChatMessage = (messageText) => {
+    const message = {
+      text: messageText,
+      sender: currentUser,
+      timestamp: new Date().toISOString()
+    };
+    webSocketService.sendMessage('chat', message);
+    setChatMessages(prev => [...prev, message]);
+  };
+
+  const toggleMute = () => {
+    const newMuteState = !isMicrophoneMuted;
+    setIsMicrophoneMuted(newMuteState);
+    
+    // Envoyer l'état du micro aux autres participants
+    webSocketService.sendMessage('control', {
+      type: 'audio',
+      state: newMuteState ? 'muted' : 'unmuted',
+      userId: currentUser.id
+    });
+  };
   // Démarrer le flux média
   const startLocalStream = async () => {
     try {
@@ -297,6 +421,7 @@ const LiveSessionPage = () => {
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
 
   if (!session) return <div className="p-6 text-center">Chargement...</div>;
 

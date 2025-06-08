@@ -4,19 +4,20 @@ import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeftIcon,
   PlusIcon,
-  VideoCameraIcon,
+  VideoCameraIcon, // Used for external video icon
   PencilIcon,
   TrashIcon,
   PlayCircleIcon,
-  CubeTransparentIcon,
-  DocumentTextIcon // Added for text content
+  CubeTransparentIcon, // Used for AR icon
+  DocumentTextIcon, // Used for text and PDF content
+  PhotoIcon, // Used for image content
 } from "@heroicons/react/24/outline";
 
 const TeacherLessonsPage = () => {
   const { courseId } = useParams();
 
   const [course, setCourse] = useState(null);
-  const [modules, setModules] = useState([]); // To store module data for lookup
+  const [modules, setModules] = useState([]); // To store module data for lookup (still using for UI)
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,7 +25,7 @@ const TeacherLessonsPage = () => {
   useEffect(() => {
     const fetchCourseAndLessons = async () => {
       try {
-        // Simulate fetching modules
+        // Simulate fetching modules (if still using for UI display of lessons)
         const mockModules = [
           { id: "module-1", title: "Introduction au Développement Web" },
           { id: "module-2", title: "Maîtrise de JavaScript" },
@@ -32,64 +33,75 @@ const TeacherLessonsPage = () => {
         ];
         setModules(mockModules);
 
-        // Simulate fetching course and lesson data
+        // Simulate fetching course data (from Courses table)
         const mockCourse = {
           id: courseId,
           title: "Développement Web Fullstack",
-          status: "Published",
-          totalLessons: 3,
+          status: "Published", // This would come from your DB (e.g., Courses.status if you add it)
+          totalLessons: 3, // This would be calculated or fetched
         };
         setCourse(mockCourse);
 
+        // Simulate fetching lesson data (from Lessons table)
         const mockLessons = [
           {
             id: "lesson-1",
-            module_id: "module-1", // Link to a module
-            number: 1, // Order of lesson, not from DB schema directly, but useful for display
+            // module_id: "module-1", // Removed from DB schema, keeping for mock purposes if UI depends on it
             title: "HTML Essentiel",
-            description: "Apprenez les bases de la structure HTML.",
-            video_url: "https://www.youtube.com/embed/somehtmlvideo",
-            content_type: "video",
-            content_value: "https://www.youtube.com/embed/somehtmlvideo",
-            is_preview: true,
+            content: "Apprenez les bases de la structure HTML.", // Content is text
+            content_type: "text",
+            course_id: courseId,
+            is_subscriber_only: false, // Free preview
           },
           {
             id: "lesson-2",
-            module_id: "module-1",
-            number: 2,
+            // module_id: "module-1",
             title: "CSS Styles et Mise en Page",
-            description: "Découvrez comment styliser vos pages web avec CSS.",
-            video_url: "", // No video for this one
-            content_type: "text",
-            content_value: "Le contenu textuel de la leçon sur CSS...",
-            is_preview: false,
+            content: "https://www.youtube.com/embed/some_css_video", // Content is external video URL
+            content_type: "external_video_url",
+            course_id: courseId,
+            is_subscriber_only: true, // Subscriber only
           },
           {
             id: "lesson-3",
-            module_id: "module-2", // Link to another module
-            number: 1,
-            title: "Introduction à JavaScript",
-            description: "Premiers pas avec la programmation côté client.",
-            video_url: "https://www.youtube.com/embed/somejsvideo",
-            content_type: "video",
-            content_value: "https://www.youtube.com/embed/somejsvideo",
-            is_preview: false,
+            // module_id: "module-2",
+            title: "Introduction à JavaScript (fichier)",
+            content: "/uploads/js_intro.mp4", // Content is uploaded video file URL
+            content_type: "uploaded_video_file",
+            course_id: courseId,
+            is_subscriber_only: false, // Free preview
           },
           {
             id: "lesson-4",
-            module_id: "module-2",
-            number: 2,
-            title: "Manipuler le DOM",
-            description: "Comprendre comment interagir avec les éléments HTML.",
-            video_url: "",
-            content_type: "pdf", // Example: PDF lesson
-            content_value: "/assets/dom_manipulation_guide.pdf", // Conceptual URL
-            is_preview: true,
+            // module_id: "module-2",
+            title: "Les fondations de React",
+            content: "/uploads/react_basics.pdf", // Content is PDF file URL
+            content_type: "pdf",
+            course_id: courseId,
+            is_subscriber_only: true, // Subscriber only
+          },
+          {
+            id: "lesson-5",
+            // module_id: "module-2",
+            title: "Images Responsives",
+            content: "/uploads/responsive_image.jpg", // Content is Image file URL
+            content_type: "image",
+            course_id: courseId,
+            is_subscriber_only: false, // Free preview
+          },
+          {
+            id: "lesson-6",
+            // module_id: "module-3",
+            title: "Modèle 3D d'une App",
+            content: "/uploads/app_model.glb", // Content is AR file URL
+            content_type: "ar",
+            course_id: courseId,
+            is_subscriber_only: true, // Subscriber only
           },
         ];
         setLessons(mockLessons);
       } catch (err) {
-        setError("Failed to load course and lessons.");
+        setError("Échec du chargement du cours et des leçons.");
         console.error(err);
       } finally {
         setLoading(false);
@@ -98,11 +110,6 @@ const TeacherLessonsPage = () => {
 
     fetchCourseAndLessons();
   }, [courseId]);
-
-  const getModuleTitle = (moduleId) => {
-    const module = modules.find((m) => m.id === moduleId);
-    return module ? module.title : "Module Inconnu";
-  };
 
   if (loading) {
     return (
@@ -123,9 +130,9 @@ const TeacherLessonsPage = () => {
   const handleDeleteLesson = (lessonId) => {
     if (
       window.confirm(
-        `Êtes-vous sûr de vouloir supprimer la leçon ${
+        `Êtes-vous sûr de vouloir supprimer la leçon "${
           lessons.find((l) => l.id === lessonId)?.title
-        } ?`
+        }" ?`
       )
     ) {
       // In a real app, you'd make an API call to delete the lesson
@@ -134,14 +141,6 @@ const TeacherLessonsPage = () => {
     }
   };
 
-  const handleStartLiveSession = (lessonId) => {
-    console.log(`Starting live session for lesson with ID: ${lessonId}`);
-    alert(
-      `Démarrage de la session live pour la leçon ${
-        lessons.find((l) => l.id === lessonId)?.title
-      }`
-    );
-  };
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -174,12 +173,13 @@ const TeacherLessonsPage = () => {
             <PlusIcon className="h-5 w-5 mr-2" />
             Ajouter une Leçon
           </Link>
+          {/* Note: Live session link here is for the Course, not a specific lesson based on your LiveSessions schema */}
           <Link
             to={`/dashboard/live-sessions/schedule?courseId=${course.id}`}
             className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
           >
             <VideoCameraIcon className="h-5 w-5 mr-2" />
-            Démarrer une session live
+            Démarrer une session live (Cours)
           </Link>
         </div>
       </div>
@@ -195,46 +195,58 @@ const TeacherLessonsPage = () => {
               <div className="flex-grow">
                 <div className="flex items-center mb-2">
                   <span className="text-lg font-bold text-gray-800 mr-3">
-                    {lesson.number}.
+                    {/* Assuming you'd have a lesson number/order either in DB or derived */}
+                    {/* {lesson.number}. */ "•"}
                   </span>
                   <h3 className="text-lg font-semibold text-gray-800">
                     {lesson.title}
                   </h3>
-                  {lesson.is_preview && (
-                    <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      Gratuit
+                  {lesson.is_subscriber_only && (
+                    <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      Abonnés seulement
                     </span>
                   )}
-                  <span className="ml-auto text-gray-500 text-sm flex-shrink-0">
-                    {lesson.content_type === "video" && (
+                  {!lesson.is_subscriber_only && (
+                    <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                      Gratuit (Aperçu)
+                    </span>
+                  )}
+                  <span className="ml-auto text-gray-500 text-sm flex-shrink-0 flex items-center">
+                    {lesson.content_type === "external_video_url" && (
+                      <VideoCameraIcon className="h-4 w-4 inline-block mr-1 text-gray-500" />
+                    )}
+                    {lesson.content_type === "uploaded_video_file" && (
                       <VideoCameraIcon className="h-4 w-4 inline-block mr-1 text-gray-500" />
                     )}
                     {lesson.content_type === "text" && (
                       <DocumentTextIcon className="h-4 w-4 inline-block mr-1 text-gray-500" />
                     )}
-                     {lesson.content_type === "image" && (
+                    {lesson.content_type === "image" && (
                       <PhotoIcon className="h-4 w-4 inline-block mr-1 text-gray-500" />
                     )}
-                     {lesson.content_type === "pdf" && (
+                    {lesson.content_type === "pdf" && (
                       <DocumentTextIcon className="h-4 w-4 inline-block mr-1 text-gray-500" />
                     )}
-                     {lesson.content_type === "ar" && (
+                    {lesson.content_type === "ar" && (
                       <CubeTransparentIcon className="h-4 w-4 inline-block mr-1 text-gray-500" />
                     )}
-                    {lesson.content_type}
+                    {lesson.content_type.replace(/_/g, " ")}
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 mb-3">
-                  {lesson.description || (lesson.content_type !== 'text' && lesson.content_value ? `Fichier: ${lesson.content_value.split('/').pop()}` : '')}
+                  {lesson.content_type === "text"
+                    ? lesson.content // Show content directly if it's text
+                    : `Fichier: ${lesson.content.split("/").pop() || lesson.content}`} {/* Show file name or URL */}
                 </p>
-                <div className="flex items-center text-xs text-gray-500">
-                    {lesson.module_id && (
-                        <>
-                            <CubeTransparentIcon className="h-4 w-4 mr-1" />
-                            <span>Module: {getModuleTitle(lesson.module_id)}</span>
-                        </>
-                    )}
-                </div>
+                {/* If you want to show module: */}
+                {/* <div className="flex items-center text-xs text-gray-500">
+                  {lesson.module_id && (
+                    <>
+                      <CubeTransparentIcon className="h-4 w-4 mr-1" />
+                      <span>Module: {getModuleTitle(lesson.module_id)}</span>
+                    </>
+                  )}
+                </div> */}
               </div>
 
               {/* Lesson Action Buttons */}
@@ -252,18 +264,6 @@ const TeacherLessonsPage = () => {
                 >
                   <TrashIcon className="h-4 w-4 mr-1" />
                   Supprimer
-                </button>
-                <button
-                  onClick={() => handleStartLiveSession(lesson.id)}
-                  className={`flex items-center px-3 py-2 text-sm rounded-md focus:outline-none focus:ring-2 ${
-                    lesson.isLiveAvailable // Assuming you'd fetch this from backend too or deduce
-                      ? "bg-green-100 text-green-800 hover:bg-green-200 focus:ring-green-300"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  }`}
-                  disabled={!lesson.isLiveAvailable}
-                >
-                  <PlayCircleIcon className="h-4 w-4 mr-1" />
-                  Live
                 </button>
               </div>
             </div>

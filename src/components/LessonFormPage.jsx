@@ -7,39 +7,35 @@ import {
   VideoCameraIcon,
   DocumentTextIcon,
   PhotoIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  PlusCircleIcon,
-  CubeIcon,
-  CloudArrowUpIcon,
+  CubeIcon, // For AR content type
+  CloudArrowUpIcon, // For upload icon
 } from "@heroicons/react/24/outline";
 
 const LessonFormPage = () => {
-  const { courseId, lessonId } = useParams();
+  const { courseId, lessonId } = useParams(); // lessonId will be present for edits
   const navigate = useNavigate();
 
   const [lesson, setLesson] = useState({
     title: "",
-    description: "", // Corresponds to Lessons.content
-    video_url: "", // Used specifically for external video URLs
+    content: "", // Maps to Lessons.content (text, file URL, external video URL)
     content_type: "text", // Default type
-    content_value: "", // Will hold file URL or text content (or internal video URL)
-    module_id: "",
-    is_preview: false,
+    course_id: courseId, // Directly from params
+    is_subscriber_only: false, // Maps to Lessons.is_subscriber_only
   });
-  const [modules, setModules] = useState([]);
+  const [modules, setModules] = useState([]); // Assuming lessons are linked to modules via a UI selection, though not directly in Lessons table in your schema. I will keep it for UI consistency if you intend to map it. If not, this can be removed.
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [file, setFile] = useState(null); // State to hold the uploaded file object
+  const [file, setFile] = useState(null); // State to hold the uploaded file object for display
 
   // --- Mock Data Fetching ---
   useEffect(() => {
     const fetchCourseModulesAndLesson = async () => {
       try {
+        // Simulate API call for modules (if you want to link lessons to modules in UI)
         const mockModules = [
-          { id: "module-1", title: "Introduction to React" },
-          { id: "module-2", title: "Advanced State Management" },
-          { id: "module-3", title: "Building APIs with Node.js" },
+          { id: "module-1", title: "Introduction au Développement Web" },
+          { id: "module-2", title: "Maîtrise de JavaScript" },
+          { id: "module-3", title: "Frameworks Front-end Modernes" },
         ];
         setModules(mockModules);
 
@@ -47,28 +43,41 @@ const LessonFormPage = () => {
           // Simulate fetching existing lesson for edit mode
           const mockExistingLesson = {
             id: lessonId,
-            title: "Understanding React Hooks",
-            description: "A deep dive into useState, useEffect, and custom hooks.",
-            // Example: Lesson with external video URL
-            // video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            // content_type: "external_video_url",
-            // content_value: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Embed URL for external video
+            title: "Comprendre les Hooks React",
+            // Example: A text lesson
+            // content: "Une plongée approfondie dans useState, useEffect et les hooks personnalisés.",
+            // content_type: "text",
 
-            // Example: Lesson with uploaded video file
-            video_url: "", // Not used for uploaded video
-            content_type: "uploaded_video_file",
-            content_value: "/uploads/my_react_hooks_lesson.mp4", // Conceptual path to uploaded file
-            module_id: "module-1",
-            is_preview: true,
+            // Example: An external video lesson
+            // content: "https://www.youtube.com/watch?v=some_youtube_id",
+            // content_type: "external_video_url",
+
+            // Example: An uploaded video file lesson
+            // content: "/uploads/my_react_hooks_lesson.mp4",
+            // content_type: "uploaded_video_file",
+
+            // Example: A PDF lesson
+            content: "/uploads/dom_manipulation_guide.pdf",
+            content_type: "pdf",
+
+            course_id: courseId,
+            is_subscriber_only: true, // This maps to is_preview in old code, now is_subscriber_only
           };
           setLesson(mockExistingLesson);
-          if (mockExistingLesson.content_type === "uploaded_video_file" || mockExistingLesson.content_type === "image" || mockExistingLesson.content_type === "pdf" || mockExistingLesson.content_type === "ar" || mockExistingLesson.content_type === "other_file") {
-            // If it's a file type, we might need to display its name
-            setFile({ name: mockExistingLesson.content_value.split('/').pop() || 'Existing File' });
+
+          // If the content is a file URL, set the file state for display
+          if (
+            mockExistingLesson.content_type === "uploaded_video_file" ||
+            mockExistingLesson.content_type === "image" ||
+            mockExistingLesson.content_type === "pdf" ||
+            mockExistingLesson.content_type === "ar" ||
+            mockExistingLesson.content_type === "other_file"
+          ) {
+            setFile({ name: mockExistingLesson.content.split("/").pop() || "Fichier Existant" });
           }
         }
       } catch (err) {
-        setError("Failed to load data.");
+        setError("Échec du chargement des données.");
         console.error(err);
       } finally {
         setLoading(false);
@@ -80,87 +89,75 @@ const LessonFormPage = () => {
 
   // --- File Dropzone Logic ---
   const onDrop = useCallback((acceptedFiles) => {
-    const uploadedFile = acceptedFiles[0];
+    const uploadedFile = acceptedFiles[0]; // Take only the first file
     if (uploadedFile) {
       setFile(uploadedFile);
-      let newContentType = lesson.content_type; // Keep current content type by default
+      let newContentType;
 
-      // Determine content_type based on file type if not already set or specifically for files
-      if (uploadedFile.type.startsWith("video/") && lesson.content_type !== "external_video_url") {
-        newContentType = "uploaded_video_file"; // Set to our new specific type for uploaded videos
+      // Determine content_type based on file type
+      if (uploadedFile.type.startsWith("video/")) {
+        newContentType = "uploaded_video_file";
       } else if (uploadedFile.type.startsWith("image/")) {
         newContentType = "image";
       } else if (uploadedFile.type === "application/pdf") {
         newContentType = "pdf";
-      } else if (uploadedFile.type.includes("glb") || uploadedFile.type.includes("usdz")) { // Basic check for AR
+      } else if (uploadedFile.type.includes("glb") || uploadedFile.type.includes("usdz")) {
+        // Basic check for common AR file types
         newContentType = "ar";
       } else {
-        newContentType = "other_file"; // General fallback for other files
+        newContentType = "other_file"; // General fallback for other file types
       }
 
       setLesson((prev) => ({
         ...prev,
         content_type: newContentType,
-        content_value: `/uploads/${uploadedFile.name}`, // Conceptual URL for the uploaded file
-        video_url: "", // Clear video_url if a file is uploaded
+        content: `/uploads/${uploadedFile.name}`, // Conceptual URL for the uploaded file
       }));
     }
-  }, [lesson.content_type]); // Re-run if lesson.content_type changes
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   // --- Form Handlers ---
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
     setLesson((prev) => {
-      let newState = {
-        ...prev,
-        [name]: type === "checkbox" ? checked : value,
-      };
+      let newState = { ...prev, [name]: type === "checkbox" ? checked : value };
 
-      // Special handling for content_type change
+      // When content_type changes, reset file and content for new input type
       if (name === "content_type") {
-        // Clear content_value and video_url when type changes
-        newState.content_value = "";
-        newState.video_url = "";
-        setFile(null); // Clear any previously selected file
-
-        // If the new content type is 'text', ensure description is the main content
-        if (value === 'text') {
-            newState.description = prev.description || ""; // Keep existing description or make empty
-        } else {
-            // If changing from 'text' to a file/video type, clear description if it was used as primary content
-            // This logic might need refinement based on how 'description' maps to 'content' in your DB
-            // For now, let's keep it as is, as 'description' is separate from 'content_value' in the DB.
-        }
+        setFile(null); // Clear file from dropzone preview
+        newState.content = ""; // Clear content value for new type
       }
       return newState;
     });
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    try {
-      // In a real app, you'd handle file upload to backend first
-      // If `file` exists and content_type is 'uploaded_video_file', 'image', 'pdf', 'ar', 'other_file':
-      //   const fileUrl = await uploadFile(file); // Call your backend upload API
-      //   lesson.content_value = fileUrl; // Update content_value with actual URL
+    // In a real application, you would send this 'lesson' data to your backend API.
+    // If 'file' exists and content_type implies an upload (e.g., uploaded_video_file, image, pdf, ar, other_file):
+    //   You'd send the 'file' to a dedicated file upload endpoint first.
+    //   The backend would store it (S3, local storage) and return the public URL.
+    //   Then, you'd update 'lesson.content' with this actual URL before sending the lesson data.
+    // For this mock, we are just using the conceptual path already set in 'onDrop'.
 
+    try {
       if (lessonId) {
-        console.log("Updating lesson:", lesson);
+        console.log("Mise à jour de la leçon:", lesson);
+        // await fetch(`/api/lessons/${lessonId}`, { method: 'PUT', body: JSON.stringify(lesson), headers: { 'Content-Type': 'application/json' } });
         alert("Leçon mise à jour avec succès !");
       } else {
-        console.log("Creating new lesson:", lesson);
+        console.log("Création de la nouvelle leçon:", lesson);
+        // await fetch(`/api/courses/${courseId}/lessons`, { method: 'POST', body: JSON.stringify(lesson), headers: { 'Content-Type': 'application/json' } });
         alert("Leçon créée avec succès !");
       }
-      navigate(`/dashboard/courses/${courseId}/lessons`);
+      navigate(`/dashboard/courses/${courseId}/lessons`); // Redirect back to lessons list
     } catch (err) {
-      setError("Failed to save lesson.");
+      setError("Échec de la sauvegarde de la leçon.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -192,7 +189,11 @@ const LessonFormPage = () => {
         Remplissez les détails ci-dessous pour {lessonId ? "modifier" : "créer"} cette leçon.
       </p>
 
-      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">{error}</div>}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md space-y-6">
         {/* Lesson Title */}
@@ -211,7 +212,11 @@ const LessonFormPage = () => {
           />
         </div>
 
-        {/* Module Selection */}
+        {/* Module Selection (If you decide to keep modules linked visually in UI) */}
+        {/* Removed module_id from Lessons table, so this is now purely UI/conceptual.
+            If modules are needed for lessons, you might consider a join table or adding module_id back to Lessons.
+            For now, I'm commenting it out to strictly follow your provided schema.
+            If you still want it in UI, you'll need to decide how to manage its persistence.
         <div>
           <label htmlFor="module_id" className="block text-sm font-medium text-gray-700 mb-1">
             Module
@@ -222,7 +227,7 @@ const LessonFormPage = () => {
             value={lesson.module_id}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
-            required
+            required // Or make it optional if not strictly tied in DB
           >
             <option value="">Sélectionnez un module</option>
             {modules.map((mod) => (
@@ -232,6 +237,7 @@ const LessonFormPage = () => {
             ))}
           </select>
         </div>
+        */}
 
         {/* Content Type Selection */}
         <div>
@@ -247,7 +253,7 @@ const LessonFormPage = () => {
           >
             <option value="text">Texte</option>
             <option value="external_video_url">Vidéo (URL YouTube/Vimeo)</option>
-            <option value="uploaded_video_file">Fichier Vidéo (Upload)</option> {/* New option */}
+            <option value="uploaded_video_file">Fichier Vidéo (Upload)</option>
             <option value="image">Image</option>
             <option value="pdf">PDF</option>
             <option value="ar">Réalité Augmentée (AR)</option>
@@ -258,49 +264,53 @@ const LessonFormPage = () => {
         {/* Dynamic Content Input based on content_type */}
         {lesson.content_type === "text" && (
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Contenu textuel
+            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
+              Contenu textuel de la leçon
             </label>
             <textarea
-              id="description"
-              name="description"
-              value={lesson.description}
+              id="content"
+              name="content" // Maps to Lessons.content
+              value={lesson.content}
               onChange={handleChange}
               rows="6"
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
-              placeholder="Écrivez le contenu de la leçon ici..."
+              placeholder="Écrivez le contenu textuel de la leçon ici..."
             ></textarea>
             <p className="mt-2 text-sm text-gray-500">
-                Le texte de la leçon sera stocké dans la colonne `content` de votre base de données.
+              Le texte de la leçon sera stocké dans la colonne `content` de votre base de données.
             </p>
           </div>
         )}
 
         {lesson.content_type === "external_video_url" && (
           <div>
-            <label htmlFor="video_url" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
               URL Vidéo Externe (YouTube/Vimeo)
             </label>
             <input
               type="url"
-              id="video_url"
-              name="video_url"
-              value={lesson.video_url}
+              id="content"
+              name="content" // Maps to Lessons.content
+              value={lesson.content}
               onChange={handleChange}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
               placeholder="Ex: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
               required
             />
             <p className="mt-2 text-sm text-gray-500">
-                L'URL de la vidéo sera stockée dans la colonne `video_url`.
+              L'URL de la vidéo externe sera stockée dans la colonne `content`.
             </p>
           </div>
         )}
 
-        {(lesson.content_type === "uploaded_video_file" || lesson.content_type === "image" || lesson.content_type === "pdf" || lesson.content_type === "ar" || lesson.content_type === "other_file") && (
+        {(lesson.content_type === "uploaded_video_file" ||
+          lesson.content_type === "image" ||
+          lesson.content_type === "pdf" ||
+          lesson.content_type === "ar" ||
+          lesson.content_type === "other_file") && (
           <div>
             <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700 mb-1">
-              Télécharger un fichier ({lesson.content_type.replace(/_/g, ' ').toUpperCase()})
+              Télécharger un fichier ({lesson.content_type.replace(/_/g, " ").toUpperCase()})
             </label>
             <div
               {...getRootProps()}
@@ -310,11 +320,21 @@ const LessonFormPage = () => {
               <div className="text-center">
                 {file ? (
                   <>
-                    {lesson.content_type === "uploaded_video_file" && <VideoCameraIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />}
-                    {lesson.content_type === "image" && <PhotoIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />}
-                    {lesson.content_type === "pdf" && <DocumentTextIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />}
-                    {lesson.content_type === "ar" && <CubeIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />}
-                    {lesson.content_type === "other_file" && <CloudArrowUpIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />}
+                    {lesson.content_type === "uploaded_video_file" && (
+                      <VideoCameraIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />
+                    )}
+                    {lesson.content_type === "image" && (
+                      <PhotoIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />
+                    )}
+                    {lesson.content_type === "pdf" && (
+                      <DocumentTextIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />
+                    )}
+                    {lesson.content_type === "ar" && (
+                      <CubeIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />
+                    )}
+                    {lesson.content_type === "other_file" && (
+                      <CloudArrowUpIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />
+                    )}
                     <p className="text-e-bosy-purple text-lg font-medium mt-2">
                       Fichier sélectionné: {file.name}
                     </p>
@@ -344,26 +364,25 @@ const LessonFormPage = () => {
             </div>
             {isDragActive && <p className="text-center text-e-bosy-purple mt-2">Déposez le fichier ici...</p>}
             {file && (
-                <p className="mt-2 text-sm text-gray-500">
-                    L'URL de ce fichier sera stockée dans la colonne `content_value` après téléchargement sur le serveur.
-                </p>
+              <p className="mt-2 text-sm text-gray-500">
+                L'URL de ce fichier sera stockée dans la colonne `content` après son téléchargement sur le serveur.
+              </p>
             )}
           </div>
         )}
 
-
-        {/* Is Preview Checkbox */}
+        {/* Is Subscriber Only Checkbox (replaces is_preview) */}
         <div className="flex items-center">
           <input
             type="checkbox"
-            id="is_preview"
-            name="is_preview"
-            checked={lesson.is_preview}
+            id="is_subscriber_only"
+            name="is_subscriber_only"
+            checked={lesson.is_subscriber_only}
             onChange={handleChange}
             className="h-4 w-4 text-e-bosy-purple border-gray-300 rounded focus:ring-e-bosy-purple"
           />
-          <label htmlFor="is_preview" className="ml-2 block text-sm text-gray-900">
-            Leçon gratuite (aperçu)
+          <label htmlFor="is_subscriber_only" className="ml-2 block text-sm text-gray-900">
+            Réservé aux abonnés (non disponible en aperçu gratuit)
           </label>
         </div>
 
@@ -376,14 +395,32 @@ const LessonFormPage = () => {
           >
             {loading ? (
               <span className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Sauvegarde...
               </span>
+            ) : lessonId ? (
+              "Mettre à jour la Leçon"
             ) : (
-              lessonId ? "Mettre à jour la Leçon" : "Créer la Leçon"
+              "Créer la Leçon"
             )}
           </button>
         </div>

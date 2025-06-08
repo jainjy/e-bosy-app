@@ -1,7 +1,6 @@
-// src/components/EventFormModal.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css"; // Import datepicker styles
+import "react-datepicker/dist/react-datepicker.css";
 
 const EventFormModal = ({ onClose, onSubmit, event }) => {
   const [eventData, setEventData] = useState({
@@ -13,17 +12,29 @@ const EventFormModal = ({ onClose, onSubmit, event }) => {
     address: "",
   });
 
-  // Populate form with existing event data if in edit mode
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
+
   useEffect(() => {
     if (event) {
       setEventData({
         ...event,
-        // Convert ISO strings back to Date objects for react-datepicker
         start_time: event.start_time ? new Date(event.start_time) : null,
         end_time: event.end_time ? new Date(event.end_time) : null,
       });
     } else {
-      // Reset for new event
       setEventData({
         title: "",
         description: "",
@@ -52,7 +63,6 @@ const EventFormModal = ({ onClose, onSubmit, event }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Convert Date objects back to ISO strings for submission
     const submittedData = {
       ...eventData,
       start_time: eventData.start_time ? eventData.start_time.toISOString() : null,
@@ -67,7 +77,7 @@ const EventFormModal = ({ onClose, onSubmit, event }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
+      <div ref={modalRef} className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold text-gray-800 mb-6">{modalTitle}</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">

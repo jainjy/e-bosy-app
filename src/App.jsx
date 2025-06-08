@@ -27,6 +27,7 @@ import LiveSessionPage from './pages/LiveSessionPage';
 import EventsPage from './pages/teacher/EventsPage';
 import Analytics from './pages/teacher/Analytics';
 import LessonFormPage from './components/LessonFormPage';
+import CertificateViewPage from './pages/CertificateViewPage';
 
 
 function App() {
@@ -76,6 +77,7 @@ function App() {
           </Route>
           <Route path="/live-session/:sessionId" element={<LiveSessionPage />} />
           <Route path="/course/:courseId/lesson/:lessonId" element={<LessonPage />} />
+          <Route path="/certificates/:id" element={<CertificateViewPage />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const CourseFormModal = ({ onClose, onSubmit, course }) => {
   const [courseData, setCourseData] = useState({
@@ -10,12 +10,25 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
     thumbnail_url: "",
   });
 
-  // Effect to update form data when 'course' prop changes (for edit mode)
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
+
   useEffect(() => {
     if (course) {
       setCourseData(course);
     } else {
-      // Reset form if no course is provided (for create mode)
       setCourseData({
         title: "",
         description: "",
@@ -57,16 +70,11 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md md:max-w-lg lg:max-w-xl">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">
-          {modalTitle}
-        </h2>
+      <div ref={modalRef} className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md md:max-w-lg lg:max-w-xl">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">{modalTitle}</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label
-              htmlFor="title"
-              className="block text-gray-700 text-sm font-bold mb-2"
-            >
+            <label htmlFor="title" className="block text-gray-700 text-sm font-bold mb-2">
               Titre du Cours:
             </label>
             <input
@@ -80,10 +88,7 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
             />
           </div>
           <div className="mb-4">
-            <label
-              htmlFor="description"
-              className="block text-gray-700 text-sm font-bold mb-2"
-            >
+            <label htmlFor="description" className="block text-gray-700 text-sm font-bold mb-2">
               Description:
             </label>
             <textarea
@@ -97,10 +102,7 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
             ></textarea>
           </div>
           <div className="mb-4">
-            <label
-              htmlFor="category"
-              className="block text-gray-700 text-sm font-bold mb-2"
-            >
+            <label htmlFor="category" className="block text-gray-700 text-sm font-bold mb-2">
               Catégorie:
             </label>
             <select
@@ -120,10 +122,7 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
             </select>
           </div>
           <div className="mb-4">
-            <label
-              htmlFor="level"
-              className="block text-gray-700 text-sm font-bold mb-2"
-            >
+            <label htmlFor="level" className="block text-gray-700 text-sm font-bold mb-2">
               Niveau:
             </label>
             <select
@@ -143,10 +142,7 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
             </select>
           </div>
           <div className="mb-4">
-            <label
-              htmlFor="language"
-              className="block text-gray-700 text-sm font-bold mb-2"
-            >
+            <label htmlFor="language" className="block text-gray-700 text-sm font-bold mb-2">
               Langue:
             </label>
             <select
@@ -166,10 +162,7 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
             </select>
           </div>
           <div className="mb-6">
-            <label
-              htmlFor="thumbnail_url"
-              className="block text-gray-700 text-sm font-bold mb-2"
-            >
+            <label htmlFor="thumbnail_url" className="block text-gray-700 text-sm font-bold mb-2">
               URL de la miniature:
             </label>
             <input
