@@ -72,8 +72,8 @@ const EventFormModal = ({ onClose, onSubmit, event }) => {
     onClose();
   };
 
-  const modalTitle = event ? "Modifier l'événement" : "Créer un Nouvel Événement";
-  const submitButtonText = event ? "Mettre à jour" : "Créer";
+  const modalTitle = event ? "Modifier l'evenement" : "Creer un Nouvel Evenement";
+  const submitButtonText = event ? "Mettre à jour" : "Creer";
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -111,7 +111,7 @@ const EventFormModal = ({ onClose, onSubmit, event }) => {
           <div className="mb-4 flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <label htmlFor="start_time" className="block text-gray-700 text-sm font-bold mb-2">
-                Heure de début:
+                Heure de debut:
               </label>
               <DatePicker
                 selected={eventData.start_time}
@@ -148,7 +148,7 @@ const EventFormModal = ({ onClose, onSubmit, event }) => {
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
               required
             >
-              <option value="">Sélectionnez un type</option>
+              <option value="">Selectionnez un type</option>
               <option value="online">En ligne</option>
               <option value="physical">Physique</option>
             </select>

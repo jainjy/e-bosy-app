@@ -23,16 +23,16 @@ const ForgotPasswordPage = () => {
       const [response, error] = await apiHelper('post', 'password/reset-request', { email});
 
       if (error) {
-        throw new Error(error.message || "Une erreur est survenue lors de l'envoi du lien de réinitialisation");
+        throw new Error(error.message || "Une erreur est survenue lors de l'envoi du lien de reinitialisation");
       }
 
       setToast({ 
         show: true, 
-        message: 'Un lien de réinitialisation a été envoyé à votre adresse email', 
+        message: 'Un lien de reinitialisation a ete envoye à votre adresse email', 
         type: 'success' 
       });
 
-      // Redirection après un court délai
+      // Redirection après un court delai
       setTimeout(() => {
         navigate('/login');
       }, 3000);
@@ -54,9 +54,9 @@ const ForgotPasswordPage = () => {
       {toast.show && <Toast message={toast.message} type={toast.type} onClose={closeToast} />}
 
       <div className="bg-white rounded-lg shadow-xl p-8 md:p-10 w-full max-w-md text-center">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Mot de passe oublié</h2>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Mot de passe oublie</h2>
         <p className="text-gray-600 mb-8">
-          Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe
+          Entrez votre adresse email et nous vous enverrons un lien pour reinitialiser votre mot de passe
         </p>
 
         <form className="space-y-6" onSubmit={handleSubmit}>

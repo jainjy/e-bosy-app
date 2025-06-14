@@ -20,7 +20,7 @@ const MessagesPage = () => {
       <div className="w-80 bg-white p-6 shadow-md flex flex-col">
         <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center space-x-2">
           <EnvelopeIcon className="h-6 w-6" />
-          <span>Messages Instantanés</span>
+          <span>Messages Instantanes</span>
         </h2>
 
         <div className="grid grid-cols-3 gap-4 mb-6 text-center">
@@ -112,4 +112,4 @@ const MessagesPage = () => {
   );
 };
 
-export default MessagesPage;
+export default MessagesPage

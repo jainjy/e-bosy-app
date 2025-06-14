@@ -21,8 +21,8 @@ const ManageCoursesPage = () => {
     },
     {
       id: 2,
-      title: 'React pour débutants',
-      description: 'Apprenez à créer des applications modernes avec React',
+      title: 'React pour debutants',
+      description: 'Apprenez à creer des applications modernes avec React',
       instructor: 'By Unknown Instructor',
       students: 124,
       price: 0.00,
@@ -31,8 +31,8 @@ const ManageCoursesPage = () => {
     },
     {
       id: 3,
-      title: 'Développement d\'API avec Node.js et Express',
-      description: 'Développez des APIs robustes avec Node.js',
+      title: 'Developpement d\'API avec Node.js et Express',
+      description: 'Developpez des APIs robustes avec Node.js',
       instructor: 'By Unknown Instructor',
       students: 68,
       price: 0.00,

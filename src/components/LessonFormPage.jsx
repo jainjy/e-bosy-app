@@ -33,7 +33,7 @@ const LessonFormPage = () => {
       try {
         // Simulate API call for modules (if you want to link lessons to modules in UI)
         const mockModules = [
-          { id: "module-1", title: "Introduction au Développement Web" },
+          { id: "module-1", title: "Introduction au Developpement Web" },
           { id: "module-2", title: "Maîtrise de JavaScript" },
           { id: "module-3", title: "Frameworks Front-end Modernes" },
         ];
@@ -45,7 +45,7 @@ const LessonFormPage = () => {
             id: lessonId,
             title: "Comprendre les Hooks React",
             // Example: A text lesson
-            // content: "Une plongée approfondie dans useState, useEffect et les hooks personnalisés.",
+            // content: "Une plongee approfondie dans useState, useEffect et les hooks personnalises.",
             // content_type: "text",
 
             // Example: An external video lesson
@@ -77,7 +77,7 @@ const LessonFormPage = () => {
           }
         }
       } catch (err) {
-        setError("Échec du chargement des données.");
+        setError("Echec du chargement des donnees.");
         console.error(err);
       } finally {
         setLoading(false);
@@ -151,13 +151,13 @@ const LessonFormPage = () => {
         // await fetch(`/api/lessons/${lessonId}`, { method: 'PUT', body: JSON.stringify(lesson), headers: { 'Content-Type': 'application/json' } });
         alert("Leçon mise à jour avec succès !");
       } else {
-        console.log("Création de la nouvelle leçon:", lesson);
+        console.log("Creation de la nouvelle leçon:", lesson);
         // await fetch(`/api/courses/${courseId}/lessons`, { method: 'POST', body: JSON.stringify(lesson), headers: { 'Content-Type': 'application/json' } });
-        alert("Leçon créée avec succès !");
+        alert("Leçon creee avec succès !");
       }
       navigate(`/dashboard/courses/${courseId}/lessons`); // Redirect back to lessons list
     } catch (err) {
-      setError("Échec de la sauvegarde de la leçon.");
+      setError("Echec de la sauvegarde de la leçon.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -183,10 +183,10 @@ const LessonFormPage = () => {
       </Link>
 
       <h1 className="text-3xl font-bold text-gray-800 mb-2">
-        {lessonId ? "Modifier la Leçon" : "Créer une Nouvelle Leçon"}
+        {lessonId ? "Modifier la Leçon" : "Creer une Nouvelle Leçon"}
       </h1>
       <p className="text-gray-600 mb-8">
-        Remplissez les détails ci-dessous pour {lessonId ? "modifier" : "créer"} cette leçon.
+        Remplissez les details ci-dessous pour {lessonId ? "modifier" : "creer"} cette leçon.
       </p>
 
       {error && (
@@ -229,7 +229,7 @@ const LessonFormPage = () => {
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
             required // Or make it optional if not strictly tied in DB
           >
-            <option value="">Sélectionnez un module</option>
+            <option value="">Selectionnez un module</option>
             {modules.map((mod) => (
               <option key={mod.id} value={mod.id}>
                 {mod.title}
@@ -252,11 +252,11 @@ const LessonFormPage = () => {
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
           >
             <option value="text">Texte</option>
-            <option value="external_video_url">Vidéo (URL YouTube/Vimeo)</option>
-            <option value="uploaded_video_file">Fichier Vidéo (Upload)</option>
+            <option value="external_video_url">Video (URL YouTube/Vimeo)</option>
+            <option value="uploaded_video_file">Fichier Video (Upload)</option>
             <option value="image">Image</option>
             <option value="pdf">PDF</option>
-            <option value="ar">Réalité Augmentée (AR)</option>
+            <option value="ar">Realite Augmentee (AR)</option>
             <option value="other_file">Autre Fichier</option>
           </select>
         </div>
@@ -274,10 +274,10 @@ const LessonFormPage = () => {
               onChange={handleChange}
               rows="6"
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
-              placeholder="Écrivez le contenu textuel de la leçon ici..."
+              placeholder="Ecrivez le contenu textuel de la leçon ici..."
             ></textarea>
             <p className="mt-2 text-sm text-gray-500">
-              Le texte de la leçon sera stocké dans la colonne `content` de votre base de données.
+              Le texte de la leçon sera stocke dans la colonne `content` de votre base de donnees.
             </p>
           </div>
         )}
@@ -285,7 +285,7 @@ const LessonFormPage = () => {
         {lesson.content_type === "external_video_url" && (
           <div>
             <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-              URL Vidéo Externe (YouTube/Vimeo)
+              URL Video Externe (YouTube/Vimeo)
             </label>
             <input
               type="url"
@@ -298,7 +298,7 @@ const LessonFormPage = () => {
               required
             />
             <p className="mt-2 text-sm text-gray-500">
-              L'URL de la vidéo externe sera stockée dans la colonne `content`.
+              L'URL de la video externe sera stockee dans la colonne `content`.
             </p>
           </div>
         )}
@@ -310,7 +310,7 @@ const LessonFormPage = () => {
           lesson.content_type === "other_file") && (
           <div>
             <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700 mb-1">
-              Télécharger un fichier ({lesson.content_type.replace(/_/g, " ").toUpperCase()})
+              Telecharger un fichier ({lesson.content_type.replace(/_/g, " ").toUpperCase()})
             </label>
             <div
               {...getRootProps()}
@@ -336,10 +336,10 @@ const LessonFormPage = () => {
                       <CloudArrowUpIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />
                     )}
                     <p className="text-e-bosy-purple text-lg font-medium mt-2">
-                      Fichier sélectionné: {file.name}
+                      Fichier selectionne: {file.name}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">
-                      Cliquez ou déposez un autre fichier pour le remplacer.
+                      Cliquez ou deposez un autre fichier pour le remplacer.
                     </p>
                   </>
                 ) : (
@@ -347,9 +347,9 @@ const LessonFormPage = () => {
                     <CloudArrowUpIcon className="mx-auto h-12 w-12 text-gray-400" />
                     <p className="mt-1 text-sm text-gray-600">
                       <span className="font-medium text-e-bosy-purple hover:text-purple-500">
-                        Cliquez pour télécharger
+                        Cliquez pour telecharger
                       </span>{" "}
-                      ou glissez-déposez ici
+                      ou glissez-deposez ici
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
                       {lesson.content_type === "uploaded_video_file" && "MP4, MOV, AVI (max 100MB)"}
@@ -362,10 +362,10 @@ const LessonFormPage = () => {
                 )}
               </div>
             </div>
-            {isDragActive && <p className="text-center text-e-bosy-purple mt-2">Déposez le fichier ici...</p>}
+            {isDragActive && <p className="text-center text-e-bosy-purple mt-2">Deposez le fichier ici...</p>}
             {file && (
               <p className="mt-2 text-sm text-gray-500">
-                L'URL de ce fichier sera stockée dans la colonne `content` après son téléchargement sur le serveur.
+                L'URL de ce fichier sera stockee dans la colonne `content` après son telechargement sur le serveur.
               </p>
             )}
           </div>
@@ -382,7 +382,7 @@ const LessonFormPage = () => {
             className="h-4 w-4 text-e-bosy-purple border-gray-300 rounded focus:ring-e-bosy-purple"
           />
           <label htmlFor="is_subscriber_only" className="ml-2 block text-sm text-gray-900">
-            Réservé aux abonnés (non disponible en aperçu gratuit)
+            Reserve aux abonnes (non disponible en aperçu gratuit)
           </label>
         </div>
 
@@ -420,7 +420,7 @@ const LessonFormPage = () => {
             ) : lessonId ? (
               "Mettre à jour la Leçon"
             ) : (
-              "Créer la Leçon"
+              "Creer la Leçon"
             )}
           </button>
         </div>

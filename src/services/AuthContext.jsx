@@ -3,33 +3,21 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { apiHelper } from "./ApiFetch";
 
 /**
- * Crée un contexte d'authentification
+ *Cree un contexte d'authentification
  */
 const AuthContext = createContext();
 
-/**
- * Fournisseur d'authentification qui englobe l'application
- * @param {Object} props - Les propriétés du composant
- * @param {ReactNode} props.children - Les enfants à rendre
- */
+
 export const AuthProvider = ({ children }) => {
   // État pour stocker les informations de l'utilisateur
   const [user, setUser] = useState(null);
-  // État pour suivre si l'utilisateur est connecté
+  // État pour suivre si l'utilisateur est connecte
   const [logged, setLogged] = useState(false);
-  // État pour gérer le chargement
+  // État pour gerer le chargement
   const [loading, setLoading] = useState(true);
 
-  /**
-   * Récupère le token depuis le localStorage
-   * @returns {string|null} Le token de l'utilisateur
-   */
   const getToken = () => localStorage.getItem('user_token');
 
-  /**
-   * Stocke le token dans le localStorage
-   * @param {string} token - Le token à stocker
-   */
   const setToken = (token) => localStorage.setItem('user_token', token);
 
   /**
@@ -37,12 +25,7 @@ export const AuthProvider = ({ children }) => {
    */
   const removeToken = () => localStorage.removeItem('user_token');
 
-  /**
-   * Connecte un utilisateur
-   * @param {string} email - L'email de l'utilisateur
-   * @param {string} password - Le mot de passe de l'utilisateur
-   * @returns {Promise<Object>} Un objet avec le résultat de la connexion
-   */
+
   const login = async (email, password) => {
     try {
       const [response, error] = await apiHelper('post', 'auth/login', { email, password });
@@ -69,13 +52,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Déconnecte l'utilisateur
+   * Deconnecte l'utilisateur
    */
   const logout = async () => {
     try {
       await apiHelper('post', 'auth/logout');
     } finally {
-      // On nettoie toujours même si la requête échoue
+      // On nettoie toujours même si la requête echoue
       removeToken();
       setUser(null);
       setLogged(false);
@@ -83,13 +66,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Récupère les informations de l'utilisateur connecté
+   * Recupère les informations de l'utilisateur connecte
    */
   const fetchUserInfo = async () => {
     setLoading(true);
     try {
       if (getToken()) {
-        const [userData, error] = await apiHelper('get', 'me');
+        const [userData, error] = await apiHelper('get', 'users/me');
         
         if (error) throw error;
         
@@ -97,7 +80,7 @@ export const AuthProvider = ({ children }) => {
         setLogged(true);
       }
     } catch (error) {
-      // Si erreur 401 (non autorisé), on déconnecte
+      // Si erreur 401 (non autorise), on deconnecte
       if (error.status === 401) {
         removeToken();
         setLogged(false);
@@ -107,17 +90,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Au montage du composant, on récupère les infos utilisateur
+  // Au montage du composant, on recupère les infos utilisateur
   useEffect(() => {
     fetchUserInfo();
 
-    // Optionnel: vérification périodique de la session
+    // Optionnel: verification periodique de la session
     const sessionCheckInterval = setInterval(fetchUserInfo, 1000 * 60 * 5); // Toutes les 5 minutes
 
     return () => clearInterval(sessionCheckInterval);
   }, []);
 
-  // Valeurs exposées par le contexte
+  // Valeurs exposees par le contexte
   const contextValue = {
     user,
     login,
@@ -135,13 +118,13 @@ export const AuthProvider = ({ children }) => {
 };
 
 /**
- * Hook personnalisé pour accéder au contexte d'authentification
+ * Hook personnalise pour acceder au contexte d'authentification
  * @returns {Object} Les valeurs du contexte d'authentification
  */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth doit être utilisé dans un AuthProvider');
+    throw new Error('useAuth doit être utilise dans un AuthProvider');
   }
   return context;
 };

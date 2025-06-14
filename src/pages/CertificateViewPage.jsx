@@ -6,7 +6,7 @@ import {
   CheckCircleIcon,  // Verified icon
   InformationCircleIcon // Info icon
 } from '@heroicons/react/24/outline';
-import { QRCode } from 'qrcode.react'; // Import QRCode component as a named export
+import { QRCode } from 'react-qr-code'; // Import QRCode component as a named export
 import Navbar from '../Components/Navbar'; // Assuming you have a Navbar component
 
 const CertificateViewPage = () => {
@@ -19,7 +19,7 @@ const CertificateViewPage = () => {
   const dummyCertificates = [
     {
       id: '1',
-      courseTitle: 'Maîtrise du Développement Web Frontend',
+      courseTitle: 'Maîtrise du Developpement Web Frontend',
       studentName: 'RAKOTO Malala',
       issueDate: '25/05/2024',
       completionDate: '20/05/2024',
@@ -27,13 +27,13 @@ const CertificateViewPage = () => {
       grade: 'A+',
       instructor: 'Jane Doe',
       duration: '120 heures',
-      description: 'Ce certificat atteste de la maîtrise des compétences fondamentales et avancées en développement web frontend, incluant HTML5, CSS3, JavaScript (ES6+), React, et les meilleures pratiques de conception réactive.',
+      description: 'Ce certificat atteste de la maîtrise des competences fondamentales et avancees en developpement web frontend, incluant HTML5, CSS3, JavaScript (ES6+), React, et les meilleures pratiques de conception reactive.',
       imageUrl: 'https://via.placeholder.com/800x600?text=Certificat+Web+Dev', // Placeholder image if certificate has a visual
       verifierUrl: 'https://e-bosy.com/verify?code=EBSY-WEB-2024-ABC12345' // URL for QR code
     },
     {
       id: '2',
-      courseTitle: 'Intelligence Artificielle pour les Débutants',
+      courseTitle: 'Intelligence Artificielle pour les Debutants',
       studentName: 'RANDRIA Zo',
       issueDate: '10/04/2024',
       completionDate: '05/04/2024',
@@ -41,7 +41,7 @@ const CertificateViewPage = () => {
       grade: 'B',
       instructor: 'John Smith',
       duration: '80 heures',
-      description: 'Introduction aux concepts fondamentaux de l\'intelligence artificielle, incluant le machine learning, le deep learning et les réseaux neuronaux.',
+      description: 'Introduction aux concepts fondamentaux de l\'intelligence artificielle, incluant le machine learning, le deep learning et les reseaux neuronaux.',
       imageUrl: 'https://via.placeholder.com/800x600?text=Certificat+AI',
       verifierUrl: 'https://e-bosy.com/verify?code=EBSY-AI-2024-DEF67890'
     },
@@ -55,7 +55,7 @@ const CertificateViewPage = () => {
         grade: 'A',
         instructor: 'Dr. Expert',
         duration: '40 heures',
-        description: 'Ce certificat valide les compétences en JavaScript de base à intermédiaire.',
+        description: 'Ce certificat valide les competences en JavaScript de base à intermediaire.',
         imageUrl: 'https://via.placeholder.com/800x600?text=JS+Cert',
         verifierUrl: 'https://e-bosy.com/verify?code=EBSY-JS-2024-GHI10111'
     }
@@ -135,16 +135,16 @@ const CertificateViewPage = () => {
             {/* <div className="absolute inset-0 bg-e-bosy-purple opacity-10 blur-sm rounded-lg"></div> */}
             <div className="relative z-10">
               <h1 className="text-3xl md:text-4xl font-extrabold text-e-bosy-purple mb-4">
-                CERTIFICAT DE RÉUSSITE
+                CERTIFICAT DE REUSSITE
               </h1>
               <p className="text-lg md:text-xl text-gray-700 mb-6 font-medium">
-                EST DÉCERNÉ À
+                EST DECERNE À
               </p>
               <h2 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 font-serif">
                 {certificate.studentName.toUpperCase()}
               </h2>
               <p className="text-lg md:text-xl text-gray-700 mb-6 font-medium">
-                POUR AVOIR TERMINÉ AVEC SUCCÈS LE COURS
+                POUR AVOIR TERMINE AVEC SUCCÈS LE COURS
               </p>
               <h3 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-6">
                 "{certificate.courseTitle}"
@@ -153,7 +153,7 @@ const CertificateViewPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-left max-w-2xl mx-auto mb-8">
                 <div className="flex items-center text-gray-700">
                   <InformationCircleIcon className="h-5 w-5 text-e-bosy-purple mr-2" />
-                  <span className="font-medium">Date de Délivrance:</span> {certificate.issueDate}
+                  <span className="font-medium">Date de Delivrance:</span> {certificate.issueDate}
                 </div>
                 <div className="flex items-center text-gray-700">
                   <CheckCircleIcon className="h-5 w-5 text-e-bosy-purple mr-2" />
@@ -161,7 +161,7 @@ const CertificateViewPage = () => {
                 </div>
                 <div className="flex items-center text-gray-700 col-span-full">
                   <InformationCircleIcon className="h-5 w-5 text-e-bosy-purple mr-2" />
-                  <span className="font-medium">Durée du Cours:</span> {certificate.duration}
+                  <span className="font-medium">Duree du Cours:</span> {certificate.duration}
                 </div>
                 <div className="flex items-center text-gray-700 col-span-full">
                   <InformationCircleIcon className="h-5 w-5 text-e-bosy-purple mr-2" />
@@ -183,13 +183,13 @@ const CertificateViewPage = () => {
               <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="text-center">
                   <h4 className="text-md font-semibold text-gray-800 mb-2 flex items-center justify-center">
-                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" /> Vérifiez l'authenticité
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" /> Verifiez l'authenticite
                   </h4>
-                  <QRCode value={certificate.verifierUrl} size={128} level="H" includeMargin={false} />
-                  <p className="text-sm text-gray-500 mt-2">Scannez pour vérifier</p>
+                  <QRCode value={certificate.verifierUrl} size={128} level="H"  />
+                  <p className="text-sm text-gray-500 mt-2">Scannez pour verifier</p>
                 </div>
                 <div className="text-center md:text-left md:border-l md:border-gray-300 md:pl-8">
-                  <h4 className="text-md font-semibold text-gray-800 mb-2">Code de Vérification:</h4>
+                  <h4 className="text-md font-semibold text-gray-800 mb-2">Code de Verification:</h4>
                   <p className="text-2xl font-bold text-e-bosy-purple tracking-wider">
                     {certificate.verificationCode}
                   </p>
@@ -206,7 +206,7 @@ const CertificateViewPage = () => {
                   className="bg-e-bosy-purple text-white px-6 py-3 rounded-lg shadow-md flex items-center justify-center space-x-2 hover:bg-purple-700 transition-colors duration-200 text-lg"
                 >
                   <ArrowDownTrayIcon className="h-6 w-6" />
-                  <span>Télécharger le Certificat</span>
+                  <span>Telecharger le Certificat</span>
                 </button>
                 <button
                   onClick={handleShare}

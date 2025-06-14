@@ -11,9 +11,9 @@ const ViewUserModal = ({ user, onClose }) => {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [onClose]);
 
@@ -21,15 +21,15 @@ const ViewUserModal = ({ user, onClose }) => {
 
   const getRoleColorClass = (role) => {
     switch (role) {
-      case 'student': return 'bg-blue-100 text-blue-800';
-      case 'teacher': return 'bg-green-100 text-green-800';
-      case 'admin': return 'bg-purple-100 text-purple-800';
+      case 'etudiant': return 'bg-blue-100 text-blue-800';
+      case 'enseignant': return 'bg-green-100 text-green-800';
+      case 'administrateur': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getUserStatus = (user) => {
-    return user.is_verified ? 'Actif' : 'Non Vérifié';
+    return user.isSubscribed ? 'Actif' : 'Inactif';
   };
 
   const getStatusColorClass = (status) => {
@@ -57,14 +57,14 @@ const ViewUserModal = ({ user, onClose }) => {
         </div>
 
         <div className="flex flex-col items-center mb-6">
-          {user.profile_picture_url ? (
-            <img className="h-24 w-24 rounded-full object-cover shadow-md border-4 border-white" src={user.profile_picture_url} alt={`${user.name || user.email}'s avatar`} />
+          {user.profilePictureUrl ? (
+            <img className="h-24 w-24 rounded-full object-cover shadow-md border-4 border-white" src={"http://localhost:5196/"+user.profilePictureUrl} alt={`${user.firstName} ${user.lastName}`} />
           ) : (
             <div className="h-24 w-24 rounded-full bg-e-bosy-purple flex items-center justify-center text-white font-bold text-4xl shadow-md border-4 border-white">
-              {user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : user.email.substring(0,2).toUpperCase()}
+              {`${user.firstName[0]}${user.lastName[0]}`.toUpperCase()}
             </div>
           )}
-          <h3 className="text-2xl font-bold text-gray-900 mt-4">{user.name || user.email}</h3>
+          <h3 className="text-2xl font-bold text-gray-900 mt-4">{`${user.firstName} ${user.lastName}`}</h3>
           <p className="text-gray-600">{user.email}</p>
         </div>
 
@@ -72,7 +72,7 @@ const ViewUserModal = ({ user, onClose }) => {
           <div className="flex flex-col">
             <p className="font-semibold text-sm text-gray-500">Rôle</p>
             <span className={`px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full capitalize ${getRoleColorClass(user.role)}`}>
-              {user.role === 'student' ? 'étudiant' : user.role === 'teacher' ? 'enseignant' : user.role === 'admin' ? 'administrateur' : user.role}
+              {user.role}
             </span>
           </div>
           <div className="flex flex-col">
@@ -81,59 +81,39 @@ const ViewUserModal = ({ user, onClose }) => {
               {getUserStatus(user)}
             </span>
           </div>
-
-          {user.country && (
-            <div className="flex flex-col">
-              <p className="font-semibold text-sm text-gray-500">Pays</p>
-              <p className="text-base">{user.country}</p>
-            </div>
-          )}
-          {user.birth_date && (
+          {user.birthDate && (
             <div className="flex flex-col">
               <p className="font-semibold text-sm text-gray-500">Date de Naissance</p>
-              <p className="text-base">{formatDate(user.birth_date)}</p>
+              <p className="text-base">{formatDate(user.birthDate)}</p>
             </div>
           )}
-          {user.learning_style && (
+          {user.learningStyle && (
             <div className="flex flex-col">
               <p className="font-semibold text-sm text-gray-500">Style d'Apprentissage</p>
-              <p className="text-base">{user.learning_style}</p>
+              <p className="text-base">{user.learningStyle}</p>
             </div>
           )}
-          {user.experience_level && (
+          {user.experienceLevel && (
             <div className="flex flex-col">
-              <p className="font-semibold text-sm text-gray-500">Niveau d'Expérience</p>
-              <p className="text-base">{user.experience_level}</p>
+              <p className="font-semibold text-sm text-gray-500">Niveau d'Experience</p>
+              <p className="text-base">{user.experienceLevel}</p>
             </div>
           )}
-          {user.points !== undefined && (
-            <div className="flex flex-col">
-              <p className="font-semibold text-sm text-gray-500">Points</p>
-              <p className="text-base">{user.points}</p>
-            </div>
-          )}
-
-          {user.is_subscribed && (
+          {user.isSubscribed && (
             <>
               <div className="flex flex-col">
-                <p className="font-semibold text-sm text-gray-500">Abonné</p>
+                <p className="font-semibold text-sm text-gray-500">Abonne</p>
                 <p className="text-base">Oui</p>
               </div>
               <div className="flex flex-col">
                 <p className="font-semibold text-sm text-gray-500">Date d'abonnement</p>
-                <p className="text-base">{formatDate(user.subscription_date)}</p>
+                <p className="text-base">{formatDate(user.subscriptionDate)}</p>
               </div>
               <div className="flex flex-col">
                 <p className="font-semibold text-sm text-gray-500">Expiration abonnement</p>
-                <p className="text-base">{formatDate(user.subscription_expiry)}</p>
+                <p className="text-base">{formatDate(user.subscriptionExpiry)}</p>
               </div>
             </>
-          )}
-          {user.is_verified !== undefined && (
-            <div className="flex flex-col">
-              <p className="font-semibold text-sm text-gray-500">Email Vérifié</p>
-              <p className="text-base">{user.is_verified ? 'Oui' : 'Non'}</p>
-            </div>
           )}
           {user.bio && (
             <div className="md:col-span-2 flex flex-col">
@@ -141,28 +121,16 @@ const ViewUserModal = ({ user, onClose }) => {
               <p className="text-base">{user.bio}</p>
             </div>
           )}
-          {user.badges && Object.keys(user.badges).length > 0 && (
-            <div className="md:col-span-2 flex flex-col">
-              <p className="font-semibold text-sm text-gray-500">Badges</p>
-              <div className="flex flex-wrap gap-2">
-                {Object.keys(user.badges).map(badgeKey => (
-                  <span key={badgeKey} className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-                    {badgeKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {user.created_at && (
+          {user.createdAt && (
             <div className="flex flex-col">
-              <p className="font-semibold text-sm text-gray-500">Créé le</p>
-              <p className="text-base">{moment(user.created_at).format('DD/MM/YYYY HH:mm')}</p>
+              <p className="font-semibold text-sm text-gray-500">Cree le</p>
+              <p className="text-base">{moment(user.createdAt).format('DD/MM/YYYY HH:mm')}</p>
             </div>
           )}
-          {user.updated_at && (
+          {user.updatedAt && (
             <div className="flex flex-col">
               <p className="font-semibold text-sm text-gray-500">Dernière mise à jour</p>
-              <p className="text-base">{moment(user.updated_at).format('DD/MM/YYYY HH:mm')}</p>
+              <p className="text-base">{moment(user.updatedAt).format('DD/MM/YYYY HH:mm')}</p>
             </div>
           )}
         </div>

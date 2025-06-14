@@ -32,26 +32,25 @@ api.interceptors.request.use(config => {
   return config;
 }, error => Promise.reject(error));
 
+apiWithFile.interceptors.request.use(config => {
+  const token = localStorage.getItem('user_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, error => Promise.reject(error));
+
 /**
  * Intercepteur pour gérer les erreurs globales
  */
 api.interceptors.response.use(
   response => response,
   error => {
-    // Vous pouvez ajouter une logique de gestion d'erreur globale ici
     // Par exemple, rediriger vers /login si 401
     return Promise.reject(error);
   }
 );
 
-/**
- * Helper générique pour les requêtes API
- * @param {string} method - La méthode HTTP (get, post, put, delete)
- * @param {string} url - L'URL de l'endpoint
- * @param {Object} [data=null] - Les données à envoyer
- * @param {Object} [config={}] - Configuration supplémentaire
- * @returns {Promise<Array>} Un tableau [data, error]
- */
 export const apiHelper = async (method, url, data = null, config = {}) => {
   try {
     // Choisir l'instance axios en fonction du type de contenu
@@ -81,48 +80,19 @@ export const apiHelper = async (method, url, data = null, config = {}) => {
   }
 };
 
-/**
- * Fonction pour les requêtes GET
- * @param {string} url - L'URL de l'endpoint
- * @param {Object} [config={}] - Configuration supplémentaire
- * @returns {Promise<Array>} Un tableau [data, error]
- */
 export const getData = (url, config = {}) => apiHelper('get', url, null, config);
 
-/**
- * Fonction pour les requêtes POST
- * @param {string} url - L'URL de l'endpoint
- * @param {Object} data - Les données à envoyer
- * @param {Object} [config={}] - Configuration supplémentaire
- * @returns {Promise<Array>} Un tableau [data, error]
- */
-export const postData = (url, data, config = {}) => apiHelper('post', url, data, config);
+export const deleteData = (url, config = {}) => apiHelper('delete', url, null, config);
 
-/**
- * Fonction pour les requêtes POST avec fichiers
- * @param {string} url - L'URL de l'endpoint
- * @param {FormData} data - Les données FormData à envoyer
- * @returns {Promise<Array>} Un tableau [data, error]
- */
-export const postDataFile = (url, data) => {
-  return apiHelper('post', url, data, {
+export const postData= (url, data,file) => {
+  return apiHelper('post', url, data, file &&{
     headers: { 'Content-Type': 'multipart/form-data' }
   });
 };
 
-/**
- * Fonction pour les requêtes PUT
- * @param {string} url - L'URL de l'endpoint
- * @param {Object} data - Les données à envoyer
- * @param {Object} [config={}] - Configuration supplémentaire
- * @returns {Promise<Array>} Un tableau [data, error]
- */
-export const putData = (url, data, config = {}) => apiHelper('put', url, data, config);
+export const putData = (url, data,file) => {
+  return apiHelper('put', url, data,file && {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
 
-/**
- * Fonction pour les requêtes DELETE
- * @param {string} url - L'URL de l'endpoint
- * @param {Object} [config={}] - Configuration supplémentaire
- * @returns {Promise<Array>} Un tableau [data, error]
- */
-export const deleteData = (url, config = {}) => apiHelper('delete', url, null, config);

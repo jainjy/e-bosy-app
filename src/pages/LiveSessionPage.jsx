@@ -45,14 +45,14 @@ const LiveSessionPage = () => {
   const [remoteStreams, setRemoteStreams] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
-  const currentUser = { id: 1, name: "Teacher (You)", role: "Host" }; // À remplacer par vos données utilisateur
+  const currentUser = { id: 1, name: "Teacher (You)", role: "Host" }; // À remplacer par vos donnees utilisateur
   const [session, setSession] = useState(null);
   const [activeTab, setActiveTab] = useState("video");
 // Initialiser WebSocket
 useEffect(() => {
   webSocketService.connect(sessionId, currentUser.id);
   
-  // Configurer les écouteurs
+  // Configurer les ecouteurs
   webSocketService.addListener('connection', handleConnectionChange);
   webSocketService.addListener('signal', handleSignal);
   webSocketService.addListener('chat', handleChatMessage);
@@ -125,14 +125,14 @@ const renderChat = () => (
   const handleConnectionChange = ({ status }) => {
     setIsConnected(status === 'connected');
     if (status === 'connected') {
-      // Envoyer l'offre SDP initiale si nécessaire
+      // Envoyer l'offre SDP initiale si necessaire
     }
   };
 
   const handleSignal = (data) => {
-    // Gérer les signaux WebRTC (offre, réponse, ICE candidates)
+    // Gerer les signaux WebRTC (offre, reponse, ICE candidates)
     console.log('Signal received:', data);
-    // Implémentation WebRTC ici...
+    // Implementation WebRTC ici...
   };
 
   const handleChatMessage = (message) => {
@@ -140,7 +140,7 @@ const renderChat = () => (
   };
 
   const handleControlMessage = (control) => {
-    // Gérer les messages de contrôle (mute, partage d'écran, etc.)
+    // Gerer les messages de contrôle (mute, partage d'ecran, etc.)
     console.log('Control message:', control);
   };
 
@@ -158,14 +158,14 @@ const renderChat = () => (
     const newMuteState = !isMicrophoneMuted;
     setIsMicrophoneMuted(newMuteState);
     
-    // Envoyer l'état du micro aux autres participants
+    // Envoyer l'etat du micro aux autres participants
     webSocketService.sendMessage('control', {
       type: 'audio',
       state: newMuteState ? 'muted' : 'unmuted',
       userId: currentUser.id
     });
   };
-  // Démarrer le flux média
+  // Demarrer le flux media
   const startLocalStream = async () => {
     try {
       const constraints = {
@@ -189,14 +189,14 @@ const renderChat = () => (
       
       updateTrackStates();
     } catch (err) {
-      console.error("Erreur d'accès aux médias:", err);
-      alert("Veuillez autoriser l'accès à la caméra et au microphone");
+      console.error("Erreur d'accès aux medias:", err);
+      alert("Veuillez autoriser l'accès à la camera et au microphone");
       setIsCameraOff(true);
       setIsMicrophoneMuted(true);
     }
   };
 
-  // Mettre à jour l'état des tracks
+  // Mettre à jour l'etat des tracks
   const updateTrackStates = () => {
     if (localStream.current) {
       localStream.current.getVideoTracks().forEach(track => {
@@ -208,10 +208,10 @@ const renderChat = () => (
     }
   };
 
-  // Démarrer l'enregistrement
+  // Demarrer l'enregistrement
   const startRecording = async () => {
     if (!localStream.current) {
-      alert("Aucun flux média disponible");
+      alert("Aucun flux media disponible");
       return;
     }
 
@@ -226,10 +226,10 @@ const renderChat = () => (
         bitsPerSecond: 2500000 // 2.5 Mbps
       };
 
-      // Fallback si VP9 n'est pas supporté
+      // Fallback si VP9 n'est pas supporte
       if (!MediaRecorder.isTypeSupported(options.mimeType)) {
         options.mimeType = 'video/webm;codecs=vp8,opus';
-        console.warn("VP9 non supporté, utilisation de VP8");
+        console.warn("VP9 non supporte, utilisation de VP8");
       }
 
       mediaRecorderRef.current = new MediaRecorder(localStream.current, options);
@@ -255,16 +255,16 @@ const renderChat = () => (
         setIsRecording(false);
       };
 
-      mediaRecorderRef.current.start(1000); // Collecte des données chaque seconde
+      mediaRecorderRef.current.start(1000); // Collecte des donnees chaque seconde
       setIsRecording(true);
       
-      // Timer pour la durée d'enregistrement
+      // Timer pour la duree d'enregistrement
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
     } catch (error) {
       console.error("Erreur d'enregistrement:", error);
-      alert("Erreur lors du démarrage de l'enregistrement");
+      alert("Erreur lors du demarrage de l'enregistrement");
     }
   };
 
@@ -292,9 +292,9 @@ const renderChat = () => (
           data: reader.result.split(',')[1] // Stocker seulement la partie base64
         };
         
-        videos.unshift(videoData); // Ajouter au début du tableau
+        videos.unshift(videoData); // Ajouter au debut du tableau
         localStorage.setItem('recordedVideos', JSON.stringify(videos));
-        console.log("Enregistrement sauvegardé localement");
+        console.log("Enregistrement sauvegarde localement");
       };
       reader.readAsDataURL(blob);
     } catch (error) {
@@ -302,7 +302,7 @@ const renderChat = () => (
     }
   };
 
-  // Télécharger la vidéo
+  // Telecharger la video
   const downloadRecording = () => {
     if (!recordedVideoUrl) return;
     
@@ -319,7 +319,7 @@ const renderChat = () => (
     if (!recordedVideoUrl || !recordedChunksRef.current.length) return;
     
     setIsUploading(true);
-    setUploadStatus("Préparation de l'envoi...");
+    setUploadStatus("Preparation de l'envoi...");
     setUploadProgress(0);
     
     try {
@@ -341,16 +341,16 @@ const renderChat = () => (
       }
       
       // Simulation de succès
-      setUploadStatus("Enregistrement sauvegardé avec succès!");
+      setUploadStatus("Enregistrement sauvegarde avec succès!");
       setTimeout(() => {
         setIsUploading(false);
         setUploadStatus("");
       }, 2000);
       
-      console.log("Enregistrement uploadé (simulation)");
+      console.log("Enregistrement uploade (simulation)");
     } catch (error) {
       console.error("Erreur d'upload:", error);
-      setUploadStatus("Échec de l'envoi");
+      setUploadStatus("Echec de l'envoi");
       setIsUploading(false);
     }
   };
@@ -373,12 +373,12 @@ const renderChat = () => (
     };
   }, []);
 
-  // Mise à jour des états des tracks
+  // Mise à jour des etats des tracks
   useEffect(() => {
     updateTrackStates();
   }, [isCameraOff, isMicrophoneMuted]);
 
-  // Chargement des données de session
+  // Chargement des donnees de session
   useEffect(() => {
     const mockSession = {
       id: sessionId,
@@ -413,7 +413,7 @@ const renderChat = () => (
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(session?.shareLink || '');
-    alert("Lien copié!");
+    alert("Lien copie!");
   };
 
   const formatTime = (seconds) => {
@@ -483,7 +483,7 @@ const renderChat = () => (
               <button
                 onClick={() => setIsCameraOff(!isCameraOff)}
                 className={`p-3 rounded-full ${isCameraOff ? 'bg-gray-300' : 'bg-purple-600'} text-white`}
-                title={isCameraOff ? "Activer la caméra" : "Désactiver la caméra"}
+                title={isCameraOff ? "Activer la camera" : "Desactiver la camera"}
               >
                 {isCameraOff ? <VideoCameraSlashIcon className="h-6 w-6" /> : <VideoCameraIcon className="h-6 w-6" />}
               </button>
@@ -491,7 +491,7 @@ const renderChat = () => (
               <button
                 onClick={() => setIsMicrophoneMuted(!isMicrophoneMuted)}
                 className={`p-3 rounded-full ${isMicrophoneMuted ? 'bg-gray-300' : 'bg-purple-600'} text-white`}
-                title={isMicrophoneMuted ? "Activer le microphone" : "Désactiver le microphone"}
+                title={isMicrophoneMuted ? "Activer le microphone" : "Desactiver le microphone"}
               >
                 {isMicrophoneMuted ? (
                   <span className="relative">
@@ -507,7 +507,7 @@ const renderChat = () => (
                 <button
                   onClick={startRecording}
                   className="p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700"
-                  title="Démarrer l'enregistrement"
+                  title="Demarrer l'enregistrement"
                 >
                   <VideoCameraIcon className="h-6 w-6" />
                 </button>
@@ -521,7 +521,7 @@ const renderChat = () => (
                 </button>
               )}
 
-              <button className="p-3 rounded-full bg-gray-200 hover:bg-gray-300" title="Partager l'écran">
+              <button className="p-3 rounded-full bg-gray-200 hover:bg-gray-300" title="Partager l'ecran">
                 <ShareIcon className="h-6 w-6" />
               </button>
 
@@ -537,14 +537,14 @@ const renderChat = () => (
             {/* Section d'enregistrement */}
             {recordedVideoUrl && (
               <div className="mt-6 bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold mb-3">Enregistrement terminé</h4>
+                <h4 className="font-semibold mb-3">Enregistrement termine</h4>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={downloadRecording}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                   >
                     <ArrowDownTrayIcon className="h-5 w-5" />
-                    Télécharger
+                    Telecharger
                   </button>
                   
                   <button
@@ -568,14 +568,14 @@ const renderChat = () => (
                 
                 {uploadStatus && (
                   <p className={`mt-2 text-sm text-center ${
-                    uploadStatus.includes("Échec") ? "text-red-500" : "text-green-600"
+                    uploadStatus.includes("Echec") ? "text-red-500" : "text-green-600"
                   }`}>
                     {uploadStatus}
                   </p>
                 )}
                 
                 <p className="text-xs text-gray-500 mt-2">
-                  L'enregistrement a été sauvegardé automatiquement dans votre historique local.
+                  L'enregistrement a ete sauvegarde automatiquement dans votre historique local.
                 </p>
               </div>
             )}

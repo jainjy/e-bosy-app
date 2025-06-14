@@ -1,5 +1,8 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 import HomePage from './pages/HomePage';
 import CoursesPage from './pages/CoursesPage';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -10,13 +13,12 @@ import UserManagementPage from './pages/admin/UserManagementPage';
 import MessagesPage from './pages/MessagesPage';
 import LessonPage from './pages/LessonPage';
 import NotFoundPage from './pages/NotFoundPage';
-// ... (imports)
 import AdminOverviewPage from './pages/admin/AdminOverviewPage';
 import TeacherOverviewPage from './pages/teacher/TeacherOverviewPage';
 import StudentOverviewPage from './pages/student/StudentOverviewPage';
 import LoginPage from './pages/LoginPage';
 import ReportsPage from './pages/ReportsPage';
-import { AuthProvider } from './services/AuthContext';
+import { AuthProvider, useAuth } from './services/AuthContext';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -24,66 +26,105 @@ import TeacherCoursesPage from './pages/teacher/TeacherCoursesPage';
 import TeacherLessonsPage from './pages/teacher/TeacherLessonsPage';
 import ScheduleLiveSessionPage from './pages/ScheduleLiveSessionPage';
 import LiveSessionPage from './pages/LiveSessionPage';
-import EventsPage from './pages/teacher/EventsPage';
 import Analytics from './pages/teacher/Analytics';
 import LessonFormPage from './components/LessonFormPage';
 import CertificateViewPage from './pages/CertificateViewPage';
+import SubscriptionPage from './pages/SubscriptionPage';
+import NotificationsPage from './pages/NotificationsPage';
+import CourseDetailsPage from './pages/CourseDetailsPage';
 
+const ProtectedRoute = ({ children }) => {
+  const { logged, loading, refreshUser } = useAuth();
+
+  useEffect(() => {
+    if (!logged) {
+      refreshUser();
+    }
+  }, [logged, refreshUser]);
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Chargement...</div>;
+  }
+
+  if (!logged) {
+    return ;
+  }
+
+  return children;
+};
 
 function App() {
-  const currentUserRole = 'teacher'; // Set to 'admin' for testing this page
-  const currentUserName = 'Admin User';
-  const currentUserEmail = 'admin@example.com';
-
   return (
-    <AuthProvider>
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/courses" element={<CoursesPage />} />
-        <Route path="/login" element={<LoginPage />} /> {/* Add Login Page route */}
-        <Route path="/register" element={<SignupPage />} /> {/* Add Login Page route */}
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} /> {/* Add Login Page route */}
-        <Route path="/reset-password" element={<ResetPasswordPage />} /> {/* Add Login Page route */}
-        {/* <Route path="/about" element={()=>"about pages"} /> Add Login Page route */}
+    <>
+      <Router>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/subscription" element={<SubscriptionPage />} />
+          <Route path="/course/:courseId" element={<CourseDetailsPage />} />
 
-        <Route
-          path="/dashboard/*"
-          element={
-            <DashboardLayout
-              userRole={currentUserRole}
-              userName={currentUserName}
-              userEmail={currentUserEmail}
-            />
-          }
-        >
-              {/* Change the default dashboard route to AdminOverviewPage if user is admin */}
-              <Route index element={currentUserRole === 'admin' ? <AdminOverviewPage /> : currentUserRole === 'teacher' ? <TeacherOverviewPage /> : <StudentOverviewPage />} />
-              <Route path='courses' element={currentUserRole === 'admin' ? <TeacherCoursesPage /> : currentUserRole === 'teacher' ? <TeacherCoursesPage /> : <StudentCoursePage />} />
-              <Route path='courses/:courseId/lessons' element={currentUserRole === 'admin' ? <TeacherCoursesPage /> : currentUserRole === 'teacher' ? <TeacherLessonsPage /> : <StudentCoursePage />} />
-              <Route path="mycourses" element={<MyCoursesPage />} />
-              <Route path="certificates" element={<CertificatesPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-              <Route path="messages" element={<MessagesPage />} />
-              <Route path="users" element={<UserManagementPage />} />
-              <Route path="reports" element={<ReportsPage />} /> {/* Add Reports Page route */}
-              <Route path="events" element={<EventsPage />} /> {/* Add Reports Page route */}
-              <Route path="analytics" element={<Analytics />} /> {/* Add Reports Page route */}
-              {/* Route pour le formulaire de planification de session live */}
-              <Route path="live-sessions/schedule" element={<ScheduleLiveSessionPage />} />
-              {/* Route pour la page de session live en cours (avec un ID dynamique) */}
-              <Route path="courses/:courseId/lessons/:lessonId/edit" element={<LessonFormPage />} />
-              <Route path="courses/:courseId/lessons/add" element={<LessonFormPage />} />
+          <Route path="/dashboard/*" element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<RoleBasedDashboard />} />
+            <Route path="courses" element={<RoleBasedCoursesPage />} />
+            <Route path="courses/:courseId/lessons" element={<TeacherLessonsPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="certificates" element={<CertificatesPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="messages" element={<MessagesPage />} />
+            <Route path="users" element={<UserManagementPage />} />
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="live-sessions/schedule" element={<ScheduleLiveSessionPage />} />
+            <Route path="courses/:courseId/lessons/:lessonId/edit" element={<LessonFormPage />} />
+            <Route path="courses/:courseId/lessons/add" element={<LessonFormPage />} />
+            <Route path="certificates/:id" element={<CertificateViewPage />} />
           </Route>
+
           <Route path="/live-session/:sessionId" element={<LiveSessionPage />} />
           <Route path="/course/:courseId/lesson/:lessonId" element={<LessonPage />} />
-          <Route path="/certificates/:id" element={<CertificateViewPage />} />
-
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Router>
-    </AuthProvider>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Router>
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
+    </>
   );
 }
 
-export default App;
+// Composants pour la gestion des rôles
+function RoleBasedDashboard() {
+  const { user } = useAuth();
+  
+  switch (user?.role) {
+    case 'administrateur':
+      return <AdminOverviewPage />;
+    case 'enseignant':
+      return <TeacherOverviewPage />;
+    default:
+      return <StudentOverviewPage />;
+  }
+}
+
+function RoleBasedCoursesPage() {
+  const { user } = useAuth();
+  
+  if (user?.role === 'etudiant') {
+    return <MyCoursesPage />;
+  }
+  return <TeacherCoursesPage />;
+}
+
+export default function AppWrapper() {
+  return (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+}

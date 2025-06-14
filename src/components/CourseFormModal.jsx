@@ -65,8 +65,8 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
   const levels = ["Beginner", "Intermediate", "Advanced", "All Levels"];
   const languages = ["Français", "English", "Español", "Deutsch"];
 
-  const modalTitle = course ? "Modifier le Cours" : "Créer un Nouveau Cours";
-  const submitButtonText = course ? "Mettre à jour le Cours" : "Créer le Cours";
+  const modalTitle = course ? "Modifier le Cours" : "Creer un Nouveau Cours";
+  const submitButtonText = course ? "Mettre à jour le Cours" : "Creer le Cours";
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -103,7 +103,7 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
           </div>
           <div className="mb-4">
             <label htmlFor="category" className="block text-gray-700 text-sm font-bold mb-2">
-              Catégorie:
+              Categorie:
             </label>
             <select
               id="category"
@@ -113,7 +113,7 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
               required
             >
-              <option value="">Sélectionnez une catégorie</option>
+              <option value="">Selectionnez une categorie</option>
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
@@ -133,7 +133,7 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
               required
             >
-              <option value="">Sélectionnez un niveau</option>
+              <option value="">Selectionnez un niveau</option>
               {levels.map((lvl) => (
                 <option key={lvl} value={lvl}>
                   {lvl}
@@ -153,7 +153,7 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
               required
             >
-              <option value="">Sélectionnez une langue</option>
+              <option value="">Selectionnez une langue</option>
               {languages.map((lang) => (
                 <option key={lang} value={lang}>
                   {lang}

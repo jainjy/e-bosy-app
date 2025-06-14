@@ -196,7 +196,7 @@ const TeacherCoursesPage = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-2">Mes Cours</h1>
       <p className="text-gray-600 mb-8">
-        Gérez vos cours et suivez leur performance.
+        Gerez vos cours et suivez leur performance.
       </p>
 
       {/* Search and Action Buttons */}
@@ -223,14 +223,14 @@ const TeacherCoursesPage = () => {
             className="flex items-center px-4 py-2 bg-e-bosy-purple text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
             <PlusIcon className="h-5 w-5 mr-2" />
-            Créer Nouveau Cours
+            Creer Nouveau Cours
           </button>
           <Link
             to="/dashboard/live-sessions/schedule"
             className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
           >
             <VideoCameraIcon className="h-5 w-5 mr-2" />
-            Session Live Générale
+            Session Live Generale
           </Link>
         </div>
       </div>
@@ -255,7 +255,7 @@ const TeacherCoursesPage = () => {
           } focus:outline-none`}
           onClick={() => setActiveTab("Published")}
         >
-          Publiés
+          Publies
         </button>
         <button
           className={`px-4 py-2 text-sm font-medium ${
@@ -288,7 +288,7 @@ const TeacherCoursesPage = () => {
                       : "bg-gray-100 text-gray-700"
                   }`}
                 >
-                  {course.status === "Published" ? "Publié" : "Brouillon"}
+                  {course.status === "Published" ? "Publie" : "Brouillon"}
                 </span>
               </div>
 
@@ -296,7 +296,7 @@ const TeacherCoursesPage = () => {
                 <>
                   <p className="text-sm text-gray-600 mb-2">
                     <UsersIcon className="h-4 w-4 inline-block mr-1" />
-                    {course.studentsEnrolled} étudiants inscrits
+                    {course.studentsEnrolled} etudiants inscrits
                   </p>
                   <p className="text-sm text-gray-600 mb-2">
                     Mis à jour: {course.updatedDate}
@@ -315,14 +315,14 @@ const TeacherCoursesPage = () => {
               ) : (
                 <>
                   <p className="text-sm text-gray-600 mb-2">
-                    Pas encore publié
+                    Pas encore publie
                   </p>
                   <p className="text-sm text-gray-600 mb-2">
                     Mis à jour: {course.updatedDate}
                   </p>
                   <div className="flex items-center text-sm text-gray-600 mb-4">
                     <UsersIcon className="h-4 w-4 text-gray-500 mr-1" />
-                    <span>Aucun étudiant encore</span>
+                    <span>Aucun etudiant encore</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
                     <div
@@ -343,7 +343,7 @@ const TeacherCoursesPage = () => {
                   className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent"
                 >
                   <Bars3BottomLeftIcon className="h-4 w-4 mr-1" />
-                  Gérer les leçons ({course.lessonsCount})
+                  Gerer les leçons ({course.lessonsCount})
                 </Link>
 
                 <Link
@@ -384,7 +384,7 @@ const TeacherCoursesPage = () => {
           ))
         ) : (
           <p className="col-span-full text-center text-gray-600">
-            Aucun cours trouvé pour cette sélection.
+            Aucun cours trouve pour cette selection.
           </p>
         )}
       </div>

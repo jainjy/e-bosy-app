@@ -19,14 +19,14 @@ const CertificatesPage = () => {
     },
     {
       id: 2,
-      courseTitle: 'React pour débutants',
+      courseTitle: 'React pour debutants',
       issueDate: '10/05/2024',
       code: 'REACT-XYZ789',
       imageUrl: 'https://via.placeholder.com/300x180?text=React+Cert'
     },
     {
       id: 3,
-      courseTitle: 'Développement d\'API avec Node.js',
+      courseTitle: 'Developpement d\'API avec Node.js',
       issueDate: '28/04/2024',
       code: 'NODE-DEF456',
       imageUrl: 'https://via.placeholder.com/300x180?text=Node.js+Cert'
@@ -55,7 +55,7 @@ const CertificatesPage = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Mes Certificats</h1>
-          <p className="text-gray-600">Gérez et téléchargez vos certificats de cours</p>
+          <p className="text-gray-600">Gerez et telechargez vos certificats de cours</p>
         </div>
       </div>
 
@@ -88,12 +88,12 @@ const CertificatesPage = () => {
               </div>
               <div className="p-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2 truncate">{certificate.courseTitle}</h3>
-                <p className="text-sm text-gray-600 mb-1">Délivré le: {certificate.issueDate}</p>
+                <p className="text-sm text-gray-600 mb-1">Delivre le: {certificate.issueDate}</p>
                 <p className="text-sm text-gray-600 mb-3">Code: <span className="font-medium text-gray-800">{certificate.code}</span></p>
                 <div className="flex justify-between items-center mt-4">
-                  <button className="bg-e-bosy-purple text-white px-4 py-2 rounded-md hover:bg-purple-700">
+                  <Link to={""+certificate.id} className="bg-e-bosy-purple text-white px-4 py-2 rounded-md hover:bg-purple-700">
                     Voir
-                  </button>
+                  </Link>
                   <button
                     onClick={() => handleDownload(certificate)}
                     className="p-2 rounded-md text-e-bosy-purple hover:bg-e-bosy-purple hover:text-white transition-colors duration-200"

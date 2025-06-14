@@ -20,7 +20,7 @@ const LessonPage = () => {
     <div className="flex h-screen bg-gray-50">
       <div className="w-80 bg-white p-6 shadow-md flex flex-col">
         <h3 className="text-xl font-bold text-gray-800 mb-6">Progression du cours</h3>
-        <p className="text-gray-600 mb-4">1 sur 3 terminées</p>
+        <p className="text-gray-600 mb-4">1 sur 3 terminees</p>
         <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
           <div className="bg-e-bosy-purple h-2 rounded-full" style={{ width: '33%' }}></div>
         </div>
@@ -39,7 +39,7 @@ const LessonPage = () => {
         <div className="mt-auto flex justify-between pt-4 border-t border-gray-200">
           <button className="flex items-center space-x-2 text-e-bosy-purple hover:underline">
             <ChevronLeftIcon className="h-5 w-5" />
-            <span>Précédent</span>
+            <span>Precedent</span>
           </button>
           <button className="bg-e-bosy-purple text-white px-6 py-2 rounded-md flex items-center space-x-2 hover:bg-purple-700">
             <span>Suivant</span>

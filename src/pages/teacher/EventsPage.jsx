@@ -20,7 +20,7 @@ const EventsPage = () => {
   const [events, setEvents] = useState([
     {
       id: "event-1",
-      title: "Réunion d'équipe hebdomadaire",
+      title: "Reunion d'equipe hebdomadaire",
       description: "Discussion des progrès du projet et planification future.",
       start_time: new Date(2025, 5, 10, 9, 0),
       end_time: new Date(2025, 5, 10, 10, 0),
@@ -31,7 +31,7 @@ const EventsPage = () => {
     },
     {
       id: "event-2",
-      title: "Webinaire: Tendances du développement web 2025",
+      title: "Webinaire: Tendances du developpement web 2025",
       description: "Exploration des dernières technologies et frameworks.",
       start_time: new Date(2025, 5, 15, 14, 0),
       end_time: new Date(2025, 5, 15, 15, 30),
@@ -49,7 +49,7 @@ const EventsPage = () => {
       created_by: 201,
       participants_ids: [101, 201, 301, 401],
       location_type: "physical",
-      address: "123 Rue de la Créativité, Anytown",
+      address: "123 Rue de la Creativite, Anytown",
     },
   ]);
 
@@ -106,7 +106,7 @@ const EventsPage = () => {
   };
 
   const handleDeleteEvent = (id) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cet événement ?")) {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cet evenement ?")) {
       setEvents((prevEvents) => prevEvents.filter((event) => event.id !== id));
     }
   };
@@ -164,10 +164,10 @@ const EventsPage = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-2">
         <CalendarDaysIcon className="h-8 w-8 inline-block mr-2 text-e-bosy-purple" />
-        Mes Événements
+        Mes Evenements
       </h1>
       <p className="text-gray-600 mb-8">
-        Gérez vos sessions live, réunions et autres événements importants.
+        Gerez vos sessions live, reunions et autres evenements importants.
       </p>
 
       <div className="flex justify-end mb-6">
@@ -176,14 +176,14 @@ const EventsPage = () => {
           className="flex items-center px-4 py-2 bg-e-bosy-purple text-white rounded-lg hover:bg-purple-700"
         >
           <PlusIcon className="h-5 w-5 mr-2" />
-          Créer Nouvel Événement
+          Creer Nouvel Evenement
         </button>
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-800">
-            Calendrier des Événements
+            Calendrier des Evenements
           </h2>
         </div>
 
@@ -195,13 +195,13 @@ const EventsPage = () => {
           style={{ height: 600 }}
           messages={{
             next: "Suivant",
-            previous: "Précédent",
+            previous: "Precedent",
             today: "Aujourd'hui",
             month: "Mois",
             week: "Semaine",
             day: "Jour",
             agenda: "Agenda",
-            noEventsInRange: "Aucun événement dans cette plage.",
+            noEventsInRange: "Aucun evenement dans cette plage.",
           }}
           components={{
             event: Event,
@@ -221,7 +221,7 @@ const EventsPage = () => {
 
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          Liste des Événements
+          Liste des Evenements
         </h2>
         {events.length > 0 ? (
           <ul className="divide-y divide-gray-200">
@@ -258,7 +258,7 @@ const EventsPage = () => {
             ))}
           </ul>
         ) : (
-          <p className="text-gray-600">Aucun événement à afficher.</p>
+          <p className="text-gray-600">Aucun evenement à afficher.</p>
         )}
       </div>
 

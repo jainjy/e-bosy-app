@@ -33,7 +33,7 @@ const ResetPasswordPage = () => {
       }
 
       if (!token) {
-        throw new Error('Token de réinitialisation manquant');
+        throw new Error('Token de reinitialisation manquant');
       }
 
       const [response, error] = await apiHelper('post', 'password/reset', { 
@@ -42,16 +42,16 @@ const ResetPasswordPage = () => {
       });
 
       if (error) {
-        throw new Error(error.message || "Échec de la réinitialisation du mot de passe");
+        throw new Error(error.message || "Echec de la reinitialisation du mot de passe");
       }
 
       setToast({ 
         show: true, 
-        message: 'Votre mot de passe a été réinitialisé avec succès', 
+        message: 'Votre mot de passe a ete reinitialise avec succès', 
         type: 'success' 
       });
 
-      // Redirection après un court délai
+      // Redirection après un court delai
       setTimeout(() => {
         navigate('/login');
       }, 2000);
@@ -73,7 +73,7 @@ const ResetPasswordPage = () => {
       {toast.show && <Toast message={toast.message} type={toast.type} onClose={closeToast} />}
 
       <div className="bg-white rounded-lg shadow-xl p-8 md:p-10 w-full max-w-md text-center">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Réinitialiser votre mot de passe</h2>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Reinitialiser votre mot de passe</h2>
         <p className="text-gray-600 mb-8">Entrez votre nouveau mot de passe</p>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
@@ -136,7 +136,7 @@ const ResetPasswordPage = () => {
               disabled={loading}
               className="flex w-full justify-center rounded-md bg-e-bosy-purple px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-e-bosy-purple disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Traitement en cours...' : 'Réinitialiser le mot de passe'}
+              {loading ? 'Traitement en cours...' : 'Reinitialiser le mot de passe'}
             </button>
           </div>
         </form>

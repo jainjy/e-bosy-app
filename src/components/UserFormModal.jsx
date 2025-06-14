@@ -1,31 +1,56 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+// Define roles for consistency (assuming this is imported from a shared constants file)
+// Or you can define them here if this component is the only one needing them in this way
+const ROLES = {
+  ADMIN: 'administrateur',
+  TEACHER: 'enseignant',
+  STUDENT: 'etudiant',
+};
+
 const UserFormModal = ({ onClose, onSubmit, user = null, mode = 'add' }) => {
   const [formData, setFormData] = useState(() => {
+    // Helper to format ISO date strings to YYYY-MM-DD for date inputs
+    const formatDate = (isoDate) => {
+      if (!isoDate) return '';
+      // Ensure it's a valid date string before splitting
+      const date = new Date(isoDate);
+      return isNaN(date.getTime()) ? '' : isoDate.split('T')[0];
+    };
+
     if (mode === 'edit' && user) {
       return {
-        ...user,
-        birth_date: user.birth_date ? user.birth_date.split('T')[0] : '',
-        subscription_date: user.subscription_date ? user.subscription_date.split('T')[0] : '',
-        subscription_expiry: user.subscription_expiry ? user.subscription_expiry.split('T')[0] : '',
-        role: user.role === 'admin' ? 'administrateur' : user.role,
+        userId: user.userId,
+        email: user.email || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        // Ensure role is consistent with what's expected by the select input
+        // If backend sends 'admin' for administrator, convert it to 'administrateur' for the form
+        role: user.role.toLowerCase() === 'admin' ? ROLES.ADMIN : user.role || ROLES.STUDENT,
+        bio: user.bio || '',
+        learningStyle: user.learningStyle || '',
+        experienceLevel: user.experienceLevel || '',
+        birthDate: formatDate(user.birthDate), // Format date for input
+        profilePicture: null,
+        isSubscribed: user.isSubscribed || false,
+        subscriptionDate: formatDate(user.subscriptionDate), // Format date for input
+        subscriptionExpiry: formatDate(user.subscriptionExpiry), // Format date for input
       };
     }
     return {
-      name: '',
       email: '',
-      role: 'student',
-      is_verified: false,
-      is_subscribed: false,
-      subscription_date: '',
-      subscription_expiry: '',
-      profile_picture_url: '',
+      firstName: '',
+      lastName: '',
+      password: '', // Only included in add mode for initial state
+      role: ROLES.STUDENT, // Default role for new user
       bio: '',
-      learning_style: '',
-      experience_level: '',
-      birth_date: '',
-      points: 0,
-      badges: {},
+      learningStyle: '',
+      experienceLevel: '',
+      birthDate: '',
+      profilePicture: null,
+      isSubscribed: false,
+      subscriptionDate: '',
+      subscriptionExpiry: '',
     };
   });
 
@@ -38,29 +63,17 @@ const UserFormModal = ({ onClose, onSubmit, user = null, mode = 'add' }) => {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [onClose]);
 
-  useEffect(() => {
-    if (mode === 'edit' && user) {
-      setFormData({
-        ...user,
-        birth_date: user.birth_date ? user.birth_date.split('T')[0] : '',
-        subscription_date: user.subscription_date ? user.subscription_date.split('T')[0] : '',
-        subscription_expiry: user.subscription_expiry ? user.subscription_expiry.split('T')[0] : '',
-        role: user.role === 'admin' ? 'administrateur' : user.role,
-      });
-    }
-  }, [user, mode]);
-
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked, files } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox' ? checked : type === 'file' ? files[0] : value,
     }));
   };
 
@@ -68,20 +81,28 @@ const UserFormModal = ({ onClose, onSubmit, user = null, mode = 'add' }) => {
     e.preventDefault();
     const submittedData = {
       ...formData,
-      role: formData.role === 'administrateur' ? 'admin' : formData.role,
-      subscription_date: formData.subscription_date || null,
-      subscription_expiry: formData.subscription_expiry || null,
-      birth_date: formData.birth_date || null,
-      points: parseInt(formData.points, 10) || 0,
+      // Handle the role conversion if the backend *truly* expects 'admin' for 'administrateur'
+      // Otherwise, remove this line and just send formData.role
+      role: formData.role === ROLES.ADMIN ? 'admin' : formData.role,
+      
+      // Ensure date fields are null if empty, or correctly formatted
+      birthDate: formData.birthDate || null,
+      subscriptionDate: formData.isSubscribed && formData.subscriptionDate ? formData.subscriptionDate : null,
+      subscriptionExpiry: formData.isSubscribed && formData.subscriptionExpiry ? formData.subscriptionExpiry : null,
     };
+
+    // Remove password if in edit mode and it's empty (i.e., not changed)
+    if (mode === 'edit' && !submittedData.password) {
+      delete submittedData.password;
+    }
+    
     onSubmit(submittedData);
   };
 
-  const roles = ['student', 'teacher', 'administrateur'];
-  const countries = ['France', 'Allemagne', 'Canada', 'États-Unis', 'Madagascar', 'Royaume-Uni', 'Autre'];
-  const learningStyles = ['Visuel', 'Auditif', 'Kinesthésique', 'Lecture/Écriture', 'Pratique', 'Analytique'];
-  const experienceLevels = ['Débutant', 'Intermédiaire', 'Avancé', 'Expert'];
-  const statuses = ['Actif', 'Inactif'];
+  // Use the ROLES constant for the roles array
+  const rolesOptions = [ROLES.STUDENT, ROLES.TEACHER, ROLES.ADMIN];
+  const learningStyles = ['Visuel', 'Auditif', 'Kinesthesique', 'Lecture/Ecriture', 'Pratique', 'Analytique'];
+  const experienceLevels = ['Debutant', 'Intermediaire', 'Avance', 'Expert'];
 
   const title = mode === 'add' ? 'Ajouter un Nouvel Utilisateur' : 'Modifier l\'Utilisateur';
   const submitButtonText = mode === 'add' ? 'Ajouter l\'Utilisateur' : 'Mettre à Jour l\'Utilisateur';
@@ -105,12 +126,24 @@ const UserFormModal = ({ onClose, onSubmit, user = null, mode = 'add' }) => {
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="col-span-1">
-              <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-1">Nom:</label>
+              <label htmlFor="firstName" className="block text-gray-700 text-sm font-bold mb-1">Prenom:</label>
               <input
                 type="text"
-                id="name"
-                name="name"
-                value={formData.name || ''}
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
+                required
+              />
+            </div>
+            <div className="col-span-1">
+              <label htmlFor="lastName" className="block text-gray-700 text-sm font-bold mb-1">Nom:</label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
                 onChange={handleChange}
                 className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
                 required
@@ -122,23 +155,37 @@ const UserFormModal = ({ onClose, onSubmit, user = null, mode = 'add' }) => {
                 type="email"
                 id="email"
                 name="email"
-                value={formData.email || ''}
+                value={formData.email}
                 onChange={handleChange}
                 className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
                 required
               />
             </div>
+            {mode === 'add' && (
+              <div className="col-span-1">
+                <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-1">Mot de passe:</label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
+                  required
+                />
+              </div>
+            )}
             <div className="col-span-1">
               <label htmlFor="role" className="block text-gray-700 text-sm font-bold mb-1">Rôle:</label>
               <select
                 id="role"
                 name="role"
-                value={formData.role || ''}
+                value={formData.role}
                 onChange={handleChange}
                 className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
                 required
               >
-                {roles.map((roleOpt) => (
+                {rolesOptions.map((roleOpt) => (
                   <option key={roleOpt} value={roleOpt}>
                     {roleOpt.charAt(0).toUpperCase() + roleOpt.slice(1)}
                   </option>
@@ -146,157 +193,100 @@ const UserFormModal = ({ onClose, onSubmit, user = null, mode = 'add' }) => {
               </select>
             </div>
             <div className="col-span-1">
-              <label htmlFor="profile_picture_url" className="block text-gray-700 text-sm font-bold mb-1">URL Photo de Profil:</label>
+              <label htmlFor="profilePicture" className="block text-gray-700 text-sm font-bold mb-1">Photo de Profil:</label>
               <input
-                type="text"
-                id="profile_picture_url"
-                name="profile_picture_url"
-                value={formData.profile_picture_url || ''}
+                type="file"
+                id="profilePicture"
+                name="profilePicture"
+                accept="image/*"
                 onChange={handleChange}
                 className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
               />
             </div>
-
             <div className="col-span-1 flex items-center">
               <input
                 type="checkbox"
-                id="is_verified"
-                name="is_verified"
-                checked={formData.is_verified || false}
+                id="isSubscribed"
+                name="isSubscribed"
+                checked={formData.isSubscribed}
                 onChange={handleChange}
                 className="h-4 w-4 text-e-bosy-purple focus:ring-e-bosy-purple border-gray-300 rounded"
               />
-              <label htmlFor="is_verified" className="ml-2 block text-gray-700 text-sm font-bold">Email Vérifié</label>
+              <label htmlFor="isSubscribed" className="ml-2 block text-gray-700 text-sm font-bold">Abonné</label>
             </div>
-
-            <div className="col-span-1 flex items-center">
-              <input
-                type="checkbox"
-                id="is_subscribed"
-                name="is_subscribed"
-                checked={formData.is_subscribed || false}
-                onChange={handleChange}
-                className="h-4 w-4 text-e-bosy-purple focus:ring-e-bosy-purple border-gray-300 rounded"
-              />
-              <label htmlFor="is_subscribed" className="ml-2 block text-gray-700 text-sm font-bold">Abonné</label>
-            </div>
-
-            {formData.is_subscribed && (
+            {formData.isSubscribed && (
               <>
                 <div className="col-span-1">
-                  <label htmlFor="subscription_date" className="block text-gray-700 text-sm font-bold mb-1">Date d'abonnement:</label>
+                  <label htmlFor="subscriptionDate" className="block text-gray-700 text-sm font-bold mb-1">Date d'abonnement:</label>
                   <input
                     type="date"
-                    id="subscription_date"
-                    name="subscription_date"
-                    value={formData.subscription_date || ''}
+                    id="subscriptionDate"
+                    name="subscriptionDate"
+                    value={formData.subscriptionDate}
                     onChange={handleChange}
                     className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
                   />
                 </div>
                 <div className="col-span-1">
-                  <label htmlFor="subscription_expiry" className="block text-gray-700 text-sm font-bold mb-1">Date d'expiration abonnement:</label>
+                  <label htmlFor="subscriptionExpiry" className="block text-gray-700 text-sm font-bold mb-1">Date d'expiration abonnement:</label>
                   <input
                     type="date"
-                    id="subscription_expiry"
-                    name="subscription_expiry"
-                    value={formData.subscription_expiry || ''}
+                    id="subscriptionExpiry"
+                    name="subscriptionExpiry"
+                    value={formData.subscriptionExpiry}
                     onChange={handleChange}
                     className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
                   />
                 </div>
               </>
             )}
-
             <div className="col-span-1">
-              <label htmlFor="country" className="block text-gray-700 text-sm font-bold mb-1">Pays:</label>
-              <select
-                id="country"
-                name="country"
-                value={formData.country || ''}
-                onChange={handleChange}
-                className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
-              >
-                <option value="">Sélectionner un pays</option>
-                {countries.map((countryOpt) => (
-                  <option key={countryOpt} value={countryOpt}>{countryOpt}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-span-1">
-              <label htmlFor="birth_date" className="block text-gray-700 text-sm font-bold mb-1">Date de Naissance:</label>
+              <label htmlFor="birthDate" className="block text-gray-700 text-sm font-bold mb-1">Date de Naissance:</label>
               <input
                 type="date"
-                id="birth_date"
-                name="birth_date"
-                value={formData.birth_date || ''}
+                id="birthDate"
+                name="birthDate"
+                value={formData.birthDate}
                 onChange={handleChange}
                 className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
               />
             </div>
             <div className="col-span-1">
-              <label htmlFor="learning_style" className="block text-gray-700 text-sm font-bold mb-1">Style d'Apprentissage:</label>
+              <label htmlFor="learningStyle" className="block text-gray-700 text-sm font-bold mb-1">Style d'Apprentissage:</label>
               <select
-                id="learning_style"
-                name="learning_style"
-                value={formData.learning_style || ''}
+                id="learningStyle"
+                name="learningStyle"
+                value={formData.learningStyle}
                 onChange={handleChange}
                 className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
               >
-                <option value="">Sélectionner un style</option>
+                <option value="">Selectionner un style</option>
                 {learningStyles.map((style) => (
                   <option key={style} value={style}>{style}</option>
                 ))}
               </select>
             </div>
             <div className="col-span-1">
-              <label htmlFor="experience_level" className="block text-gray-700 text-sm font-bold mb-1">Niveau d'Expérience:</label>
+              <label htmlFor="experienceLevel" className="block text-gray-700 text-sm font-bold mb-1">Niveau d'Experience:</label>
               <select
-                id="experience_level"
-                name="experience_level"
-                value={formData.experience_level || ''}
+                id="experienceLevel"
+                name="experienceLevel"
+                value={formData.experienceLevel}
                 onChange={handleChange}
                 className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
               >
-                <option value="">Sélectionner un niveau</option>
+                <option value="">Selectionner un niveau</option>
                 {experienceLevels.map((level) => (
                   <option key={level} value={level}>{level}</option>
                 ))}
               </select>
             </div>
-            <div className="col-span-1">
-              <label htmlFor="points" className="block text-gray-700 text-sm font-bold mb-1">Points:</label>
-              <input
-                type="number"
-                id="points"
-                name="points"
-                value={formData.points || 0}
-                onChange={handleChange}
-                className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
-              />
-            </div>
-            {mode === 'edit' && (
-              <div className="col-span-1">
-                <label htmlFor="status" className="block text-gray-700 text-sm font-bold mb-1">Statut:</label>
-                <select
-                  id="status"
-                  name="status"
-                  value={formData.status || ''}
-                  onChange={handleChange}
-                  className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"
-                >
-                  {statuses.map((statusOpt) => (
-                    <option key={statusOpt} value={statusOpt}>{statusOpt}</option>
-                  ))}
-                </select>
-              </div>
-            )}
             <div className="md:col-span-2">
               <label htmlFor="bio" className="block text-gray-700 text-sm font-bold mb-1">Biographie:</label>
               <textarea
                 id="bio"
                 name="bio"
-                value={formData.bio || ''}
+                value={formData.bio}
                 onChange={handleChange}
                 rows="3"
                 className="shadow-sm appearance-none border border-gray-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:border-transparent"

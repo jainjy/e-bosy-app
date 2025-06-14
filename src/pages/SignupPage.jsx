@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon, UserIcon, CalendarIcon, GlobeAltIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
-import { Toast } from '../components/Toast';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { postDataFile } from '../services/ApiFetch';
+import { postData } from '../services/ApiFetch';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +23,6 @@ const SignupPage = () => {
     profilePicture: null
   });
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const navigate = useNavigate();
 
   const togglePasswordVisibility = () => {
@@ -60,34 +61,29 @@ const SignupPage = () => {
         }
       }
 
-      const [response, error] = await postDataFile('users', formDataToSend);
+      const [_, error] = await postData('users', formDataToSend, true);
 
       if (error) {
         throw new Error(error.message || "Erreur lors de l'inscription");
       }
 
-      setToast({ show: true, message: 'Inscription réussie! Vous pouvez maintenant vous connecter.', type: 'success' });
-      
+      toast.success('Inscription réussie! Vous pouvez maintenant vous connecter.');
+
       // Redirection après un court délai
       setTimeout(() => {
         navigate('/login');
       }, 2000);
 
     } catch (err) {
-      setToast({ show: true, message: err.message, type: 'error' });
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const closeToast = () => {
-    setToast({ ...toast, show: false });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-200 via-pink-200 to-blue-200 flex items-center justify-center p-4">
       {loading && <LoadingSpinner />}
-      {toast.show && <Toast message={toast.message} type={toast.type} onClose={closeToast} />}
 
       <div className="bg-white rounded-lg shadow-xl p-8 md:p-10 w-full max-w-md">
         <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">Créer un compte</h2>
@@ -116,7 +112,7 @@ const SignupPage = () => {
 
           {/* First Name Input */}
           <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">Prénom*</label>
+            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">Prenom*</label>
             <div className="relative rounded-md shadow-sm">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <UserIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -128,7 +124,7 @@ const SignupPage = () => {
                 name="firstName"
                 id="firstName"
                 className="block w-full rounded-md border-0 py-2 pl-10 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-e-bosy-purple sm:text-sm sm:leading-6"
-                placeholder="Votre prénom"
+                placeholder="Votre prenom"
                 required
               />
             </div>
@@ -196,7 +192,7 @@ const SignupPage = () => {
               onChange={handleChange}
               className="block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-e-bosy-purple sm:text-sm sm:leading-6"
             >
-              <option value="student">Étudiant</option>
+              <option value="student">Etudiant</option>
               <option value="teacher">Enseignant</option>
             </select>
           </div>
@@ -273,7 +269,7 @@ const SignupPage = () => {
 
           {/* Experience Level */}
           <div>
-            <label htmlFor="experienceLevel" className="block text-sm font-medium text-gray-700 mb-1">Niveau d'expérience</label>
+            <label htmlFor="experienceLevel" className="block text-sm font-medium text-gray-700 mb-1">Niveau d'experience</label>
             <select
               id="experienceLevel"
               name="experienceLevel"
@@ -281,10 +277,10 @@ const SignupPage = () => {
               onChange={handleChange}
               className="block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-e-bosy-purple sm:text-sm sm:leading-6"
             >
-              <option value="">Sélectionnez...</option>
-              <option value="beginner">Débutant</option>
-              <option value="intermediate">Intermédiaire</option>
-              <option value="advanced">Avancé</option>
+              <option value="">Selectionnez...</option>
+              <option value="beginner">Debutant</option>
+              <option value="intermediate">Intermediaire</option>
+              <option value="advanced">Avance</option>
               <option value="expert">Expert</option>
             </select>
           </div>
@@ -327,6 +323,8 @@ const SignupPage = () => {
           </Link>
         </p>
       </div>
+
+      <ToastContainer />
     </div>
   );
 };

@@ -56,7 +56,7 @@ const TeacherOverviewPage = () => {
       },
       yaxis: {
         title: {
-          text: 'Minutes Enseignées'
+          text: 'Minutes Enseignees'
         },
         min: 0,
         max: 160 // Adjusted max for better fit
@@ -68,7 +68,7 @@ const TeacherOverviewPage = () => {
         },
       },
       title: {
-        text: 'Activité d\'Enseignement Hebdomadaire',
+        text: 'Activite d\'Enseignement Hebdomadaire',
         align: 'left',
         margin: 10,
         offsetX: 0,
@@ -91,7 +91,7 @@ const TeacherOverviewPage = () => {
         width: 380,
         type: 'donut',
       },
-      labels: ['Développement', 'Design', 'Science des Données', 'Marketing'],
+      labels: ['Developpement', 'Design', 'Science des Donnees', 'Marketing'],
       responsive: [{
         breakpoint: 480,
         options: {
@@ -174,41 +174,41 @@ const TeacherOverviewPage = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-2">Tableau de Bord Enseignant</h1>
-      <p className="text-gray-600 mb-8">Gérez vos cours et suivez les progrès de vos étudiants.</p>
+      <p className="text-gray-600 mb-8">Gerez vos cours et suivez les progrès de vos etudiants.</p>
 
       {/* Stats Cards - Adjusted for Teacher Dashboard based on image */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Total Cours */}
         <div className="bg-white p-6 rounded-lg shadow flex items-center justify-between">
           <div>
-            <p className="text-gray-500 text-sm">Cours Publiés</p>
+            <p className="text-gray-500 text-sm">Cours Publies</p>
             <p className="text-3xl font-bold text-gray-900 mt-1">15</p>
           </div>
           <BookOpenIcon className="h-8 w-8 text-e-bosy-purple" />
         </div>
 
-        {/* Total Étudiants Inscrits (across all courses) */}
+        {/* Total Etudiants Inscrits (across all courses) */}
         <div className="bg-white p-6 rounded-lg shadow flex items-center justify-between">
           <div>
-            <p className="text-gray-500 text-sm">Total Étudiants</p>
+            <p className="text-gray-500 text-sm">Total Etudiants</p>
             <p className="text-3xl font-bold text-gray-900 mt-1">1,234</p>
           </div>
           <UsersIcon className="h-8 w-8 text-e-bosy-purple" />
         </div>
 
-        {/* Heures Enseignées */}
+        {/* Heures Enseignees */}
         <div className="bg-white p-6 rounded-lg shadow flex items-center justify-between">
           <div>
-            <p className="text-gray-500 text-sm">Heures Enseignées</p>
+            <p className="text-gray-500 text-sm">Heures Enseignees</p>
             <p className="text-3xl font-bold text-gray-900 mt-1">42</p>
           </div>
           <ClockIcon className="h-8 w-8 text-e-bosy-purple" />
         </div>
 
-        {/* Gains Estimés */}
+        {/* Gains Estimes */}
         <div className="bg-white p-6 rounded-lg shadow flex items-center justify-between">
           <div>
-            <p className="text-gray-500 text-sm">Gains Estimés</p>
+            <p className="text-gray-500 text-sm">Gains Estimes</p>
             <p className="text-3xl font-bold text-gray-900 mt-1">$ 2,850</p>
           </div>
           <CurrencyDollarIcon className="h-8 w-8 text-e-bosy-purple" />
@@ -238,7 +238,7 @@ const TeacherOverviewPage = () => {
               <p className="text-xs text-gray-500 mb-3">Progression Moyenne: 80%</p>
               <div className="flex items-center text-sm text-gray-600">
                 <AcademicCapIcon className="h-4 w-4 mr-1" />
-                <span>Prochain: Module 5 - Hooks Avancés</span>
+                <span>Prochain: Module 5 - Hooks Avances</span>
               </div>
             </div>
             {/* Course Card 2 */}
@@ -246,7 +246,7 @@ const TeacherOverviewPage = () => {
               <div className="h-32 bg-gray-200 rounded-md mb-3 flex items-center justify-center text-gray-400">
                 <BookOpenIcon className="h-10 w-10" />
               </div>
-              <h4 className="font-semibold text-gray-800 mb-1">Python pour la Science des Données</h4>
+              <h4 className="font-semibold text-gray-800 mb-1">Python pour la Science des Donnees</h4>
               <p className="text-sm text-gray-600 mb-2">Par [Nom Enseignant]</p>
               <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
                 <div className="bg-yellow-500 h-2.5 rounded-full" style={{ width: '60%' }}></div>
@@ -254,7 +254,7 @@ const TeacherOverviewPage = () => {
               <p className="text-xs text-gray-500 mb-3">Progression Moyenne: 60%</p>
               <div className="flex items-center text-sm text-gray-600">
                 <AcademicCapIcon className="h-4 w-4 mr-1" />
-                <span>Prochain: Pandas Dataframe Opérations</span>
+                <span>Prochain: Pandas Dataframe Operations</span>
               </div>
             </div>
             {/* Course Card 3 */}
@@ -301,7 +301,7 @@ const TeacherOverviewPage = () => {
                 <CalendarDaysIcon className="h-6 w-6 text-e-bosy-purple mr-3 flex-shrink-0" />
                 <div>
                   <p className="font-medium text-gray-800">Session Q&A Live - React</p>
-                  <p className="text-sm text-gray-600">Aujourd'hui, 17:00 | Cours: Développement Frontend React</p>
+                  <p className="text-sm text-gray-600">Aujourd'hui, 17:00 | Cours: Developpement Frontend React</p>
                 </div>
               </div>
               <button className="bg-gray-100 text-gray-700 text-sm px-4 py-2 rounded-md hover:bg-gray-200 flex-shrink-0">
@@ -312,8 +312,8 @@ const TeacherOverviewPage = () => {
               <div className="flex items-start">
                 <ClipboardDocumentCheckIcon className="h-6 w-6 text-e-bosy-purple mr-3 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-gray-800">Correction Projet Final - Science des Données</p>
-                  <p className="text-sm text-gray-600">Demain, 11:59 | Cours: Python pour la Science des Données</p>
+                  <p className="font-medium text-gray-800">Correction Projet Final - Science des Donnees</p>
+                  <p className="text-sm text-gray-600">Demain, 11:59 | Cours: Python pour la Science des Donnees</p>
                 </div>
               </div>
               <button className="bg-gray-100 text-gray-700 text-sm px-4 py-2 rounded-md hover:bg-gray-200 flex-shrink-0">
@@ -324,7 +324,7 @@ const TeacherOverviewPage = () => {
               <div className="flex items-start">
                 <AcademicCapIcon className="h-6 w-6 text-e-bosy-purple mr-3 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-gray-800">Workshop - UI/UX Design Avancé</p>
+                  <p className="font-medium text-gray-800">Workshop - UI/UX Design Avance</p>
                   <p className="text-sm text-gray-600">Vendredi, 15:00 | Cours: UI/UX Design Fundamentals</p>
                 </div>
               </div>
@@ -342,14 +342,14 @@ const TeacherOverviewPage = () => {
 
         {/* Course Review Scores (similar to Your Certificates) */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Évaluations des Cours</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Evaluations des Cours</h3>
           <ul className="space-y-4">
             <li className="flex items-center justify-between border-b pb-3 mb-3 last:border-b-0 last:pb-0">
               <div className="flex items-start">
                 <StarIcon className="h-6 w-6 text-e-bosy-purple mr-3 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-gray-800">Développement Frontend React</p>
-                  <p className="text-sm text-gray-600">Évalué le 15 Mars 2023 | Note Moyenne: 4.8/5</p>
+                  <p className="font-medium text-gray-800">Developpement Frontend React</p>
+                  <p className="text-sm text-gray-600">Evalue le 15 Mars 2023 | Note Moyenne: 4.8/5</p>
                 </div>
               </div>
               <button className="bg-e-bosy-purple text-white text-sm px-4 py-2 rounded-md hover:bg-purple-700 flex-shrink-0">
@@ -360,8 +360,8 @@ const TeacherOverviewPage = () => {
               <div className="flex items-start">
                 <StarIcon className="h-6 w-6 text-e-bosy-purple mr-3 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-gray-800">Python pour la Science des Données</p>
-                  <p className="text-sm text-gray-600">Évalué le 10 Janvier 2023 | Note Moyenne: 4.5/5</p>
+                  <p className="font-medium text-gray-800">Python pour la Science des Donnees</p>
+                  <p className="text-sm text-gray-600">Evalue le 10 Janvier 2023 | Note Moyenne: 4.5/5</p>
                 </div>
               </div>
               <button className="bg-e-bosy-purple text-white text-sm px-4 py-2 rounded-md hover:bg-purple-700 flex-shrink-0">
@@ -373,7 +373,7 @@ const TeacherOverviewPage = () => {
                 <StarIcon className="h-6 w-6 text-e-bosy-purple mr-3 flex-shrink-0" />
                 <div>
                   <p className="font-medium text-gray-800">UI/UX Design Fundamentals</p>
-                  <p className="text-sm text-gray-600">Évalué le 2 Février 2023 | Note Moyenne: 4.6/5</p>
+                  <p className="text-sm text-gray-600">Evalue le 2 Fevrier 2023 | Note Moyenne: 4.6/5</p>
                 </div>
               </div>
               <button className="bg-e-bosy-purple text-white text-sm px-4 py-2 rounded-md hover:bg-purple-700 flex-shrink-0">
@@ -383,7 +383,7 @@ const TeacherOverviewPage = () => {
           </ul>
           <div className="mt-6 text-center">
             <Link to="/dashboard/courses" className="text-e-bosy-purple hover:underline text-sm">
-              Voir Toutes les Évaluations
+              Voir Toutes les Evaluations
             </Link>
           </div>
         </div>
@@ -399,7 +399,7 @@ const TeacherOverviewPage = () => {
           </Link>
           <Link to="/dashboard/users" className="bg-gray-100 p-4 rounded-lg flex flex-col items-center justify-center text-center hover:bg-gray-200">
             <UsersIcon className="h-6 w-6 text-e-bosy-purple mb-2" />
-            <span className="text-gray-700 text-sm">Gérer les Étudiants</span>
+            <span className="text-gray-700 text-sm">Gerer les Etudiants</span>
           </Link>
           <Link to="/dashboard/messages" className="bg-gray-100 p-4 rounded-lg flex flex-col items-center justify-center text-center hover:bg-gray-200">
             <MegaphoneIcon className="h-6 w-6 text-e-bosy-purple mb-2" />

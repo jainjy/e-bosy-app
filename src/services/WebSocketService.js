@@ -1,88 +1,78 @@
+import * as signalR from '@microsoft/signalr';
+
 class WebSocketService {
-    constructor() {
-      this.socket = null;
-      this.listeners = new Map();
-      this.reconnectAttempts = 0;
-      this.maxReconnectAttempts = 5;
-      this.reconnectDelay = 3000; // 3 seconds
-    }
-  
-    connect(sessionId, userId) {
-      if (this.socket) {
-        this.disconnect();
-      }
-  
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host;
-      this.socket = new WebSocket(`${protocol}//${host}/api/ws/${sessionId}?userId=${userId}`);
-  
-      this.socket.onopen = () => {
-        console.log('WebSocket connected');
-        this.reconnectAttempts = 0;
-        this.notifyListeners('connection', { status: 'connected' });
-      };
-  
-      this.socket.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          this.notifyListeners(message.type, message.data);
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
-      };
-  
-      this.socket.onclose = (event) => {
-        console.log('WebSocket disconnected:', event);
-        this.notifyListeners('connection', { status: 'disconnected' });
-        
-        // Tentative de reconnexion
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-          setTimeout(() => {
-            this.reconnectAttempts++;
-            console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-            this.connect(sessionId, userId);
-          }, this.reconnectDelay);
-        }
-      };
-  
-      this.socket.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        this.notifyListeners('connection', { status: 'error', error });
-      };
-    }
-  
-    disconnect() {
-      if (this.socket) {
-        this.socket.close();
-        this.socket = null;
-      }
-    }
-  
-    sendMessage(type, data) {
-      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-        const message = JSON.stringify({ type, data });
-        this.socket.send(message);
-      }
-    }
-  
-    addListener(type, callback) {
-      if (!this.listeners.has(type)) {
-        this.listeners.set(type, new Set());
-      }
-      this.listeners.get(type).add(callback);
-    }
-  
-    removeListener(type, callback) {
-      if (this.listeners.has(type)) {
-        this.listeners.get(type).delete(callback);
-      }
-    }
-  
-    notifyListeners(type, data) {
-      if (this.listeners.has(type)) {
-        this.listeners.get(type).forEach(callback => callback(data));
-      }
+  constructor() {
+    this.connection = null;
+    this.listeners = new Map();
+  }
+
+  connect(sessionId, userId) {
+    this.connection = new signalR.HubConnectionBuilder()
+      .withUrl(`http://127.0.0.1:5196/liveHub?sessionId=${sessionId}&userId=${userId}`)
+      .withAutomaticReconnect()
+      .build();
+
+    this.connection.on('connection', (data) => {
+      this.notifyListeners('connection', data);
+    });
+
+    this.connection.on('signal', (data) => {
+      this.notifyListeners('signal', data);
+    });
+
+    this.connection.on('chat', (data) => {
+      this.notifyListeners('chat', data);
+    });
+
+    this.connection.on('control', (data) => {
+      this.notifyListeners('control', data);
+    });
+
+    this.connection.onclose((error) => {
+      console.error('SignalR connection closed:', error);
+      this.notifyListeners('connection', { status: 'disconnected' });
+    });
+
+    this.connection.start().catch((err) => {
+      console.error('SignalR connection error:', err);
+    });
+  }
+
+  disconnect() {
+    if (this.connection) {
+      this.connection.stop();
+      this.connection = null;
     }
   }
-  
-  export const webSocketService = new WebSocketService();
+
+  addListener(event, callback) {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, []);
+    }
+    this.listeners.get(event).push(callback);
+  }
+
+  removeListener(event, callback) {
+    if (this.listeners.has(event)) {
+      const callbacks = this.listeners.get(event).filter(cb => cb !== callback);
+      this.listeners.set(event, callbacks);
+    }
+  }
+
+  notifyListeners(event, data) {
+    if (this.listeners.has(event)) {
+      this.listeners.get(event).forEach(callback => callback(data));
+    }
+  }
+
+  sendMessage(type, data) {
+    if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
+      this.connection.invoke('Send' + type.charAt(0).toUpperCase() + type.slice(1), data.sessionId, data)
+        .catch(err => console.error(`Error sending ${type}:`, err));
+    } else {
+      console.warn('SignalR connection is not active');
+    }
+  }
+}
+
+export const webSocketService = new WebSocketService();

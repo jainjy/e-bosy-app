@@ -27,7 +27,7 @@ const TeacherLessonsPage = () => {
       try {
         // Simulate fetching modules (if still using for UI display of lessons)
         const mockModules = [
-          { id: "module-1", title: "Introduction au Développement Web" },
+          { id: "module-1", title: "Introduction au Developpement Web" },
           { id: "module-2", title: "Maîtrise de JavaScript" },
           { id: "module-3", title: "Frameworks Front-end Modernes" },
         ];
@@ -36,7 +36,7 @@ const TeacherLessonsPage = () => {
         // Simulate fetching course data (from Courses table)
         const mockCourse = {
           id: courseId,
-          title: "Développement Web Fullstack",
+          title: "Developpement Web Fullstack",
           status: "Published", // This would come from your DB (e.g., Courses.status if you add it)
           totalLessons: 3, // This would be calculated or fetched
         };
@@ -101,7 +101,7 @@ const TeacherLessonsPage = () => {
         ];
         setLessons(mockLessons);
       } catch (err) {
-        setError("Échec du chargement du cours et des leçons.");
+        setError("Echec du chargement du cours et des leçons.");
         console.error(err);
       } finally {
         setLoading(false);
@@ -155,13 +155,13 @@ const TeacherLessonsPage = () => {
 
       {/* Course Header */}
       <h1 className="text-3xl font-bold text-gray-800 mb-2">{course.title}</h1>
-      <p className="text-gray-600 mb-4">Gérer les leçons pour ce cours.</p>
+      <p className="text-gray-600 mb-4">Gerer les leçons pour ce cours.</p>
 
       {/* Course Status and Action Buttons */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
         <div className="flex items-center space-x-3">
           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-            {course.status === "Published" ? "Publié" : "Brouillon"}
+            {course.status === "Published" ? "Publie" : "Brouillon"}
           </span>
           <span className="text-gray-600 text-sm">{lessons.length} leçons</span>
         </div>
@@ -179,7 +179,7 @@ const TeacherLessonsPage = () => {
             className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
           >
             <VideoCameraIcon className="h-5 w-5 mr-2" />
-            Démarrer une session live (Cours)
+            Demarrer une session live (Cours)
           </Link>
         </div>
       </div>
@@ -203,7 +203,7 @@ const TeacherLessonsPage = () => {
                   </h3>
                   {lesson.is_subscriber_only && (
                     <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                      Abonnés seulement
+                      Abonnes seulement
                     </span>
                   )}
                   {!lesson.is_subscriber_only && (
@@ -270,7 +270,7 @@ const TeacherLessonsPage = () => {
           ))
         ) : (
           <p className="text-center text-gray-600">
-            Aucune leçon trouvée pour ce cours.
+            Aucune leçon trouvee pour ce cours.
           </p>
         )}
       </div>

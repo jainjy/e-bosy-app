@@ -5,23 +5,23 @@ import {
   TicketIcon,     // Pour les certificats
   ClockIcon,      // Pour les heures apprises
   BookOpenIcon,   // Pour les cours inscrits
-  CheckCircleIcon, // Pour les cours terminés
+  CheckCircleIcon, // Pour les cours termines
   CalendarIcon,    // Pour Upcoming Schedule
   DocumentTextIcon, // Pour Browse Courses (Quick Actions)
   HeartIcon,      // Pour My Wishlist (Quick Actions)
   CreditCardIcon, // Pour Payment History (Quick Actions)
   TicketIcon as TicketIconSolid, // Pour Certificates (Quick Actions)
-} from '@heroicons/react/24/outline'; // Assurez-vous d'avoir tous les icônes nécessaires
+} from '@heroicons/react/24/outline'; // Assurez-vous d'avoir tous les icônes necessaires
 import { Link } from 'react-router-dom';
 
 const StudentOverviewPage = () => {
-  // Données simulées pour les graphiques (à remplacer par des données réelles de l'API)
+  // Donnees simulees pour les graphiques (à remplacer par des donnees reelles de l'API)
 
-  // Données pour le graphique 'Weekly Learning Activity' (Line Chart)
+  // Donnees pour le graphique 'Weekly Learning Activity' (Line Chart)
   const weeklyLearningActivityData = {
     series: [{
       name: 'Minutes Spent',
-      data: [40, 55, 30, 80, 120, 100, 85] // Minutes passées par jour
+      data: [40, 55, 30, 80, 120, 100, 85] // Minutes passees par jour
     }],
     options: {
       chart: {
@@ -41,16 +41,16 @@ const StudentOverviewPage = () => {
       },
       colors: ['#6B46C1'], // e-bosy-purple
       dataLabels: {
-        enabled: false // Cache les valeurs sur les points de données
+        enabled: false // Cache les valeurs sur les points de donnees
       },
       stroke: {
         curve: 'smooth',
-        width: 3 // Épaisseur de la ligne
+        width: 3 // Epaisseur de la ligne
       },
       grid: {
         borderColor: '#e7e7e7',
         row: {
-          colors: ['#f3f3f3', 'transparent'], // couleurs alternées
+          colors: ['#f3f3f3', 'transparent'], // couleurs alternees
           opacity: 0.5
         },
       },
@@ -101,9 +101,9 @@ const StudentOverviewPage = () => {
     },
   };
 
-  // Données pour le graphique 'Subject Distribution' (Donut Chart)
+  // Donnees pour le graphique 'Subject Distribution' (Donut Chart)
   const subjectDistributionData = {
-    series: [40, 25, 20, 15], // Pourcentages fictifs pour chaque catégorie
+    series: [40, 25, 20, 15], // Pourcentages fictifs pour chaque categorie
     options: {
       chart: {
         width: 380,
@@ -152,7 +152,7 @@ const StudentOverviewPage = () => {
         }
       },
       legend: {
-        position: 'bottom', // Légende en bas comme dans l'image
+        position: 'bottom', // Legende en bas comme dans l'image
         horizontalAlign: 'left', // Alignement à gauche
         markers: {
             fillColors: ['#6B46C1', '#805AD5', '#9F7AEA', '#D6BCFA'] // Assure que les marqueurs correspondent aux couleurs des tranches
@@ -247,7 +247,7 @@ const StudentOverviewPage = () => {
             </div>
           </div>
 
-          {/* Répétez pour Python Data Science */}
+          {/* Repetez pour Python Data Science */}
           <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
             <div className="w-full h-32 bg-gray-200 flex items-center justify-center text-gray-400">
               <BookOpenIcon className="h-12 w-12" />
@@ -266,7 +266,7 @@ const StudentOverviewPage = () => {
             </div>
           </div>
 
-          {/* Répétez pour UI/UX Design Fundamentals */}
+          {/* Repetez pour UI/UX Design Fundamentals */}
           <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
             <div className="w-full h-32 bg-gray-200 flex items-center justify-center text-gray-400">
               <BookOpenIcon className="h-12 w-12" />
