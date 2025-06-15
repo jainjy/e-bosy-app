@@ -198,9 +198,6 @@ const AdminOverviewPage = () => {
               </p>
             </div>
           </div>
-          <div className="mt-6 text-center">
-            <Link to="/dashboard/reports" className="text-e-bosy-purple hover:underline text-sm">View All Issues</Link>
-          </div>
         </div>
 
         {/* Quick Actions */}
@@ -214,10 +211,6 @@ const AdminOverviewPage = () => {
             <Link to="/dashboard/courses" className="bg-gray-100 p-4 rounded-lg flex flex-col items-center justify-center text-center hover:bg-gray-200">
               <BookOpenIcon className="h-6 w-6 text-e-bosy-purple mb-2" />
               <span className="text-gray-700 text-sm">Add Course</span>
-            </Link>
-            <Link to="/dashboard/reports" className="bg-gray-100 p-4 rounded-lg flex flex-col items-center justify-center text-center hover:bg-gray-200">
-              <DocumentTextIcon className="h-6 w-6 text-e-bosy-purple mb-2" />
-              <span className="text-gray-700 text-sm">View Reports</span>
             </Link>
             <Link to="/dashboard/settings" className="bg-gray-100 p-4 rounded-lg flex flex-col items-center justify-center text-center hover:bg-gray-200">
               <Cog6ToothIcon className="h-6 w-6 text-e-bosy-purple mb-2" />

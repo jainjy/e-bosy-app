@@ -405,10 +405,6 @@ const TeacherOverviewPage = () => {
             <MegaphoneIcon className="h-6 w-6 text-e-bosy-purple mb-2" />
             <span className="text-gray-700 text-sm">Envoyer un Message</span>
           </Link>
-          <Link to="/dashboard/reports" className="bg-gray-100 p-4 rounded-lg flex flex-col items-center justify-center text-center hover:bg-gray-200">
-            <ChartBarIcon className="h-6 w-6 text-e-bosy-purple mb-2" />
-            <span className="text-gray-700 text-sm">Voir les Rapports</span>
-          </Link>
         </div>
       </div>
     </div>

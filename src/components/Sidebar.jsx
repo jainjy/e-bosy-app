@@ -56,12 +56,6 @@ const Sidebar = ({ userRole, userName, userEmail, userProfilePicture }) => {
       roles: ["etudiant", "enseignant", "administrateur"],
     },
     {
-      name: "Report Issue",
-      icon: ExclamationTriangleIcon,
-      path: "/dashboard/reports",
-      roles: ["etudiant", "enseignant", "administrateur"],
-    },
-    {
       name: "Settings",
       icon: Cog6ToothIcon,
       path: "/dashboard/settings",
@@ -73,12 +67,7 @@ const Sidebar = ({ userRole, userName, userEmail, userProfilePicture }) => {
       path: "/dashboard/users",
       roles: ["administrateur"],
     },
-    {
-      name: "Events",
-      icon: CalendarDaysIcon,
-      path: "/dashboard/events",
-      roles: ["administrateur", "enseignant"],
-    },
+
     {
       name: "Analytics",
       icon: ChartBarIcon,

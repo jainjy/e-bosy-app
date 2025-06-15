@@ -17,7 +17,6 @@ import AdminOverviewPage from './pages/admin/AdminOverviewPage';
 import TeacherOverviewPage from './pages/teacher/TeacherOverviewPage';
 import StudentOverviewPage from './pages/student/StudentOverviewPage';
 import LoginPage from './pages/LoginPage';
-import ReportsPage from './pages/ReportsPage';
 import { AuthProvider, useAuth } from './services/AuthContext';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -46,8 +45,8 @@ const ProtectedRoute = ({ children }) => {
     return <div className="flex justify-center items-center h-screen">Chargement...</div>;
   }
 
-  if (!logged) {
-    return ;
+  if (!localStorage.getItem('user_token')) {
+    return <Navigate to="/login" replace />;
   }
 
   return children;
@@ -80,7 +79,6 @@ function App() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="messages" element={<MessagesPage />} />
             <Route path="users" element={<UserManagementPage />} />
-            <Route path="reports" element={<ReportsPage />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="live-sessions/schedule" element={<ScheduleLiveSessionPage />} />
             <Route path="courses/:courseId/lessons/:lessonId/edit" element={<LessonFormPage />} />
