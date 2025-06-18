@@ -96,3 +96,9 @@ export const putData = (url, data,file) => {
   });
 };
 
+export const patchData = (url, data, file) => {
+  return apiHelper('patch', url, data, file && {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
+

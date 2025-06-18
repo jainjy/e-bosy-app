@@ -1,17 +1,20 @@
+// CourseFormModal.js
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from 'react-toastify';
 import { getData } from "../services/ApiFetch";
 
+const API_BASE_URL = "http://localhost:5196";
+
 const CourseFormModal = ({ onClose, onSubmit, course }) => {
   const [courseData, setCourseData] = useState({
-    course_id: "",
+    courseId: "",
     title: "",
     description: "",
-    category_id: "",
+    categoryId: "",
     level: "",
     language: "",
-    is_subscriber_only: false,
-    status: "draft",
+    isSubscriberOnly: false,
+    status: "brouillon", // Changé de "draft" à "brouillon"
   });
 
   const [categories, setCategories] = useState([]);
@@ -53,35 +56,26 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
   }, [onClose]);
 
   useEffect(() => {
-    if (course) {
+    if (course && categories.length > 0) {
+      console.log('Course data:', course);
+      console.log('Categories:', categories);
+  
       setCourseData({
-        course_id: course.course_id,
+        courseId: course.courseId,
         title: course.title,
         description: course.description,
-        category_id: course.category_id || "",
-        level: course.level,
-        language: course.language,
-        is_subscriber_only: course.is_subscriber_only,
-        status: course.status,
+        categoryId: course.category?.categoryId?.toString() || "", // Utilisez categoryId ici
+        level: course.level?.toLowerCase(),
+        language: course.language?.toLowerCase(),
+        isSubscriberOnly: course.isSubscriberOnly || false,
+        status: course.status || 'brouillon',
       });
-      setPreviewUrl(course.thumbnail_url || "");
-      setSelectedFile(null);
-    } else {
-      setCourseData({
-        course_id: "",
-        title: "",
-        description: "",
-        category_id: "",
-        level: "",
-        language: "",
-        is_subscriber_only: false,
-        status: "draft",
-      });
-      setSelectedFile(null);
-      setPreviewUrl("");
+  
+      if (course.thumbnailUrl) {
+        setPreviewUrl(course.thumbnailUrl);
+      }
     }
-  }, [course]);
-
+  }, [course, categories]);
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setCourseData((prevData) => ({
@@ -93,28 +87,39 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Créer une URL locale pour la prévisualisation
+      const objectUrl = URL.createObjectURL(file);
       setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      setPreviewUrl(objectUrl);
     } else {
       setSelectedFile(null);
-      setPreviewUrl(course?.thumbnail_url || "");
+      setPreviewUrl("");
     }
   };
+
+  useEffect(() => {
+    // Nettoyage des URLs créées lors du démontage du composant
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
       ...courseData,
       thumbnailFile: selectedFile,
-      categoryId: parseInt(courseData.category_id),
+      categoryId: parseInt(courseData.categoryId, 10),
     });
   };
 
-  const levels = ["Beginner", "Intermediate", "Advanced", "All Levels"];
-  const languages = ["Français", "English", "Español", "Deutsch"];
+  const levels = ["debutant", "intermediaire", "avance", "tous les niveaux"];
+  const languages = ["francais", "anglais", "espagnol", "allemand"];
 
-  const modalTitle = course ? "Modifier le Cours" : "Créer un Nouveau Cours";
-  const submitButtonText = course ? "Mettre à jour le Cours" : "Créer le Cours";
+  const modalTitle = course ? "Modifier le cours" : "Creer un nouveau cours";
+  const submitButtonText = course ? "Mettre à jour le cours" : "Creer le cours";
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -150,21 +155,24 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="category_id" className="block text-gray-700 text-sm font-bold mb-2">
+            <label htmlFor="categoryId" className="block text-gray-700 text-sm font-bold mb-2">
               Catégorie:
             </label>
             <select
-              id="category_id"
-              name="category_id"
-              value={courseData.category_id}
+              id="categoryId"
+              name="categoryId"
+              value={courseData.categoryId || ""}
               onChange={handleChange}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
               required
             >
               <option value="">Sélectionnez une catégorie</option>
               {categories.map((cat) => (
-                <option key={cat.categoryId} value={cat.categoryId}>
+                <option 
+                  key={cat.categoryId} 
+                  value={cat.categoryId.toString()}>
                   {cat.name}
+                  {cat.categoryId === courseData.categoryId && "selected"}
                 </option>
               ))}
             </select>
@@ -176,15 +184,15 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
             <select
               id="level"
               name="level"
-              value={courseData.level}
+              value={courseData.level || ""}
               onChange={handleChange}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
               required
             >
-              <option value="">Sélectionnez un niveau</option>
+              <option value="">Selectionnez un niveau</option>
               {levels.map((lvl) => (
                 <option key={lvl} value={lvl}>
-                  {lvl}
+                  {lvl.charAt(0).toUpperCase() + lvl.slice(1)}
                 </option>
               ))}
             </select>
@@ -196,28 +204,28 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
             <select
               id="language"
               name="language"
-              value={courseData.language}
+              value={courseData.language || ""}
               onChange={handleChange}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
               required
             >
-              <option value="">Sélectionnez une langue</option>
+              <option value="">Selectionnez une langue</option>
               {languages.map((lang) => (
                 <option key={lang} value={lang}>
-                  {lang}
+                  {lang.charAt(0).toUpperCase() + lang.slice(1)}
                 </option>
               ))}
             </select>
           </div>
 
           <div className="mb-6">
-            <label htmlFor="thumbnail_file" className="block text-gray-700 text-sm font-bold mb-2">
+            <label htmlFor="thumbnailFile" className="block text-gray-700 text-sm font-bold mb-2">
               Miniature du Cours:
             </label>
             <input
               type="file"
-              id="thumbnail_file"
-              name="thumbnail_file"
+              id="thumbnailFile"
+              name="thumbnailFile"
               accept="image/*"
               onChange={handleFileChange}
               ref={fileInputRef}
@@ -227,13 +235,16 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
               <div className="mt-4">
                 <p className="text-gray-700 text-sm mb-2">Aperçu de l'image:</p>
                 <img
-                  src={previewUrl}
+                  src={previewUrl.startsWith('blob:') ? previewUrl : `${API_BASE_URL}/${previewUrl}`}
                   alt="Aperçu de la miniature"
                   className="max-w-full h-auto rounded-lg shadow-md max-h-48 object-contain"
                 />
                 <button
                   type="button"
                   onClick={() => {
+                    if (previewUrl.startsWith('blob:')) {
+                      URL.revokeObjectURL(previewUrl);
+                    }
                     setPreviewUrl("");
                     setSelectedFile(null);
                     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -249,13 +260,13 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
           <div className="mb-6 flex items-center">
             <input
               type="checkbox"
-              id="is_subscriber_only"
-              name="is_subscriber_only"
-              checked={courseData.is_subscriber_only}
+              id="isSubscriberOnly"
+              name="isSubscriberOnly"
+              checked={courseData.isSubscriberOnly}
               onChange={handleChange}
               className="mr-2 h-4 w-4 text-e-bosy-purple border-gray-300 rounded focus:ring-e-bosy-purple"
             />
-            <label htmlFor="is_subscriber_only" className="text-gray-700 text-sm font-bold">
+            <label htmlFor="isSubscriberOnly" className="text-gray-700 text-sm font-bold">
               Réservé aux abonnés seulement
             </label>
           </div>
