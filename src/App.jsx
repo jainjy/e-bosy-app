@@ -26,11 +26,11 @@ import TeacherLessonsPage from './pages/teacher/TeacherLessonsPage';
 import ScheduleLiveSessionPage from './pages/ScheduleLiveSessionPage';
 import LiveSessionPage from './pages/LiveSessionPage';
 import Analytics from './pages/teacher/Analytics';
-import LessonFormPage from './components/LessonFormPage';
 import CertificateViewPage from './pages/CertificateViewPage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import NotificationsPage from './pages/NotificationsPage';
 import CourseDetailsPage from './pages/CourseDetailsPage';
+import LessonFormPage from './pages/teacher/LessonFormPage';
 
 const ProtectedRoute = ({ children }) => {
   const { logged, loading, refreshUser } = useAuth();

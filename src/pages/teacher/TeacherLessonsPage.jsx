@@ -33,6 +33,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import SectionFormModal from "../../components/SectionFormModal"; // Import the new modal
+import { getData, postData, putData, deleteData } from "../../services/ApiFetch";
+import { toast } from "react-toastify";
 
 // --- SortableItem Component for Lessons ---
 // This component wraps each draggable lesson
@@ -208,60 +210,35 @@ const TeacherLessonsPage = () => {
 
   useEffect(() => {
     const fetchCourseAndLessons = async () => {
+      setLoading(true);
       try {
-        const mockCourse = {
-          id: courseId,
-          title: "Developpement Web Fullstack",
-          status: "Published",
-          sections: [
-            { id: "sec-1", title: "Introduction", order: 1 },
-            { id: "sec-2", title: "HTML & CSS Avancé", order: 2 },
-            { id: "sec-3", title: "JavaScript Essentiel", order: 3 },
-          ],
-        };
-        setCourse(mockCourse);
+        const [data, error] = await getData(`courses/${courseId}/lessons`);
+        if (error) throw error;
 
-        const mockLessons = [
-          {
-            id: "lesson-1", section_id: "sec-1", position_in_section: 1,
-            title: "HTML Essentiel", content: "Apprenez les bases de la structure HTML.", content_type: "text",
-            course_id: courseId, is_subscriber_only: false,
-          },
-          {
-            id: "lesson-2", section_id: "sec-1", position_in_section: 2,
-            title: "CSS Styles et Mise en Page", content: "https://www.youtube.com/embed/some_css_video", content_type: "external_video_url",
-            course_id: courseId, is_subscriber_only: true,
-          },
-          {
-            id: "lesson-3", section_id: "sec-2", position_in_section: 1,
-            title: "Introduction à JavaScript (fichier)", content: "/uploads/js_intro.mp4", content_type: "uploaded_video_file",
-            course_id: courseId, is_subscriber_only: false,
-          },
-          {
-            id: "lesson-4", section_id: "sec-2", position_in_section: 2,
-            title: "Les fondations de React", content: "/uploads/react_basics.pdf", content_type: "pdf",
-            course_id: courseId, is_subscriber_only: true,
-          },
-          {
-            id: "lesson-5", section_id: "sec-3", position_in_section: 1,
-            title: "Images Responsives", content: "/uploads/responsive_image.jpg", content_type: "image",
-            course_id: courseId, is_subscriber_only: false,
-          },
-          {
-            id: "lesson-6", section_id: "sec-3", position_in_section: 2,
-            title: "Modèle 3D d'une App", content: "/uploads/app_model.glb", content_type: "ar",
-            course_id: courseId, is_subscriber_only: true,
-          },
-          {
-            id: "lesson-7", section_id: "sec-1", position_in_section: 3,
-            title: "Flexbox et Grid", content: "Maîtrisez les mises en page modernes avec Flexbox et Grid CSS.", content_type: "text",
-            course_id: courseId, is_subscriber_only: true,
-          },
-        ];
+        setCourse({
+          id: data.course.courseId,
+          title: data.course.title,
+          status: data.course.status,
+          sections: data.sections.map(section => ({
+            id: uuidv4(), // Générer un ID unique pour la section
+            title: section.title,
+            order: section.order
+          }))
+        });
 
-        setLessons(mockLessons); // No need to pre-sort here, DND will manage.
+        setLessons(data.lessons.map(lesson => ({
+          id: lesson.lessonId,
+          section_id: lesson.sectionTitle, // Utiliser sectionTitle comme identifiant de section
+          position_in_section: lesson.position,
+          title: lesson.title,
+          content: lesson.content,
+          content_type: lesson.contentType,
+          course_id: lesson.courseId,
+          is_subscriber_only: lesson.isSubscriberOnly
+        })));
       } catch (err) {
         setError("Échec du chargement du cours et des leçons.");
+        toast.error("Erreur lors du chargement des données");
         console.error(err);
       } finally {
         setLoading(false);
@@ -278,9 +255,9 @@ const TeacherLessonsPage = () => {
   }, [course]);
 
   // Helper to get lessons for a specific section, sorted by position
-  const getLessonsForSection = (sectionId) => {
+  const getLessonsForSection = (sectionTitle) => {
     return lessons
-      .filter((lesson) => lesson.section_id === sectionId)
+      .filter((lesson) => lesson.section_id === sectionTitle)
       .sort((a, b) => a.position_in_section - b.position_in_section);
   };
 
@@ -299,167 +276,162 @@ const TeacherLessonsPage = () => {
     setSectionToEdit(null); // Clear section to edit state
   };
 
-  const handleSaveSection = (newTitle) => {
-    if (sectionToEdit) {
-      setCourse((prevCourse) => ({
-        ...prevCourse,
-        sections: prevCourse.sections.map((sec) =>
-          sec.id === sectionToEdit.id ? { ...sec, title: newTitle } : sec
-        ),
-      }));
-      console.log("Section updated:", { ...sectionToEdit, title: newTitle });
-    } else {
-      const newSection = {
-        id: uuidv4(),
-        title: newTitle,
-        order: course.sections.length + 1,
-      };
-      setCourse((prevCourse) => ({
-        ...prevCourse,
-        sections: [...prevCourse.sections, newSection].map((sec, index) => ({ ...sec, order: index + 1 })),
-      }));
-      console.log("New section added:", newSection);
-    }
-    handleCloseSectionModal();
-  };
-
-  const handleDeleteSection = (sectionId) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette section ? Toutes les leçons de cette section seront également supprimées.")) {
-      setCourse((prevCourse) => ({
-        ...prevCourse,
-        sections: prevCourse.sections
-          .filter((sec) => sec.id !== sectionId)
-          .map((sec, index) => ({ ...sec, order: index + 1 })), // Re-order remaining sections
-      }));
-      setLessons((prevLessons) => prevLessons.filter((lesson) => lesson.section_id !== sectionId));
-      console.log(`Section with ID: ${sectionId} and its lessons deleted.`);
-    }
-  };
-
-  const handleDeleteLesson = (lessonId) => {
-    if (
-      window.confirm(
-        `Êtes-vous sûr de vouloir supprimer la leçon "${
-          lessons.find((l) => l.id === lessonId)?.title
-        }" ?`
-      )
-    ) {
-      setLessons((prevLessons) => {
-        const updatedLessons = prevLessons.filter((lesson) => lesson.id !== lessonId);
-        // Re-calculate positions in the affected section
-        const affectedSectionId = prevLessons.find(l => l.id === lessonId)?.section_id;
-        return updatedLessons.map(lesson => {
-            if (lesson.section_id === affectedSectionId) {
-                const lessonsInThisSection = updatedLessons.filter(l => l.section_id === affectedSectionId).sort((a,b) => a.position_in_section - b.position_in_section);
-                const newPos = lessonsInThisSection.findIndex(l => l.id === lesson.id) + 1;
-                return {...lesson, position_in_section: newPos};
-            }
-            return lesson;
+  const handleSaveSection = async (newTitle) => {
+    try {
+      if (sectionToEdit) {
+        // Mise à jour d'une section existante
+        const [data, error] = await putData(`courses/${courseId}/sections/${encodeURIComponent(sectionToEdit.title)}`, {
+          title: newTitle,
+          order: sectionToEdit.order
         });
-      });
-      console.log(`Deleting lesson with ID: ${lessonId}`);
+        
+        if (error) throw error;
+
+        setCourse(prevCourse => ({
+          ...prevCourse,
+          sections: prevCourse.sections.map(sec =>
+            sec.id === sectionToEdit.id ? { ...sec, title: newTitle } : sec
+          )
+        }));
+        
+        toast.success("Section mise à jour avec succès");
+      } else {
+        // Création d'une nouvelle section
+        const [data, error] = await postData(`courses/${courseId}/sections`, {
+          title: newTitle,
+          order: course.sections.length + 1,
+          courseId: parseInt(courseId)
+        });
+
+        if (error) throw error;
+
+        setCourse(prevCourse => ({
+          ...prevCourse,
+          sections: [...prevCourse.sections, {
+            id: data.id,
+            title: data.title,
+            order: data.order
+          }]
+        }));
+        
+        toast.success("Section créée avec succès");
+      }
+    } catch (err) {
+      toast.error("Erreur lors de la sauvegarde de la section");
+      console.error(err);
+    } finally {
+      handleCloseSectionModal();
     }
   };
 
+  const handleDeleteSection = async (sectionId) => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette section ?")) {
+      try {
+        const section = course.sections.find(s => s.id === sectionId);
+        const [, error] = await deleteData(`courses/${courseId}/sections/${encodeURIComponent(section.title)}`);
+        
+        if (error) throw error;
 
-  // --- DND Kit onDragEnd Handler ---
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
+        setCourse(prevCourse => ({
+          ...prevCourse,
+          sections: prevCourse.sections.filter(s => s.id !== sectionId)
+        }));
 
-    if (!active || !over || active.id === over.id) {
-      return; // No change or dropped on itself
+        setLessons(prevLessons => 
+          prevLessons.filter(lesson => lesson.section_id !== section.title)
+        );
+
+        toast.success("Section supprimée avec succès");
+      } catch (err) {
+        toast.error("Erreur lors de la suppression de la section");
+        console.error(err);
+      }
     }
+  };
 
-    // Determine if it's a section being dragged
-    const isSectionDrag = course.sections.some(s => s.id === active.id);
+  const handleDeleteLesson = async (lessonId) => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette leçon ?")) {
+      try {
+        const [, error] = await deleteData(`courses/lessons/${lessonId}`);
+        if (error) throw error;
 
-    if (isSectionDrag) {
-      // Logic for reordering sections
-      const oldIndex = course.sections.findIndex((sec) => sec.id === active.id);
-      const newIndex = course.sections.findIndex((sec) => sec.id === over.id);
+        setLessons(prevLessons => 
+          prevLessons.filter(lesson => lesson.id !== lessonId)
+        );
+        
+        toast.success("Leçon supprimée avec succès");
+      } catch (err) {
+        toast.error("Erreur lors de la suppression de la leçon");
+        console.error(err);
+      }
+    }
+  };
 
-      if (oldIndex !== -1 && newIndex !== -1) {
-        setCourse((prevCourse) => {
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!active || !over || active.id === over.id) return;
+
+    try {
+      const isSectionDrag = course.sections.some(s => s.id === active.id);
+
+      if (isSectionDrag) {
+        // Réorganisation des sections
+        const activeSection = course.sections.find(sec => sec.id === active.id);
+        const overSection = course.sections.find(sec => sec.id === over.id);
+
+        if (!activeSection || !overSection) return;
+
+        const [, error] = await postData(`courses/${courseId}/sections/reorder`, {
+          courseId: parseInt(courseId),
+          sectionId: parseInt(activeSection.order), // Utiliser l'order comme identifiant
+          newOrder: parseInt(overSection.order)
+        });
+
+        if (error) throw error;
+
+        setCourse(prevCourse => {
+          const oldIndex = prevCourse.sections.findIndex(sec => sec.id === active.id);
+          const newIndex = prevCourse.sections.findIndex(sec => sec.id === over.id);
+          
           const newSections = arrayMove(prevCourse.sections, oldIndex, newIndex);
-          // Re-assign 'order' property based on new array index
-          const reorderedAndNumberedSections = newSections.map((sec, index) => ({
-            ...sec,
-            order: index + 1,
+          return {
+            ...prevCourse,
+            sections: newSections.map((sec, index) => ({ ...sec, order: index + 1 }))
+          };
+        });
+      } else {
+        // Réorganisation des leçons (code existant)
+        const activeLesson = lessons.find(l => l.id === active.id);
+        const overLesson = lessons.find(l => l.id === over.id);
+        
+        if (!activeLesson || !overLesson) return;
+
+        const [, error] = await postData(`courses/lessons/reorder`, {
+          courseId: parseInt(courseId),
+          fromPosition: activeLesson.position_in_section,
+          toPosition: overLesson.position_in_section
+        });
+
+        if (error) throw error;
+
+        setLessons(prevLessons => {
+          const updatedLessons = arrayMove(
+            prevLessons,
+            prevLessons.findIndex(l => l.id === active.id),
+            prevLessons.findIndex(l => l.id === over.id)
+          );
+          
+          return updatedLessons.map((lesson, index) => ({
+            ...lesson,
+            position_in_section: index + 1
           }));
-          console.log("Sections reordered:", reorderedAndNumberedSections);
-          // In a real app, send API request to update section orders
-          return { ...prevCourse, sections: reorderedAndNumberedSections };
         });
       }
-    } else {
-      // Logic for reordering lessons (within or between sections)
-      const activeLesson = lessons.find(l => l.id === active.id);
-      const overLesson = lessons.find(l => l.id === over.id);
-
-      if (!activeLesson) return;
-
-      const oldSectionId = activeLesson.section_id;
-      const newSectionId = overLesson ? overLesson.section_id : over.id; // If over is a section, use its ID
-
-      setLessons((prevLessons) => {
-        let updatedLessons = [...prevLessons];
-
-        // 1. Remove the active lesson from its current position
-        const activeLessonIndex = updatedLessons.findIndex(l => l.id === active.id);
-        const [movedLesson] = updatedLessons.splice(activeLessonIndex, 1);
-
-        // 2. Determine target index to insert
-        let targetIndex;
-        if (overLesson) {
-          // Dropped over another lesson
-          targetIndex = updatedLessons.findIndex(l => l.id === over.id);
-          // Adjust target index if dropping below the overLesson (important for visual stability)
-          const overLessonIndex = prevLessons.findIndex(l => l.id === over.id);
-          const activeLessonOriginalIndex = prevLessons.findIndex(l => l.id === active.id);
-
-          if (oldSectionId === newSectionId && activeLessonOriginalIndex < overLessonIndex) {
-            // Moving downwards within the same section, insert after the target
-            targetIndex++;
-          }
-        } else {
-          // Dropped over a section (likely an empty one or at the end of a section)
-          // Find the last lesson in the target section, or the end of the entire list if no lessons in section
-          const lessonsInTargetSection = updatedLessons.filter(l => l.section_id === newSectionId);
-          if (lessonsInTargetSection.length > 0) {
-            const lastLessonInTarget = lessonsInTargetSection[lessonsInTargetSection.length - 1];
-            targetIndex = updatedLessons.findIndex(l => l.id === lastLessonInTarget.id) + 1;
-          } else {
-            // Target section is empty, insert at the end of existing lessons (then positions will be re-calculated)
-            targetIndex = updatedLessons.length;
-          }
-        }
-
-        // 3. Update the section_id if moved to a different section
-        movedLesson.section_id = newSectionId;
-
-        // 4. Insert the moved lesson at the new position
-        updatedLessons.splice(targetIndex, 0, movedLesson);
-
-        // 5. Re-calculate `position_in_section` for affected sections
-        // This is crucial because positions change when lessons are moved in/out/within sections.
-        const sectionsToReorder = new Set([oldSectionId, newSectionId]);
-        sectionsToReorder.forEach(secId => {
-            const lessonsInCurrentSection = updatedLessons
-                .filter(l => l.section_id === secId)
-                .sort((a,b) => {
-                    // Stable sort based on their current order in the `updatedLessons` array
-                    return updatedLessons.findIndex(item => item.id === a.id) - updatedLessons.findIndex(item => item.id === b.id);
-                });
-
-            lessonsInCurrentSection.forEach((lesson, index) => {
-                lesson.position_in_section = index + 1;
-            });
-        });
-
-        console.log("Lessons reordered:", updatedLessons);
-        // In a real app, send API requests to update lesson positions and section_id on the backend.
-        return updatedLessons;
-      });
+      
+      toast.success("Réorganisation effectuée avec succès");
+    } catch (err) {
+      toast.error("Erreur lors de la réorganisation");
+      console.error(err);
     }
   };
 
@@ -560,12 +532,12 @@ const TeacherLessonsPage = () => {
                 >
                   {/* SortableContext for Lessons within this Section */}
                   <SortableContext
-                    items={getLessonsForSection(section.id).map(lesson => lesson.id)} // IDs of lessons in this section
+                    items={getLessonsForSection(section.title).map(lesson => lesson.id)} // Utiliser section.title
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="space-y-4 pt-2">
-                      {getLessonsForSection(section.id).length > 0 ? (
-                        getLessonsForSection(section.id).map((lesson) => (
+                      {getLessonsForSection(section.title).length > 0 ? ( // Utiliser section.title
+                        getLessonsForSection(section.title).map((lesson) => ( // Utiliser section.title
                           <SortableLessonItem
                             key={lesson.id}
                             lesson={lesson}
@@ -579,6 +551,9 @@ const TeacherLessonsPage = () => {
                         </p>
                       )}
                     </div>
+                    {console.log('Sections:', sortedSections)}
+                    {console.log('Lessons:', lessons)}
+                    {console.log('Lessons for section:', section.title, getLessonsForSection(section.title))}
                   </SortableContext>
                 </SortableSectionItem>
               ))
