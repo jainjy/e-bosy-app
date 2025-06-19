@@ -278,49 +278,57 @@ const TeacherLessonsPage = () => {
 
   const handleSaveSection = async (newTitle) => {
     try {
-      if (sectionToEdit) {
-        // Mise à jour d'une section existante
-        const [data, error] = await putData(`courses/${courseId}/sections/${encodeURIComponent(sectionToEdit.title)}`, {
-          title: newTitle,
-          order: sectionToEdit.order
-        });
-        
-        if (error) throw error;
+        if (sectionToEdit) {
+            // Mise à jour d'une section existante
+            const [data, error] = await putData(`courses/${courseId}/sections/${encodeURIComponent(sectionToEdit.title)}`, {
+                title: newTitle,
+                order: sectionToEdit.order
+            });
+            
+            if (error) throw error;
 
-        setCourse(prevCourse => ({
-          ...prevCourse,
-          sections: prevCourse.sections.map(sec =>
-            sec.id === sectionToEdit.id ? { ...sec, title: newTitle } : sec
-          )
-        }));
-        
-        toast.success("Section mise à jour avec succès");
-      } else {
-        // Création d'une nouvelle section
-        const [data, error] = await postData(`courses/${courseId}/sections`, {
-          title: newTitle,
-          order: course.sections.length + 1,
-          courseId: parseInt(courseId)
-        });
+            // Mettre à jour le state des sections
+            setCourse(prevCourse => ({
+                ...prevCourse,
+                sections: prevCourse.sections.map(sec =>
+                    sec.id === sectionToEdit.id ? { ...sec, title: newTitle } : sec
+                )
+            }));
 
-        if (error) throw error;
-
-        setCourse(prevCourse => ({
-          ...prevCourse,
-          sections: [...prevCourse.sections, {
-            id: data.id,
-            title: data.title,
-            order: data.order
-          }]
-        }));
-        
-        toast.success("Section créée avec succès");
-      }
+            // Mettre à jour les leçons avec le nouveau titre de section
+            setLessons(prevLessons => prevLessons.map(lesson =>
+                lesson.section_id === sectionToEdit.title
+                    ? { ...lesson, section_id: newTitle }
+                    : lesson
+            ));
+            
+            toast.success("Section mise à jour avec succès");
+        } else {
+            // Création d'une nouvelle section
+            const [data, error] = await postData(`courses/${courseId}/sections`, {
+              title: newTitle,
+              order: course.sections.length + 1,
+              courseId: parseInt(courseId)
+            });
+    
+            if (error) throw error;
+    
+            setCourse(prevCourse => ({
+              ...prevCourse,
+              sections: [...prevCourse.sections, {
+                id: data.id,
+                title: data.title,
+                order: data.order
+              }]
+            }));
+            
+            toast.success("Section créée avec succès");
+        }
     } catch (err) {
-      toast.error("Erreur lors de la sauvegarde de la section");
-      console.error(err);
+        toast.error("Erreur lors de la sauvegarde de la section");
+        console.error(err);
     } finally {
-      handleCloseSectionModal();
+        handleCloseSectionModal();
     }
   };
 

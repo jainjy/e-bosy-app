@@ -13,8 +13,8 @@ const SubscriptionPage = () => {
         {
             id: 'monthly_pro',
             name: 'Pro Monthly',
-            price: 9.99,
-            currency: 'EUR',
+            price: 5000,
+            currency: 'Ariary',
             features: [
                 'Access to all premium courses',
                 'Unlimited live sessions',
@@ -26,8 +26,8 @@ const SubscriptionPage = () => {
         {
             id: 'yearly_premium',
             name: 'Premium Yearly',
-            price: 99.99,
-            currency: 'EUR',
+            price: 50000,
+            currency: 'Ariary',
             features: [
                 'All Pro Monthly features',
                 'Exclusive early access to new courses',

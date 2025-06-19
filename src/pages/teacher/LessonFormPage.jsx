@@ -11,8 +11,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { postData, putData, getData } from "../../services/ApiFetch";
 import { toast } from "react-toastify";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import '../../styles/editor.css';
 
 const LessonFormPage = () => {
   const { courseId, lessonId } = useParams(); // lessonId will be present for edits
@@ -31,6 +32,23 @@ const LessonFormPage = () => {
   const [error, setError] = useState(null);
   const [file, setFile] = useState(null); // State to hold the uploaded file object for display
   const [sections, setSections] = useState([]); // State for sections
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+    ],
+    content: lesson.content || '',
+    editable: true,
+    onUpdate: ({ editor }) => {
+      setLesson(prev => ({ ...prev, content: editor.getHTML() }));
+    },
+  });
+
+  useEffect(() => {
+    if (editor) {
+      editor.commands.setContent(lesson.content, false)
+    }
+  }, [lesson.content, editor])
 
   // --- Fetch Lesson Data ---
   useEffect(() => {
@@ -138,25 +156,31 @@ const LessonFormPage = () => {
     try {
       const formData = new FormData();
       formData.append('title', lesson.title);
-      formData.append('content', lesson.content);
-      formData.append('contentType', lesson.content_type);
       formData.append('courseId', courseId);
+      formData.append('contentType', lesson.content_type);
       formData.append('isSubscriberOnly', lesson.is_subscriber_only);
       formData.append('sectionTitle', lesson.section_title || '');
       formData.append('position', lesson.position || 1);
+      formData.append('content', 'contenue'); // Envoyer une chaîne vide pour le champ content
 
-      // Ajouter le fichier si présent et si c'est un type qui nécessite un upload
-      if (file && ['videos', 'images', 'pdfs', 'ar'].includes(lesson.content_type)) {
+      // Pour les types avec fichiers
+      if (file && (lesson.content_type === "video" || 
+                   lesson.content_type === "image" || 
+                   lesson.content_type === "pdf" || 
+                   lesson.content_type === "ar")) {
         formData.append('contentFile', file);
+        
+      } 
+      // Pour les types texte ou URL
+      else {
+        formData.append('content', lesson.content || '');
       }
 
       if (lessonId) {
-        // Mise à jour
         const [data, error] = await putData(`courses/lessons/${lessonId}`, formData, true);
         if (error) throw error;
         toast.success("Leçon mise à jour avec succès !");
       } else {
-        // Création
         const [data, error] = await postData('courses/lessons', formData, true);
         if (error) throw error;
         toast.success("Leçon créée avec succès !");
@@ -164,8 +188,9 @@ const LessonFormPage = () => {
 
       navigate(`/dashboard/courses/${courseId}/lessons`);
     } catch (err) {
-      setError(err.message || "Échec de la sauvegarde de la leçon.");
-      toast.error(err.message || "Erreur lors de la sauvegarde de la leçon");
+      const errorMessage = err.errors?.Content?.[0] || err.message || "Échec de la sauvegarde de la leçon.";
+      setError(errorMessage);
+      toast.error(errorMessage);
       console.error(err);
     } finally {
       setLoading(false);
@@ -174,11 +199,11 @@ const LessonFormPage = () => {
 
   const getContentTypeLabel = (contentType) => {
     switch (contentType) {
-      case 'videos':
+      case 'video':
         return 'VIDÉO';
-      case 'images':
+      case 'image':
         return 'IMAGE';
-      case 'pdfs':
+      case 'pdf':
         return 'PDF';
       case 'ar':
         return 'RÉALITÉ AUGMENTÉE';
@@ -265,7 +290,7 @@ const LessonFormPage = () => {
           >
             <option value="">Sélectionner une section</option>
             {sections.map(section => (
-              <option key={section.title} value={section.title}>
+              <option key={section.id} value={section.title}>
                 {section.title}
               </option>
             ))}
@@ -299,33 +324,34 @@ const LessonFormPage = () => {
             <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
               Contenu textuel de la leçon
             </label>
-            <ReactQuill
-              id="content"
-              name="content"
-              theme="snow"
-              value={lesson.content}
-              onChange={value => setLesson(prev => ({ ...prev, content: value }))}
-              modules={{
-                toolbar: [
-                  [{ 'header': [1, 2, false] }],
-                  ['bold', 'italic', 'underline', 'strike'],
-                  [{ 'color': [] }, { 'background': [] }],
-                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                  [{ 'align': [] }],
-                  ['blockquote', 'code-block'],
-                  ['link', 'image'],
-                  ['clean']
-                ]
-              }}
-              formats={[
-                'header', 'bold', 'italic', 'underline', 'strike', 'color', 'background',
-                'list', 'bullet', 'align', 'blockquote', 'code-block', 'link', 'image'
-              ]}
-              className="bg-white"
-              style={{ minHeight: 180 }}
-            />
+            <div className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl">
+              <EditorContent editor={editor} />
+            </div>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => editor?.chain().focus().toggleBold().run()}
+                className={`p-2 rounded ${editor?.isActive('bold') ? 'bg-gray-200' : ''}`}
+              >
+                Gras
+              </button>
+              <button
+                type="button"
+                onClick={() => editor?.chain().focus().toggleItalic().run()}
+                className={`p-2 rounded ${editor?.isActive('italic') ? 'bg-gray-200' : ''}`}
+              >
+                Italique
+              </button>
+              <button
+                type="button"
+                onClick={() => editor?.chain().focus().toggleBulletList().run()}
+                className={`p-2 rounded ${editor?.isActive('bulletList') ? 'bg-gray-200' : ''}`}
+              >
+                Liste
+              </button>
+            </div>
             <p className="mt-2 text-sm text-gray-500">
-              Le texte de la leçon sera stocké en HTML dans la colonne <code>content</code> de votre base de données.
+              Le texte de la leçon sera stocké dans la colonne `content` de votre base de données.
             </p>
           </div>
         )}
