@@ -7,18 +7,21 @@ import {
   BellIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import { toast } from 'react-toastify';
+import { messageService } from '../services/MessageService';
 
 const MessagesPage = () => {
   const {
     conversations,
-    activeConversation,
     messages,
-    unreadCount,
+    activeConversation,
+    updateMessages,
     setActiveConversation,
     sendMessage,
     markAsRead,
     messagesEndRef,
-    setConversations
+    setConversations,
+    unreadCount
   } = useMessages();
   
   const { user } = useAuth();
@@ -26,23 +29,51 @@ const MessagesPage = () => {
 
   // Ajout d'un effet pour le défilement automatique
   useEffect(() => {
-    if (messages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages?.length > 0 && messagesEndRef?.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, messagesEndRef]);
+
+  // Ajoutez cet effet pour écouter les nouveaux messages
+  useEffect(() => {
+    if (activeConversation) {
+      messageService.setMessageHandler((newMessage) => {
+        const parsedMessage = typeof newMessage === 'string' ? JSON.parse(newMessage) : newMessage;
+        
+        if (parsedMessage.senderId === activeConversation.userId || 
+            parsedMessage.recipientId === activeConversation.userId) {
+          updateMessages(prev => [...prev, parsedMessage].sort((a, b) => 
+            new Date(a.sentAt) - new Date(b.sentAt)
+          ));
+        }
+      });
+    }
+    
+    return () => {
+      messageService.setMessageHandler(null);
+    };
+  }, [activeConversation]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !activeConversation) return;
 
     try {
-      await sendMessage({
+      const messageData = {
         content: newMessage,
         recipientId: activeConversation.userId,
         senderId: user.userId,
-        messageType: 'private'
-      });
-      setNewMessage(''); // Vider le champ de message
+        messageType: 'prive'
+      };
+
+      const result = await sendMessage(messageData);
+      // Ajout immédiat du message dans la conversation
+      updateMessages(prev => [...prev, {
+        ...messageData,
+        messageId: result.messageId,
+        sentAt: new Date().toISOString()
+      }]);
+      setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Erreur lors de l\'envoi du message');
@@ -53,8 +84,12 @@ const MessagesPage = () => {
     try {
       setActiveConversation(conversation);
       
-      // Marquer tous les messages non lus de cette conversation comme lus
-      const unreadMessages = messages.filter(m => 
+      const messagesData = await messageService.getMessagesForConversation(conversation.userId);
+      updateMessages(messagesData.sort((a, b) => 
+        new Date(a.sentAt) - new Date(b.sentAt)
+      ));
+
+      const unreadMessages = messagesData.filter(m => 
         !m.isRead && 
         m.senderId === conversation.userId && 
         m.recipientId === user.userId
@@ -65,7 +100,6 @@ const MessagesPage = () => {
           unreadMessages.map(message => markAsRead(message.messageId))
         );
 
-        // Mettre à jour le compteur de messages non lus
         setConversations(prev => prev.map(conv => 
           conv.userId === conversation.userId 
             ? { ...conv, unreadCount: 0 }
@@ -73,8 +107,8 @@ const MessagesPage = () => {
         ));
       }
     } catch (error) {
-      console.error('Error marking messages as read:', error);
-      toast.error("Erreur lors de la mise à jour des messages");
+      console.error('Error in conversation click:', error);
+      toast.error("Erreur lors du chargement des messages");
     }
   };
 
@@ -169,9 +203,9 @@ const MessagesPage = () => {
           </div>
 
           <div className="flex-1 p-6 overflow-y-auto space-y-4">
-            {messages.map((message, index) => (
+            {messages.map((message) => (
               <div 
-                key={message.messageId || index} 
+                key={message.messageId} 
                 className={`flex ${message.senderId === user.userId ? 'justify-end' : 'justify-start'}`}
               >
                 <div className={`max-w-xs p-3 rounded-lg ${
@@ -180,7 +214,7 @@ const MessagesPage = () => {
                     : 'bg-gray-100 text-gray-800 rounded-bl-none'
                 }`}>
                   <p className="text-sm">{message.content}</p>
-                  <p className="text-xs mt-1 text-right">
+                  <p className="text-xs mt-1 text-right opacity-75">
                     {new Date(message.sentAt).toLocaleTimeString()}
                   </p>
                 </div>

@@ -16,15 +16,18 @@ export const MessageProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      loadUsers();
+      initializeMessageService();
+      return () => {
+        messageService.disconnect();
+      };
     }
   }, [user]);
 
   useEffect(() => {
-    if (activeConversation) {
+    if (activeConversation?.userId) {
       loadMessages(activeConversation.userId);
     }
-  }, [activeConversation]);
+  }, [activeConversation?.userId]);
 
   const loadUsers = async () => {
     try {
@@ -39,26 +42,15 @@ export const MessageProvider = ({ children }) => {
   };
 
   const initializeMessageService = async () => {
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    while (retryCount < maxRetries) {
-      try {
-        await messageService.startConnection(user.userId);
-        messageService.setMessageHandler(handleNewMessage);
-        messageService.setUserStatusHandler(handleUserStatusChange);
-        await loadConversations();
-        break;
-      } catch (error) {
-        console.error(`Attempt ${retryCount + 1} failed:`, error);
-        retryCount++;
-        if (retryCount === maxRetries) {
-          toast.error("Impossible de se connecter au service de messagerie");
-          console.error('Failed to initialize message service after multiple attempts:', error);
-        } else {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-      }
+    try {
+      await messageService.startConnection(user.userId);
+      messageService.setMessageHandler(handleNewMessage);
+      messageService.setUserStatusHandler(handleUserStatusChange);
+      await loadConversations();
+      await loadUsers();
+    } catch (error) {
+      console.error('Error initializing message service:', error);
+      toast.error('Erreur de connexion au service de messagerie');
     }
   };
 
@@ -80,8 +72,14 @@ export const MessageProvider = ({ children }) => {
 
   const loadMessages = async (userId) => {
     try {
+      if (!userId) return;
+      
+      // Récupérer tous les messages pour cette conversation
       const messages = await messageService.getMessagesForConversation(userId);
-      setMessages(messages || []);
+      const sortedMessages = messages.sort((a, b) => 
+        new Date(a.sentAt) - new Date(b.sentAt)
+      );
+      setMessages(sortedMessages);
       scrollToBottom();
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -90,47 +88,76 @@ export const MessageProvider = ({ children }) => {
   };
 
   const handleNewMessage = (message) => {
-    // Mise à jour des messages si la conversation est active
-    if (activeConversation?.userId === message.senderId || 
-        activeConversation?.userId === message.recipientId) {
-      setMessages(prev => [...prev, {
-        ...message,
-        sentAt: new Date().toISOString()
-      }]);
-      scrollToBottom();
-    }
+    try {
+      const parsedMessage = typeof message === 'string' ? JSON.parse(message) : message;
+      
+      // Ajoutez le message à la conversation active si pertinent
+      if (activeConversation?.userId === parsedMessage.senderId || 
+          activeConversation?.userId === parsedMessage.recipientId) {
+        setMessages(prev => {
+          // Éviter les doublons
+          if (prev.some(m => m.messageId === parsedMessage.messageId)) {
+            return prev;
+          }
+          const updatedMessages = [...prev, parsedMessage].sort(
+            (a, b) => new Date(a.sentAt) - new Date(b.sentAt)
+          );
+          return updatedMessages;
+        });
+        scrollToBottom();
+      }
 
-    // Mise à jour des conversations
+      // Mise à jour des conversations
+      setConversations(prev => prev.map(conv => {
+        if (conv.userId === parsedMessage.senderId || 
+            conv.userId === parsedMessage.recipientId) {
+          return {
+            ...conv,
+            lastMessage: parsedMessage.content,
+            lastMessageDate: parsedMessage.sentAt,
+            unreadCount: conv.userId === parsedMessage.senderId ? 
+              (conv.unreadCount || 0) + 1 : 
+              conv.unreadCount
+          };
+        }
+        return conv;
+      }));
+    } catch (error) {
+      console.error('Error handling new message:', error);
+    }
+  };
+
+  const handleUserStatusChange = (userId, status) => {
     setConversations(prev => prev.map(conv => {
-      if (conv.userId === message.senderId || conv.userId === message.recipientId) {
+      if (conv.userId === parseInt(userId)) {
         return {
           ...conv,
-          lastMessage: message.content,
-          lastMessageDate: new Date().toISOString(),
-          unreadCount: activeConversation?.userId !== message.senderId 
-            ? (conv.unreadCount || 0) + 1 
-            : conv.unreadCount
+          status: status,
+          isActive: status === 'online'
         };
       }
       return conv;
     }));
   };
 
-  const handleUserStatusChange = (userId, status) => {
-    setConversations(prev => prev.map(conv => 
-      conv.userId === userId ? { ...conv, status } : conv
-    ));
-  };
-
   const sendMessage = async (messageData) => {
     try {
       const result = await messageService.sendMessage(messageData);
-      // Ajouter immédiatement le message à la liste
-      handleNewMessage({
+      
+      // Ajoutez directement le message à la liste des messages
+      const newMessage = {
         ...messageData,
         messageId: result.messageId,
-        sentAt: new Date().toISOString()
-      });
+        sentAt: new Date().toISOString(),
+        isRead: false
+      };
+
+      setMessages(prev => [...prev, newMessage]);
+      scrollToBottom();
+
+      // Mise à jour des conversations
+      updateConversationWithNewMessage(newMessage);
+      
       return result;
     } catch (error) {
       console.error('Error sending message:', error);
@@ -140,18 +167,19 @@ export const MessageProvider = ({ children }) => {
   };
 
   const updateConversationWithNewMessage = (message) => {
-    setConversations(prev => prev.map(conv => 
-      conv.id === message.conversationId
-        ? {
-            ...conv,
-            lastMessage: message.content,
-            lastMessageDate: message.sentAt,
-            unreadCount: activeConversation?.id !== message.conversationId 
-              ? conv.unreadCount + 1 
-              : conv.unreadCount
-          }
-        : conv
-    ));
+    setConversations(prev => prev.map(conv => {
+      const isParticipant = conv.userId === message.senderId || conv.userId === message.recipientId;
+      if (!isParticipant) return conv;
+
+      return {
+        ...conv,
+        lastMessage: message.content,
+        lastMessageDate: message.sentAt,
+        unreadCount: conv.userId === message.senderId && message.recipientId === user?.userId
+          ? conv.unreadCount + 1
+          : conv.unreadCount
+      };
+    }));
   };
 
   const updateMessageReadStatus = (conversationId) => {
@@ -164,16 +192,21 @@ export const MessageProvider = ({ children }) => {
     ));
   };
 
+  const updateMessages = (newMessages) => {
+    setMessages(newMessages);
+  };
+
   const value = {
+    messages,
     conversations,
     activeConversation,
-    messages,
-    unreadCount,
+    updateMessages,
     setActiveConversation,
-    sendMessage, // Utilisez la nouvelle fonction sendMessage
+    sendMessage,
     markAsRead: messageService.markAsRead,
     messagesEndRef,
-    updateMessageReadStatus,
+    setConversations,
+    unreadCount
   };
 
   return (

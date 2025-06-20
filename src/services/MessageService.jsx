@@ -14,59 +14,36 @@ class MessageService {
 
   async startConnection(userId) {
     try {
-      // Arrêter la connexion existante uniquement si elle est en cours de connexion ou connectée
-      if (this.connection && 
-          (this.connection.state === 'Connected' || this.connection.state === 'Connecting')) {
-        await this.connection.stop();
+      if (this.connection?.state === "Connected") {
+        return true;
       }
 
       this.connection = new HubConnectionBuilder()
         .withUrl(this.hubUrl, {
-          accessTokenFactory: () => localStorage.getItem('token'),
-          skipNegotiation: false,
-          withCredentials: false
+          accessTokenFactory: () => localStorage.getItem('token')
         })
         .withAutomaticReconnect()
-        .configureLogging(LogLevel.Information)
         .build();
 
-      // Configuration des handlers
       this.connection.on("ReceiveMessage", (message) => {
         if (this.onMessageReceived) {
           this.onMessageReceived(message);
         }
       });
 
-      this.connection.on("UserStatusChanged", (userId, status) => {
+      this.connection.on("UserStatusChanged", (statusUserId, status) => {
         if (this.onUserStatusChanged) {
-          this.onUserStatusChanged(userId, status);
+          this.onUserStatusChanged(parseInt(statusUserId), status);
         }
       });
 
-      this.connection.onclose((error) => {
-        console.log('Connection closed:', error);
-      });
-
-      this.connection.onreconnecting((error) => {
-        console.log('Reconnecting:', error);
-      });
-
-      this.connection.onreconnected(() => {
-        console.log('Reconnected');
-        this.connection.invoke("JoinUser", userId).catch(console.error);
-      });
-
-      // Démarrer la connexion
       await this.connection.start();
-      console.log("SignalR Connected.");
-      
-      // Rejoindre en tant qu'utilisateur
       await this.connection.invoke("JoinUser", userId);
-
+      
       return true;
-    } catch (err) {
-      console.error("SignalR Connection Error:", err);
-      throw err;
+    } catch (error) {
+      console.error("SignalR Connection Error:", error);
+      throw error;
     }
   }
 
@@ -91,15 +68,20 @@ class MessageService {
 
   async getMessagesForConversation(userId) {
     try {
-      // Récupérer les messages envoyés et reçus pour créer la conversation complète
-      const [sentMessages] = await getData(`messages/sent?recipientId=${userId}`);
-      const [receivedMessages] = await getData(`messages/received?senderId=${userId}`);
+      if (!userId) return [];
       
-      // Combiner et trier les messages par date
-      const allMessages = [...(sentMessages || []), ...(receivedMessages || [])].sort(
+      // Récupérer les messages envoyés et reçus
+      const [sentMessagesData] = await getData(`messages/sent?recipientId=${userId}`);
+      const [receivedMessagesData] = await getData(`messages/received?senderId=${userId}`);
+      
+      const sentMessages = sentMessagesData || [];
+      const receivedMessages = receivedMessagesData || [];
+      
+      // Combiner et trier tous les messages
+      const allMessages = [...sentMessages, ...receivedMessages].sort(
         (a, b) => new Date(a.sentAt) - new Date(b.sentAt)
       );
-
+      
       return allMessages;
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -113,9 +95,13 @@ class MessageService {
       if (error) throw error;
 
       // Notification via SignalR
-      if (this.connection) {
+      if (this.connection?.state === "Connected") {
         await this.connection.invoke('SendMessage', 
-          JSON.stringify(data), 
+          JSON.stringify({
+            ...data,
+            senderId: messageData.senderId,
+            recipientId: messageData.recipientId
+          }), 
           messageData.recipientId
         );
       }
