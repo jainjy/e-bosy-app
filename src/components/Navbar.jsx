@@ -11,7 +11,7 @@ import {
   BellIcon,
   UserCircleIcon
 } from '@heroicons/react/24/outline';
-import { useAuth } from '../services/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = () => {
   const { user, logged, logout } = useAuth();

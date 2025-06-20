@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { messageService } from '../services/MessageService';
-import { useAuth } from '../services/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 
 const MessageContext = createContext();
@@ -91,21 +91,21 @@ export const MessageProvider = ({ children }) => {
     try {
       const parsedMessage = typeof message === 'string' ? JSON.parse(message) : message;
       
-      // Ajoutez le message à la conversation active si pertinent
-      if (activeConversation?.userId === parsedMessage.senderId || 
-          activeConversation?.userId === parsedMessage.recipientId) {
-        setMessages(prev => {
+      // Mise à jour immédiate des messages si la conversation est active
+      setMessages(prev => {
+        // Vérifier si le message appartient à la conversation active
+        if (activeConversation?.userId === parsedMessage.senderId || 
+            activeConversation?.userId === parsedMessage.recipientId) {
           // Éviter les doublons
           if (prev.some(m => m.messageId === parsedMessage.messageId)) {
             return prev;
           }
-          const updatedMessages = [...prev, parsedMessage].sort(
+          return [...prev, parsedMessage].sort(
             (a, b) => new Date(a.sentAt) - new Date(b.sentAt)
           );
-          return updatedMessages;
-        });
-        scrollToBottom();
-      }
+        }
+        return prev;
+      });
 
       // Mise à jour des conversations
       setConversations(prev => prev.map(conv => {
@@ -122,6 +122,8 @@ export const MessageProvider = ({ children }) => {
         }
         return conv;
       }));
+
+      scrollToBottom();
     } catch (error) {
       console.error('Error handling new message:', error);
     }
@@ -182,15 +184,15 @@ export const MessageProvider = ({ children }) => {
     }));
   };
 
-  const updateMessageReadStatus = (conversationId) => {
-    setMessages(prev => prev.map(message => 
-      message.senderId === conversationId ? { ...message, isRead: true } : message
-    ));
+  // const updateMessageReadStatus = (conversationId) => {
+  //   setMessages(prev => prev.map(message => 
+  //     message.senderId === conversationId ? { ...message, isRead: true } : message
+  //   ));
 
-    setConversations(prev => prev.map(conv => 
-      conv.userId === conversationId ? { ...conv, unreadCount: 0 } : conv
-    ));
-  };
+  //   setConversations(prev => prev.map(conv => 
+  //     conv.userId === conversationId ? { ...conv, unreadCount: 0 } : conv
+  //   ));
+  // };
 
   const updateMessages = (newMessages) => {
     setMessages(newMessages);

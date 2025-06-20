@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { AcademicCapIcon } from '@heroicons/react/24/solid';
 import { getData } from '../../services/ApiFetch';
-import { useAuth } from '../../services/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import Navbar from '../../Components/Navbar';
 

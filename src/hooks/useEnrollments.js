@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getData } from '../services/ApiFetch';
-import { useAuth } from '../services/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export const useEnrollments = () => {
   const [enrollments, setEnrollments] = useState([]);

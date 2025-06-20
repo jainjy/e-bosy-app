@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircleIcon, XCircleIcon, CalendarDaysIcon, CurrencyEuroIcon, SparklesIcon } from '@heroicons/react/24/outline';
-import { useAuth } from '../services/AuthContext'; // Adjust path as needed
+import { useAuth } from '../contexts/AuthContext'; // Adjust path as needed
 import { Link } from 'react-router-dom';
 const SubscriptionPage = () => {
     const { user, logged } = useAuth();

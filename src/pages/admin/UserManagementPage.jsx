@@ -6,7 +6,7 @@ import { MagnifyingGlassIcon, PlusIcon, EllipsisVerticalIcon, PencilIcon, TrashI
 import UserFormModal from '../../components/UserFormModal';
 import ViewUserModal from '../../components/ViewUserModal';
 import { getData, postData, putData, deleteData } from '../../services/ApiFetch';
-import { useAuth } from '../../services/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ROLES = {
   ADMIN: 'administrateur',

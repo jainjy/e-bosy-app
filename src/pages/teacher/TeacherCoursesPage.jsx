@@ -19,7 +19,7 @@ import { Link } from "react-router-dom";
 import CourseFormModal from "../../components/CourseFormModal";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import { getData, deleteData, postData, putData, patchData } from "../../services/ApiFetch";
-import { useAuth } from '../../services/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const API_BASE_URL = "http://localhost:5196";
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";

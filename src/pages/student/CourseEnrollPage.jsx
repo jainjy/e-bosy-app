@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getData, postData } from '../../services/ApiFetch';
-import { useAuth } from '../../services/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   CheckCircleIcon,
   BookOpenIcon,

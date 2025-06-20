@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from "react";
-import { apiHelper } from "./ApiFetch";
+import { apiHelper } from "../services/ApiFetch";
 
 /**
  *Cree un contexte d'authentification

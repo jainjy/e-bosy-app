@@ -12,7 +12,7 @@ import {
   FolderIcon
 } from '@heroicons/react/24/outline';
 import { getData, postData } from '../../services/ApiFetch';
-import { useAuth } from '../../services/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
 const API_BASE_URL = "http://localhost:5196";

@@ -11,7 +11,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { ClockIcon, FolderIcon, UserIcon } from '@heroicons/react/24/outline';
 import { getData } from '../../services/ApiFetch';
-import { useAuth } from '../../services/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import Navbar from '../../Components/Navbar';
 

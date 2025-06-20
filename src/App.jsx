@@ -22,7 +22,7 @@ import AdminOverviewPage from "./pages/admin/AdminOverviewPage";
 import TeacherOverviewPage from "./pages/teacher/TeacherOverviewPage";
 import StudentOverviewPage from "./pages/student/StudentOverviewPage";
 import LoginPage from "./pages/LoginPage";
-import { AuthProvider, useAuth } from "./services/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import SignupPage from "./pages/SignupPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";

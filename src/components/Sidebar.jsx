@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
-import { useAuth } from "../services/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { 
   HomeIcon, AcademicCapIcon, TicketIcon, CreditCardIcon, 
   EnvelopeIcon, ExclamationTriangleIcon, Cog6ToothIcon, 
@@ -10,7 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { BellIcon } from "lucide-react";
 
-const Sidebar = ({ userRole, userName, userEmail, userProfilePicture }) => {
+const Sidebar = ({ userRole, userName, userEmail, userProfilePicture, unreadCount }) => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState(null);
@@ -47,7 +47,7 @@ const Sidebar = ({ userRole, userName, userEmail, userProfilePicture }) => {
       icon: EnvelopeIcon,
       path: "/dashboard/messages",
       roles: ["etudiant", "enseignant", "administrateur"],
-      badge: 3
+      badge: unreadCount > 0 ? unreadCount : null
     },
     {
       name: "Notifications",
@@ -140,7 +140,7 @@ const Sidebar = ({ userRole, userName, userEmail, userProfilePicture }) => {
                 <div className="relative">
                   <item.icon className="h-5 w-5" />
                   {item.badge && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs min-w-[20px] h-5 flex items-center justify-center rounded-full px-1">
                       {item.badge}
                     </span>
                   )}

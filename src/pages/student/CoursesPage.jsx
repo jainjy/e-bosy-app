@@ -11,7 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/20/solid';
 import { getData } from '../../services/ApiFetch';
-import { useAuth } from '../../services/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useEnrollments } from '../../hooks/useEnrollments';
 
 const API_BASE_URL = "http://localhost:5196";

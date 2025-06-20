@@ -1,6 +1,6 @@
 import React from 'react-dom'; // No need for this import, remove it
 import { Outlet } from 'react-router-dom'; // <--- Add this import
-import { useAuth } from '../services/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 
 const DashboardLayout = () => { // Remove children prop as Outlet handles it
