@@ -36,6 +36,7 @@ const CourseDetailsPage = () => {
         const [courseData, courseError] = await getData(`courses/${courseId}`);
         if (courseError) throw courseError;
         setCourse(courseData);
+        console.log("Course Data:", courseData);
 
         // Vérifier si l'utilisateur est inscrit
         if (user?.userId) {
@@ -118,8 +119,9 @@ const CourseDetailsPage = () => {
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <Navbar />
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-e-bosy-purple to-purple-800 text-white py-12 px-6 md:px-12 mt-5">
+      <div className="bg-gradient-to-r from-e-bosy-purple to-purple-800 text-white py-12 px-6 md:px-12 mt-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8">
+          {/* Colonne de gauche avec les informations */}
           <div className="md:w-2/3">
             <p className="text-sm opacity-80 mb-2">Formation &gt; {course.category?.name}</p>
             <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
@@ -149,6 +151,34 @@ const CourseDetailsPage = () => {
                 <PlayCircleIcon className="h-6 w-6 mr-2" /> Continuer le cours
               </Link>
             )}
+          </div>
+
+          {/* Colonne de droite avec l'image */}
+          <div className="md:w-1/3">
+            <div className="relative">
+              <img 
+                src={course.thumbnailUrl ? `${API_BASE_URL}/${course.thumbnailUrl}` : DEFAULT_COURSE_IMAGE}
+                alt={course.title}
+                className="w-full h-64 object-cover rounded-lg shadow-lg"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = DEFAULT_COURSE_IMAGE;
+                }}
+              />
+              {course.isSubscriberOnly && (
+                <div className="absolute top-4 right-4">
+                  <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center">
+                    <LockClosedIcon className="h-4 w-4 mr-1" />
+                    Premium
+                  </span>
+                </div>
+              )}
+              <div className="absolute bottom-4 right-4">
+                <span className="bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                  {lessons.length} leçons
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

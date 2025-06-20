@@ -5,9 +5,6 @@ import {
   PlayCircleIcon, 
   ChatBubbleOvalLeftEllipsisIcon,
   DocumentTextIcon,
-  QuestionMarkCircleIcon,
-  ClipboardDocumentListIcon,
-  AcademicCapIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   LockClosedIcon,
@@ -151,8 +148,20 @@ const LessonPage = () => {
               width="100%"
               height="100%"
               controls
+              playing={false} // Ne pas lancer automatiquement
+              light={true} // Afficher une miniature avant la lecture
+              pip={true} // Activer le mode picture-in-picture
+              stopOnUnmount={true} // Arrêter la vidéo quand le composant est démonté
               onProgress={({ played }) => setProgress(played * 100)}
               onEnded={handleLessonComplete}
+              config={{
+                file: {
+                  attributes: {
+                    controlsList: 'nodownload', // Empêcher le téléchargement
+                    onContextMenu: e => e.preventDefault() // Désactiver le clic droit
+                  }
+                }
+              }}
             />
           </div>
         );
@@ -178,6 +187,18 @@ const LessonPage = () => {
       default:
         return <p>Type de contenu non pris en charge</p>;
     }
+  };
+
+  const getNavigationLinks = () => {
+    if (!currentLesson || !lessons.length) return { prev: null, next: null };
+
+    const currentIndex = lessons.findIndex(l => l.lessonId === parseInt(lessonId));
+    if (currentIndex === -1) return { prev: null, next: null };
+
+    return {
+      prev: currentIndex > 0 ? lessons[currentIndex - 1] : null,
+      next: currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : null
+    };
   };
 
   if (loading) {
@@ -312,68 +333,33 @@ const LessonPage = () => {
       <div className="flex-1 p-8 overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-gray-800">{currentLesson?.title}</h2>
-          <button 
-            className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700"
-            onClick={() => navigateToLesson(currentLesson?.nextLessonId)}
-          >
-            Leçon suivante <ChevronRightIcon className="h-4 w-4 inline-block ml-2" />
-          </button>
+          <div className="flex gap-3">
+            {/* Bouton précédent */}
+            {getNavigationLinks().prev && (
+              <button 
+                className="bg-gray-100 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-200 flex items-center"
+                onClick={() => navigateToLesson(getNavigationLinks().prev.lessonId)}
+              >
+                <ChevronLeftIcon className="h-4 w-4 inline-block mr-2" />
+                Leçon précédente
+              </button>
+            )}
+            
+            {/* Bouton suivant */}
+            {getNavigationLinks().next && (
+              <button 
+                className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700 flex items-center"
+                onClick={() => navigateToLesson(getNavigationLinks().next.lessonId)}
+              >
+                Leçon suivante
+                <ChevronRightIcon className="h-4 w-4 inline-block ml-2" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex space-x-4 mb-6 border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('lesson')}
-              className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'lesson' ? 'text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold' : 'text-gray-600 hover:text-e-bosy-purple'}`}
-            >
-              <DocumentTextIcon className="h-5 w-5" />
-              <span>Leçon</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('quiz')}
-              className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'quiz' ? 'text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold' : 'text-gray-600 hover:text-e-bosy-purple'}`}
-            >
-              <QuestionMarkCircleIcon className="h-5 w-5" />
-              <span>Quiz</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('exercise')}
-              className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'exercise' ? 'text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold' : 'text-gray-600 hover:text-e-bosy-purple'}`}
-            >
-              <ClipboardDocumentListIcon className="h-5 w-5" />
-              <span>Exercice</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('exam')}
-              className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'exam' ? 'text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold' : 'text-gray-600 hover:text-e-bosy-purple'}`}
-            >
-              <AcademicCapIcon className="h-5 w-5" />
-              <span>Examen</span>
-            </button>
-          </div>
-
-          {activeTab === 'lesson' && renderContent()}
-
-          {activeTab === 'quiz' && (
-            <div className="py-4">
-              <h3 className="text-xl font-bold mb-4">Quiz for this lesson</h3>
-              <p className="text-gray-600">Quiz content goes here...</p>
-            </div>
-          )}
-
-          {activeTab === 'exercise' && (
-            <div className="py-4">
-              <h3 className="text-xl font-bold mb-4">Exercise for this lesson</h3>
-              <p className="text-gray-600">Exercise instructions and submission form...</p>
-            </div>
-          )}
-
-          {activeTab === 'exam' && (
-            <div className="py-4">
-              <h3 className="text-xl font-bold mb-4">Exam for this lesson</h3>
-              <p className="text-gray-600">Exam instructions and timer...</p>
-            </div>
-          )}
+          {renderContent()}
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -381,11 +367,12 @@ const LessonPage = () => {
             <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6" />
             <span>Discussion ({comments.length})</span>
           </h3>
+          
           <div className="mb-6">
             <textarea
               className="w-full p-3 border border-gray-300 rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
               rows="4"
-              placeholder="Add a comment..."
+              placeholder="Ajouter un commentaire..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
             ></textarea>
@@ -394,7 +381,7 @@ const LessonPage = () => {
                 className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700"
                 onClick={handleCommentSubmit}
               >
-                Post Comment
+                Publier
               </button>
             </div>
           </div>
@@ -412,11 +399,6 @@ const LessonPage = () => {
                   </div>
                 </div>
                 <p className="text-gray-700 ml-11">{comment.text}</p>
-                <div className="flex space-x-4 mt-3 ml-11 text-sm text-gray-500">
-                  <button className="hover:text-e-bosy-purple">Reply</button>
-                  <button className="hover:text-e-bosy-purple">Like</button>
-                  <button className="hover:text-e-bosy-purple">Report</button>
-                </div>
               </div>
             ))}
           </div>

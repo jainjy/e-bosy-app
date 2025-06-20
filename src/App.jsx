@@ -37,6 +37,9 @@ import NotificationsPage from "./pages/NotificationsPage";
 import CourseDetailsPage from "./pages/student/CourseDetailsPage";
 import LessonFormPage from "./pages/teacher/LessonFormPage";
 import CourseEnrollPage from "./pages/student/CourseEnrollPage";
+import AssessmentsPage from "./pages/teacher/AssessmentsPage";
+import QuestionsPage from "./pages/teacher/QuestionsPage";
+import { MessageProvider } from "./contexts/MessageContext";
 
 const ProtectedRoute = ({ children }) => {
   const { logged, loading, refreshUser } = useAuth();
@@ -102,6 +105,14 @@ function App() {
               path="courses/:courseId/lessons"
               element={<TeacherLessonsPage />}
             />
+            <Route
+              path="courses/:courseId/assessments"
+              element={<AssessmentsPage />}
+            />
+            <Route
+              path="courses/:courseId/assessments/:assessmentId/questions"
+              element={<QuestionsPage />}
+            />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="certificates" element={<CertificatesPage />} />
             <Route path="settings" element={<SettingsPage />} />
@@ -159,7 +170,9 @@ function RoleBasedCoursesPage() {
 export default function AppWrapper() {
   return (
     <AuthProvider>
-      <App />
+      <MessageProvider>
+        <App />
+      </MessageProvider>
     </AuthProvider>
   );
 }

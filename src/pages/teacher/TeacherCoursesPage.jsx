@@ -13,6 +13,7 @@ import {
   TrashIcon,
   Bars3BottomLeftIcon,
   ArrowPathIcon,
+  AcademicCapIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import CourseFormModal from "../../components/CourseFormModal";
@@ -122,6 +123,14 @@ const CourseCard = ({ course, onEdit, onDelete, onPublish }) => {
             Gérer les leçons
           </Link>
           
+          <Link
+            to={`/dashboard/courses/${course.courseId}/assessments`}
+            className="flex-1 flex items-center justify-center px-3 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors duration-200"
+          >
+            <AcademicCapIcon className="h-4 w-4 mr-1" />
+            Exercices & Examens
+          </Link>
+
           <button
             onClick={() => onEdit(course)}
             className="flex-1 flex items-center justify-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-200"
@@ -391,7 +400,7 @@ const TeacherCoursesPage = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {filteredCourses.map((course) => (
           <CourseCard
             key={course.courseId}
