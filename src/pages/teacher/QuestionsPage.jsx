@@ -17,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { getData, postData, putData, deleteData } from '../../services/ApiFetch';
 import { toast } from 'react-hot-toast';
+import QuestionFormModal from '../../components/QuestionFormModal';
 
 const QuestionsPage = () => {
   const { courseId, assessmentId } = useParams();
@@ -83,7 +84,13 @@ const QuestionsPage = () => {
         const [assessmentData] = await getData(`assessments/${assessmentId}`);
         const [questionsData] = await getData(`assessments/${assessmentId}/questions`);
         
-        setAssessment(assessmentData);
+        // Calculer le score total à partir des questions
+        const totalScore = questionsData?.reduce((acc, q) => acc + q.points, 0) || 0;
+        
+        setAssessment({
+          ...assessmentData,
+          totalScore: totalScore
+        });
         setQuestions(questionsData || []);
       } catch (error) {
         toast.error("Erreur lors du chargement des données");
@@ -251,7 +258,7 @@ const QuestionsPage = () => {
 
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-800 mb-2">
                 Questions
@@ -263,7 +270,7 @@ const QuestionsPage = () => {
                 </div>
                 <div className="flex items-center">
                   <StarIcon className="h-5 w-5 text-yellow-500 mr-2" />
-                  <span>{questions.reduce((acc, q) => acc + q.points, 0)} points totaux</span>
+                  <span>Total : {questions.reduce((acc, q) => acc + q.points, 0)} points</span>
                 </div>
                 <div className="flex items-center">
                   <ClockIcon className="h-5 w-5 text-blue-500 mr-2" />
@@ -280,154 +287,6 @@ const QuestionsPage = () => {
             </button>
           </div>
         </div>
-
-        {showQuestionForm && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
-              {isEditing ? "Modifier la question" : "Nouvelle question"}
-            </h2>
-            <form onSubmit={handleQuestionSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Question
-                </label>
-                <textarea
-                  required
-                  rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
-                  value={currentQuestion.questionText}
-                  onChange={(e) => setCurrentQuestion({
-                    ...currentQuestion,
-                    questionText: e.target.value
-                  })}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Type de question
-                  </label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
-                    value={currentQuestion.questionType}
-                    onChange={(e) => setCurrentQuestion({
-                      ...currentQuestion,
-                      questionType: e.target.value
-                    })}
-                  >
-                    <option value="multiple_choice">Choix multiple</option>
-                    <option value="true_false">Vrai/Faux</option>
-                    <option value="single_choice">Choix unique</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Points
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
-                    value={currentQuestion.points}
-                    onChange={(e) => setCurrentQuestion({
-                      ...currentQuestion,
-                      points: parseInt(e.target.value)
-                    })}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Réponses
-                </label>
-                {currentQuestion.answers.map((answer, index) => (
-                  <div key={index} className="flex items-center space-x-4 mb-4">
-                    <input
-                      type="text"
-                      required
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
-                      value={answer.answerText}
-                      onChange={(e) => {
-                        const newAnswers = [...currentQuestion.answers];
-                        newAnswers[index].answerText = e.target.value;
-                        setCurrentQuestion({
-                          ...currentQuestion,
-                          answers: newAnswers
-                        });
-                      }}
-                      placeholder="Réponse"
-                    />
-                    <div className="flex items-center">
-                      <input
-                        type={currentQuestion.questionType === 'multiple_choice' ? 'checkbox' : 'radio'}
-                        name="correct_answer"
-                        checked={answer.isCorrect}
-                        onChange={(e) => {
-                          const newAnswers = [...currentQuestion.answers];
-                          if (currentQuestion.questionType !== 'multiple_choice') {
-                            newAnswers.forEach(a => a.isCorrect = false);
-                          }
-                          newAnswers[index].isCorrect = e.target.checked;
-                          setCurrentQuestion({
-                            ...currentQuestion,
-                            answers: newAnswers
-                          });
-                        }}
-                        className="mr-2"
-                      />
-                      <span className="text-sm text-gray-600">Correcte</span>
-                    </div>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setCurrentQuestion({
-                    ...currentQuestion,
-                    answers: [...currentQuestion.answers, { answerText: '', isCorrect: false }]
-                  })}
-                  className="text-e-bosy-purple hover:underline text-sm"
-                >
-                  + Ajouter une réponse
-                </button>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Explication (optionnelle)
-                </label>
-                <textarea
-                  rows="2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
-                  value={currentQuestion.explanation}
-                  onChange={(e) => setCurrentQuestion({
-                    ...currentQuestion,
-                    explanation: e.target.value
-                  })}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-4">
-                <button
-                  type="button"
-                  onClick={() => setShowQuestionForm(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-e-bosy-purple text-white rounded-md hover:bg-purple-700"
-                >
-                  {isEditing ? "Mettre à jour" : "Ajouter la question"}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
 
         <div className="space-y-6">
           {questions.map((question, index) => (
@@ -536,6 +395,18 @@ const QuestionsPage = () => {
             </div>
           )}
         </div>
+
+        <QuestionFormModal 
+          isOpen={showQuestionForm}
+          onClose={() => {
+            setShowQuestionForm(false);
+            resetForm();
+          }}
+          currentQuestion={currentQuestion}
+          setCurrentQuestion={setCurrentQuestion}
+          onSubmit={handleQuestionSubmit}
+          isEditing={isEditing}
+        />
       </div>
     </div>
   );

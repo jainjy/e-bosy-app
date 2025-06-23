@@ -25,6 +25,7 @@ const AssessmentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [showAssessmentForm, setShowAssessmentForm] = useState(false);
   const [formType, setFormType] = useState('exercise');
+  const [editingAssessment, setEditingAssessment] = useState(null);
 
   const fetchQuestions = async (assessmentId) => {
     try {
@@ -86,13 +87,28 @@ const AssessmentsPage = () => {
     setShowAssessmentForm(true);
   };
 
+  const handleEdit = (assessment) => {
+    setEditingAssessment(assessment);
+    setFormType(assessment.type);
+    setShowAssessmentForm(true);
+  };
+
   const handleFormSubmit = async (data) => {
     try {
-      setAssessments([...assessments, data]);
+      if (editingAssessment) {
+        // Mise à jour de l'évaluation dans le state
+        setAssessments(assessments.map(a => 
+          a.assessmentId === editingAssessment.assessmentId ? data : a
+        ));
+      } else {
+        // Ajout d'une nouvelle évaluation
+        setAssessments([...assessments, data]);
+      }
       setShowAssessmentForm(false);
-      toast.success("Évaluation créée avec succès");
+      setEditingAssessment(null);
+      toast.success(`Évaluation ${editingAssessment ? 'modifiée' : 'créée'} avec succès`);
     } catch (error) {
-      toast.error("Erreur lors de la création de l'évaluation");
+      toast.error(`Erreur lors de la ${editingAssessment ? 'modification' : 'création'} de l'évaluation`);
     }
   };
 
@@ -150,21 +166,30 @@ const AssessmentsPage = () => {
         {assessments.map((assessment) => (
           <div 
             key={assessment.assessmentId}
-            className="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200"
+            className={`bg-white p-6 rounded-lg shadow-md border-l-4 ${
+              assessment.type === 'exam' 
+                ? 'border-l-purple-500 border-gray-200' 
+                : 'border-l-yellow-500 border-gray-200'
+            } hover:shadow-lg transition-shadow duration-200`}
           >
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-medium ${
                   assessment.type === 'exam' 
-                    ? 'bg-purple-100 text-purple-800' 
-                    : 'bg-yellow-100 text-yellow-800'
+                    ? 'bg-purple-100 text-purple-800 ring-1 ring-purple-300' 
+                    : 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-300'
                 }`}>
                   {assessment.type === 'exam' ? (
-                    <AcademicCapIcon className="h-4 w-4 mr-1" />
+                    <>
+                      <AcademicCapIcon className="h-4 w-4 mr-2" />
+                      Examen
+                    </>
                   ) : (
-                    <ClipboardDocumentCheckIcon className="h-4 w-4 mr-1" />
+                    <>
+                      <ClipboardDocumentCheckIcon className="h-4 w-4 mr-2" />
+                      Exercice
+                    </>
                   )}
-                  {assessment.typeDisplayName}
                 </span>
                 <h3 className="text-xl font-semibold text-gray-800 mt-2">
                   {assessment.title}
@@ -172,7 +197,10 @@ const AssessmentsPage = () => {
               </div>
               <div className="flex gap-2">
                 <Link
-                  to={`/dashboard/courses/${courseId}/assessments/${assessment.assessmentId}/edit`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleEdit(assessment);
+                  }}
                   className="p-2 text-gray-600 hover:text-e-bosy-purple rounded-full hover:bg-purple-50 transition-colors"
                   title="Modifier l'évaluation"
                 >
@@ -189,34 +217,66 @@ const AssessmentsPage = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="flex items-center text-sm text-gray-600">
-                <StarIcon className="h-5 w-5 text-yellow-500 mr-2" />
-                <span>{assessment.totalScore} points</span>
+              <div className={`p-3 rounded-lg ${
+                assessment.type === 'exam' 
+                  ? 'bg-purple-50' 
+                  : 'bg-yellow-50'
+              }`}>
+                <div className="flex items-center text-sm text-gray-700">
+                  <StarIcon className={`h-5 w-5 mr-2 ${assessment.type === 'exam' ? 'text-purple-500' : 'text-yellow-500'}`} />
+                  <span>{assessment.totalScore} points</span>
+                </div>
               </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <ClockIcon className="h-5 w-5 text-blue-500 mr-2" />
-                <span>{assessment.timeLimit || 'Non limitée'}</span>
+              <div className={`p-3 rounded-lg ${
+                assessment.type === 'exam' 
+                  ? 'bg-purple-50' 
+                  : 'bg-yellow-50'
+              }`}>
+                <div className="flex items-center text-sm text-gray-700">
+                  <ClockIcon className={`h-5 w-5 mr-2 ${assessment.type === 'exam' ? 'text-purple-500' : 'text-yellow-500'}`} />
+                  <span>{assessment.timeLimit || 'Non limitée'}</span>
+                </div>
               </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <QuestionMarkCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span>{assessment.questionCount || 0} questions</span>
+              <div className={`p-3 rounded-lg ${
+                assessment.type === 'exam' 
+                  ? 'bg-purple-50' 
+                  : 'bg-yellow-50'
+              }`}>
+                <div className="flex items-center text-sm text-gray-700">
+                  <QuestionMarkCircleIcon className={`h-5 w-5 mr-2 ${assessment.type === 'exam' ? 'text-purple-500' : 'text-yellow-500'}`} />
+                  <span>{assessment.questionCount || 0} questions</span>
+                </div>
               </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <CalendarIcon className="h-5 w-5 text-purple-500 mr-2" />
-                <span>{new Date(assessment.createdAt).toLocaleDateString()}</span>
+              <div className={`p-3 rounded-lg ${
+                assessment.type === 'exam' 
+                  ? 'bg-purple-50' 
+                  : 'bg-yellow-50'
+              }`}>
+                <div className="flex items-center text-sm text-gray-700">
+                  <CalendarIcon className={`h-5 w-5 mr-2 ${assessment.type === 'exam' ? 'text-purple-500' : 'text-yellow-500'}`} />
+                  <span>{new Date(assessment.createdAt).toLocaleDateString()}</span>
+                </div>
               </div>
             </div>
 
             <div className="mt-4 pt-4 border-t border-gray-100">
               <Link
                 to={`/dashboard/courses/${courseId}/assessments/${assessment.assessmentId}/questions`}
-                className="flex items-center justify-between w-full px-4 py-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors group"
+                className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors group ${
+                  assessment.type === 'exam'
+                    ? 'bg-purple-50 hover:bg-purple-100 text-purple-700'
+                    : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700'
+                }`}
               >
                 <div className="flex items-center">
-                  <DocumentTextIcon className="h-5 w-5 text-e-bosy-purple mr-2" />
+                  <DocumentTextIcon className={`h-5 w-5 mr-2 ${
+                    assessment.type === 'exam' ? 'text-purple-600' : 'text-yellow-600'
+                  }`} />
                   <span>Gérer les questions</span>
                 </div>
-                <ChevronRightIcon className="h-5 w-5 text-gray-400 group-hover:text-e-bosy-purple transition-colors" />
+                <ChevronRightIcon className={`h-5 w-5 group-hover:translate-x-1 transition-transform ${
+                  assessment.type === 'exam' ? 'text-purple-400' : 'text-yellow-400'
+                }`} />
               </Link>
             </div>
           </div>
@@ -235,7 +295,11 @@ const AssessmentsPage = () => {
         <AssessmentFormModal
           courseId={courseId}
           type={formType}
-          onClose={() => setShowAssessmentForm(false)}
+          assessment={editingAssessment}
+          onClose={() => {
+            setShowAssessmentForm(false);
+            setEditingAssessment(null);
+          }}
           onSubmit={handleFormSubmit}
         />
       )}

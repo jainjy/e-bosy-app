@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { postData } from '../services/ApiFetch';
+import { postData, putData } from '../services/ApiFetch';
 import { toast } from 'react-hot-toast';
 
-const AssessmentFormModal = ({ onClose, onSubmit, courseId, type = 'exercise' }) => {
+const AssessmentFormModal = ({ onClose, onSubmit, courseId, type = 'exercise', assessment = null }) => {
   const modalRef = useRef(null);
   const [formData, setFormData] = useState({
     title: '',
     type: type,
-    totalScore: 100, // Ajout du score total requis
     timeLimit: 30,
     courseId: parseInt(courseId)
   });
@@ -24,28 +23,44 @@ const AssessmentFormModal = ({ onClose, onSubmit, courseId, type = 'exercise' })
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
+  // Initialiser le formulaire avec les données de l'évaluation si elle existe
+  useEffect(() => {
+    if (assessment) {
+      setFormData({
+        title: assessment.title,
+        type: assessment.type,
+        timeLimit: assessment.timeLimit || 30,
+        courseId: parseInt(courseId)
+      });
+    }
+  }, [assessment, courseId]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Validation des données
       if (!formData.title.trim()) {
         toast.error("Le titre est requis");
         return;
       }
 
-      const [data, error] = await postData('assessments', {
-        ...formData,
-        timeLimit: parseInt(formData.timeLimit),
-        totalScore: parseInt(formData.totalScore),
-      });
+      const endpoint = assessment 
+        ? `assessments/${assessment.assessmentId}`
+        : 'assessments';
+
+      const method = assessment ? 'PUT' : 'POST';
+      
+      const [data, error] = await (method === 'PUT' 
+        ? putData(endpoint, { ...formData, timeLimit: parseInt(formData.timeLimit) })
+        : postData(endpoint, { ...formData, timeLimit: parseInt(formData.timeLimit) })
+      );
 
       if (error) throw error;
 
-      toast.success("Évaluation créée avec succès");
+      toast.success(`Évaluation ${assessment ? 'modifiée' : 'créée'} avec succès`);
       onSubmit(data);
     } catch (err) {
-      console.error('Erreur création:', err);
-      toast.error("Erreur lors de la création de l'évaluation");
+      console.error('Erreur:', err);
+      toast.error(`Erreur lors de la ${assessment ? 'modification' : 'création'} de l'évaluation`);
     }
   };
 
@@ -55,7 +70,7 @@ const AssessmentFormModal = ({ onClose, onSubmit, courseId, type = 'exercise' })
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">
-              {formData.type === 'exam' ? "Nouvel Examen" : "Nouvel Exercice"}
+              {assessment ? 'Modifier' : 'Nouveau'} {formData.type === 'exam' ? "Examen" : "Exercice"}
             </h2>
             <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -79,21 +94,6 @@ const AssessmentFormModal = ({ onClose, onSubmit, courseId, type = 'exercise' })
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Score total
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="1000"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
-                  value={formData.totalScore}
-                  onChange={(e) => setFormData({ ...formData, totalScore: parseInt(e.target.value) })}
-                />
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Temps limite (minutes)
@@ -122,7 +122,7 @@ const AssessmentFormModal = ({ onClose, onSubmit, courseId, type = 'exercise' })
                 type="submit"
                 className="px-6 py-2 bg-e-bosy-purple text-white rounded-md hover:bg-purple-700"
               >
-                Créer et ajouter des questions
+                {assessment ? 'Enregistrer les modifications' : 'Créer et ajouter des questions'}
               </button>
             </div>
           </form>

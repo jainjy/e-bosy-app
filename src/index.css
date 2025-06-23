@@ -115,3 +115,82 @@
     @apply bg-gray-400;
   }
 }
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(20px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease;
+}
+
+/* Styles personnalisés pour Plyr */
+:root {
+  --plyr-color-main: #6d28d9;
+  --plyr-control-radius: 0.5rem;
+  --plyr-audio-control-background-hover: #5b21b6;
+  --plyr-audio-control-color-hover: #fff;
+}
+
+.plyr {
+  border-radius: 0.75rem;
+}
+
+.plyr--video .plyr__control:hover {
+  background: var(--plyr-color-main);
+}
+
+.plyr--full-ui input[type='range'] {
+  color: var(--plyr-color-main);
+}
+
+.plyr--video .plyr__control--overlaid {
+  background: rgba(109, 40, 217, 0.8);
+}
+
+.plyr--video .plyr__control--overlaid:hover {
+  background: rgba(109, 40, 217, 1);
+}
+/* Animations personnalisées */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Styles pour les effets de glassmorphisme */
+.glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Gradients personnalisés */
+.gradient-text {
+  background: linear-gradient(to right, #6366f1, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.course-card-premium:not(.enrolled) {
+  position: relative;
+}
+
+.course-card-premium:not(.enrolled)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.9) 80%,
+    white 100%
+  );
+  pointer-events: none;
+}
+
+.course-card-premium:not(.enrolled) .course-content {
+  filter: blur(2px);
+}

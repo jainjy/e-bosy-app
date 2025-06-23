@@ -1,370 +1,372 @@
-import React, { useState } from 'react';
-import { UserCircleIcon, KeyIcon, BellAlertIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import React, { useState, useMemo } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
+import { UserCircleIcon, KeyIcon, CameraIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { putData } from '../services/ApiFetch';
+import { motion } from 'framer-motion'; // Pour les animations
+
+const API_BASE_URL = "http://localhost:5196";
+
+// Ajoutez cette fonction utilitaire avant le composant
+const getInitials = (firstName, lastName, email) => {
+  if (firstName && lastName) {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  }
+  return email ? email[0].toUpperCase() : '?';
+};
 
 const SettingsPage = () => {
-  const [activeTab, setActiveTab] = useState('profile'); // 'profile', 'account', 'notifications', 'preferences'
+  const [activeTab, setActiveTab] = useState('profile');
+  const { user, refreshUser } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || '',
+    bio: user?.bio || '',
+    experienceLevel: user?.experienceLevel || '',
+    birthDate: user?.birthDate || '',
+    role: user?.role || '' // Ajout du rôle
+  });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  const [profileImage, setProfileImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null); // Ajout d'un state pour la prévisualisation de l'image
+
+  const profileInitials = useMemo(() => 
+    getInitials(user?.firstName, user?.lastName, user?.email),
+  [user]);
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData, 
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handlePasswordChange = (e) => {
+    setPasswordData({
+      ...passwordData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setProfileImage(null);
+    setImagePreview(null);
+  };
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (!user.role) {
+        throw new Error('Erreur : le rôle de l\'utilisateur est manquant');
+      }
+
+      const formDataToSend = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (formData[key]) {
+          formDataToSend.append(key, formData[key]);
+        }
+      });
+      
+      formDataToSend.append('role', user.role);
+      
+      if (profileImage) {
+        formDataToSend.append('profilePicture', profileImage);
+      }
+
+      const [_, error] = await putData(`users/me`, formDataToSend, true);
+
+      if (error) throw error;
+
+      await refreshUser();
+      toast.success('Profil mis à jour avec succès');
+    } catch (error) {
+      toast.error(error.message || 'Erreur lors de la mise à jour du profil');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault();
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('Les mots de passe ne correspondent pas');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const [_, error] = await putData('password/change', {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+
+      if (error) throw error;
+
+      toast.success('Mot de passe modifié avec succès');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error) {
+      toast.error(error.message || 'Erreur lors de la modification du mot de passe');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Parametres</h2>
-      <p className="text-gray-600 mb-8">Manage your account settings and preferences.</p>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="max-w-4xl mx-auto px-4 py-8"
+    >
+      <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-6 mb-8">
+        <h2 className="text-2xl font-bold text-gray-800">Paramètres</h2>
+        <p className="text-gray-600">Personnalisez votre expérience E-Bosy</p>
+      </div>
 
-      <div className="flex space-x-6 border-b border-gray-200 mb-8">
+      <div className="flex space-x-6 border-b border-gray-200 mb-8 overflow-x-auto">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'profile' ? 'text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold' : 'text-gray-600 hover:text-e-bosy-purple'}`}
+          className={`px-6 py-3 flex items-center space-x-2 transition-colors whitespace-nowrap
+            ${activeTab === 'profile' 
+              ? 'text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold' 
+              : 'text-gray-600 hover:text-gray-800'
+            }`}
         >
           <UserCircleIcon className="h-5 w-5" />
-          <span>Profile</span>
+          <span>Profil</span>
         </button>
         <button
-          onClick={() => setActiveTab('account')}
-          className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'account' ? 'text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold' : 'text-gray-600 hover:text-e-bosy-purple'}`}
+          onClick={() => setActiveTab('security')}
+          className={`px-6 py-3 flex items-center space-x-2 transition-colors whitespace-nowrap
+            ${activeTab === 'security' 
+              ? 'text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold' 
+              : 'text-gray-600 hover:text-gray-800'
+            }`}
         >
           <KeyIcon className="h-5 w-5" />
-          <span>Account</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('notifications')}
-          className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'notifications' ? 'text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold' : 'text-gray-600 hover:text-e-bosy-purple'}`}
-        >
-          <BellAlertIcon className="h-5 w-5" />
-          <span>Notifications</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('preferences')}
-          className={`px-4 py-2 flex items-center space-x-2 ${activeTab === 'preferences' ? 'text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold' : 'text-gray-600 hover:text-e-bosy-purple'}`}
-        >
-          <Cog6ToothIcon className="h-5 w-5" />
-          <span>Preferences</span>
+          <span>Sécurité</span>
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <motion.div 
+        key={activeTab}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white rounded-lg shadow-lg p-6"
+      >
         {activeTab === 'profile' && (
-          <div>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Profile Information</h3>
-            <p className="text-gray-600 mb-6">Update your personal information</p>
-
-            <div className="flex items-center space-x-6 mb-6">
-              <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-3xl font-semibold text-gray-600">
-                JD
+          <form onSubmit={handleProfileUpdate} className="space-y-8">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative group">
+                <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-purple-50">
+                  {imagePreview || user?.profilePictureUrl ? (
+                    <img 
+                      src={imagePreview || `${API_BASE_URL}/${user.profilePictureUrl}`}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-e-bosy-purple text-white text-3xl font-semibold">
+                      {profileInitials}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <label 
+                      htmlFor="profilePicture"
+                      className="cursor-pointer text-white flex items-center space-x-2"
+                    >
+                      <CameraIcon className="h-6 w-6" />
+                      <span>Modifier</span>
+                    </label>
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  id="profilePicture"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                />
+                {imagePreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                  >
+                    <XMarkIcon className="h-4 w-4" />
+                  </button>
+                )}
               </div>
-              <div>
-                <button className="text-e-bosy-purple hover:underline mb-2">Upload Image</button>
-                <button className="text-red-500 hover:underline">Remove</button>
-              </div>
+              <p className="text-sm text-gray-500">
+                Format recommandé: JPG, PNG. Taille max: 2MB
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First Name</label>
+                <label className="block text-sm font-medium text-gray-700">Prénom</label>
                 <input
                   type="text"
-                  id="firstName"
-                  defaultValue="John"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-e-bosy-purple focus:border-e-bosy-purple"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                 />
               </div>
+              
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last Name</label>
+                <label className="block text-sm font-medium text-gray-700">Nom</label>
                 <input
                   type="text"
-                  id="lastName"
-                  defaultValue="Doe"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-e-bosy-purple focus:border-e-bosy-purple"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                 />
               </div>
+
               <div className="md:col-span-2">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
                 <input
                   type="email"
-                  id="email"
-                  defaultValue="john.doe@example.com"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-e-bosy-purple focus:border-e-bosy-purple"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                 />
               </div>
+
               <div className="md:col-span-2">
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
-                <input
-                  type="text"
-                  id="username"
-                  defaultValue="johndoe"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-e-bosy-purple focus:border-e-bosy-purple"
+                <label className="block text-sm font-medium text-gray-700">Bio</label>
+                <textarea
+                  name="bio"
+                  value={formData.bio}
+                  onChange={handleInputChange}
+                  rows="4"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                 />
-                <p className="mt-2 text-sm text-gray-500">Your username will be displayed on your certificates and in discussion forums.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Niveau d'expérience</label>
+                <select
+                  name="experienceLevel"
+                  value={formData.experienceLevel}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                >
+                  <option value="">Sélectionner un niveau</option>
+                  <option value="débutant">Débutant</option>
+                  <option value="intermédiaire">Intermédiaire</option>
+                  <option value="avancé">Avancé</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Date de naissance</label>
+                <input
+                  type="date"
+                  name="birthDate"
+                  value={formData.birthDate}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                />
               </div>
             </div>
-            <div className="mt-8 flex justify-end">
-              <button className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700">
-                Save Changes
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50"
+              >
+                {loading ? 'Enregistrement...' : 'Enregistrer'}
               </button>
             </div>
-          </div>
+          </form>
         )}
 
-        {activeTab === 'account' && (
-          <div>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Account Security</h3>
-            <p className="text-gray-600 mb-6">Manage your password and security settings</p>
-
-            <div className="space-y-6">
+        {activeTab === 'security' && (
+          <form onSubmit={handlePasswordUpdate}>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Changer le mot de passe</h3>
+            
+            <div className="space-y-4">
               <div>
-                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">Current Password</label>
+                <label className="block text-sm font-medium text-gray-700">Mot de passe actuel</label>
                 <input
                   type="password"
-                  id="currentPassword"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-e-bosy-purple focus:border-e-bosy-purple"
-                  placeholder="Enter your current password"
+                  name="currentPassword"
+                  value={passwordData.currentPassword}
+                  onChange={handlePasswordChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                 />
               </div>
+              
               <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">New Password</label>
+                <label className="block text-sm font-medium text-gray-700">Nouveau mot de passe</label>
                 <input
                   type="password"
-                  id="newPassword"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-e-bosy-purple focus:border-e-bosy-purple"
-                  placeholder="Enter your new password"
+                  name="newPassword"
+                  value={passwordData.newPassword}
+                  onChange={handlePasswordChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                 />
-                <p className="mt-2 text-sm text-gray-500">Password must be at least 8 characters long.</p>
               </div>
+
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                <label className="block text-sm font-medium text-gray-700">Confirmer le mot de passe</label>
                 <input
                   type="password"
-                  id="confirmPassword"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-e-bosy-purple focus:border-e-bosy-purple"
-                  placeholder="Confirm your new password"
+                  name="confirmPassword"
+                  value={passwordData.confirmPassword}
+                  onChange={handlePasswordChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                 />
               </div>
-              <div className="pt-4 border-t border-gray-200">
-                <h4 className="text-lg font-semibold text-gray-800 mb-3">Two-Factor Authentication</h4>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-700">Status: <span className="font-medium">Disabled</span></p>
-                    <p className="text-sm text-gray-500 mt-1">Add an extra layer of security to your account.</p>
-                  </div>
-                  <button className="bg-e-bosy-purple text-white px-4 py-2 rounded-md hover:bg-purple-700 text-sm">
-                    Enable 2FA
-                  </button>
-                </div>
-              </div>
             </div>
-            <div className="mt-8 flex justify-end">
-              <button className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700">
-                Update Password
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50"
+              >
+                {loading ? 'Modification...' : 'Modifier le mot de passe'}
               </button>
             </div>
-          </div>
+          </form>
         )}
-
-        {activeTab === 'notifications' && (
-          <div>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Notification Preferences</h3>
-            <p className="text-gray-600 mb-6">Configure how you receive notifications</p>
-
-            <div className="space-y-6">
-              <div className="border-b border-gray-200 pb-6">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">Email Notifications</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-700 font-medium">Course updates</p>
-                      <p className="text-sm text-gray-500">Receive notifications about course updates and new content</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-e-bosy-purple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-e-bosy-purple"></div>
-                    </label>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-700 font-medium">Assignment deadlines</p>
-                      <p className="text-sm text-gray-500">Get reminders about upcoming assignment deadlines</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-e-bosy-purple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-e-bosy-purple"></div>
-                    </label>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-700 font-medium">Discussion replies</p>
-                      <p className="text-sm text-gray-500">Notify me when someone replies to my discussions</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-e-bosy-purple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-e-bosy-purple"></div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-b border-gray-200 pb-6">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">Push Notifications</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-700 font-medium">Important announcements</p>
-                      <p className="text-sm text-gray-500">Receive urgent notifications from instructors</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-e-bosy-purple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-e-bosy-purple"></div>
-                    </label>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-700 font-medium">Course recommendations</p>
-                      <p className="text-sm text-gray-500">Get personalized course suggestions</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-e-bosy-purple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-e-bosy-purple"></div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">Notification Frequency</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <input id="frequency-daily" name="frequency" type="radio" className="h-4 w-4 border-gray-300 text-e-bosy-purple focus:ring-e-bosy-purple" defaultChecked />
-                    <label htmlFor="frequency-daily" className="ml-3 block text-sm font-medium text-gray-700">
-                      Daily digest
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input id="frequency-weekly" name="frequency" type="radio" className="h-4 w-4 border-gray-300 text-e-bosy-purple focus:ring-e-bosy-purple" />
-                    <label htmlFor="frequency-weekly" className="ml-3 block text-sm font-medium text-gray-700">
-                      Weekly summary
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input id="frequency-real" name="frequency" type="radio" className="h-4 w-4 border-gray-300 text-e-bosy-purple focus:ring-e-bosy-purple" />
-                    <label htmlFor="frequency-real" className="ml-3 block text-sm font-medium text-gray-700">
-                      Real-time
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-8 flex justify-end">
-              <button className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700">
-                Save Preferences
-              </button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'preferences' && (
-          <div>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">General Preferences</h3>
-            <p className="text-gray-600 mb-6">Customize your application experience</p>
-
-            <div className="space-y-8">
-              <div>
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">Language & Region</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="language" className="block text-sm font-medium text-gray-700">Language</label>
-                    <select
-                      id="language"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-e-bosy-purple focus:border-e-bosy-purple"
-                      defaultValue="en"
-                    >
-                      <option value="en">English</option>
-                      <option value="fr">French</option>
-                      <option value="es">Spanish</option>
-                      <option value="de">German</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="timezone" className="block text-sm font-medium text-gray-700">Timezone</label>
-                    <select
-                      id="timezone"
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-e-bosy-purple focus:border-e-bosy-purple"
-                      defaultValue="UTC+1"
-                    >
-                      <option value="UTC-5">UTC-5 (Eastern Time)</option>
-                      <option value="UTC-6">UTC-6 (Central Time)</option>
-                      <option value="UTC-7">UTC-7 (Mountain Time)</option>
-                      <option value="UTC-8">UTC-8 (Pacific Time)</option>
-                      <option value="UTC+0">UTC+0 (London)</option>
-                      <option value="UTC+1">UTC+1 (Paris, Berlin)</option>
-                      <option value="UTC+2">UTC+2 (Cairo)</option>
-                      <option value="UTC+8">UTC+8 (Beijing)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 pt-6">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">Display Preferences</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-700 font-medium">Dark Mode</p>
-                      <p className="text-sm text-gray-500">Switch between light and dark theme</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-e-bosy-purple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-e-bosy-purple"></div>
-                    </label>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-700 font-medium">Font Size</p>
-                      <p className="text-sm text-gray-500">Adjust the text size for better readability</p>
-                    </div>
-                    <select
-                      className="mt-1 block w-32 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-e-bosy-purple focus:border-e-bosy-purple"
-                      defaultValue="medium"
-                    >
-                      <option value="small">Small</option>
-                      <option value="medium">Medium</option>
-                      <option value="large">Large</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 pt-6">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">Data & Privacy</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-700 font-medium">Data Collection</p>
-                      <p className="text-sm text-gray-500">Allow us to collect anonymous usage data</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-e-bosy-purple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-e-bosy-purple"></div>
-                    </label>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-700 font-medium">Personalized Ads</p>
-                      <p className="text-sm text-gray-500">Show ads based on your interests</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-e-bosy-purple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-e-bosy-purple"></div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-8 flex justify-end">
-              <button className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700">
-                Save Preferences
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

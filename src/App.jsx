@@ -40,6 +40,11 @@ import CourseEnrollPage from "./pages/student/CourseEnrollPage";
 import AssessmentsPage from "./pages/teacher/AssessmentsPage";
 import QuestionsPage from "./pages/teacher/QuestionsPage";
 import { MessageProvider } from "./contexts/MessageContext";
+import StudentAssessmentPage from "./pages/student/StudentAssessmentPage";
+import AssessmentResultPage from "./pages/student/AssessmentResultPage";
+import ExercisePage from "./pages/student/ExercisePage";
+import AssessmentListPage from "./pages/student/AssessmentListPage";
+import StudentAssessmentsPage from "./pages/student/StudentAssessmentsPage";
 
 const ProtectedRoute = ({ children }) => {
   const { logged, loading, refreshUser } = useAuth();
@@ -82,6 +87,7 @@ function App() {
             path="/courses/:courseId/enroll"
             element={<CourseEnrollPage />}
           />
+          <Route path="/course/:courseId/exercise/:assessmentId" element={<ExercisePage />} />
           <Route
             path="/live-session/:sessionId"
             element={<LiveSessionPage />}
@@ -89,6 +95,31 @@ function App() {
           <Route
             path="/course/:courseId/lesson/:lessonId"
             element={<LessonPage />}
+          />
+          {/* Routes pour les évaluations */}
+          <Route 
+            path="/assessment/:assessmentId" 
+            element={
+              <ProtectedRoute>
+                <StudentAssessmentPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/assessment/:assessmentId/result/:submissionId" 
+            element={
+              <ProtectedRoute>
+                <AssessmentResultPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/course/:courseId/assessments" 
+            element={
+              <ProtectedRoute>
+                <AssessmentListPage />
+              </ProtectedRoute>
+            } 
           />
           <Route path="*" element={<NotFoundPage />} />
           <Route
@@ -132,6 +163,14 @@ function App() {
               element={<LessonFormPage />}
             />
             <Route path="certificates/:id" element={<CertificateViewPage />} />
+            <Route
+              path="assessments"
+              element={
+                <ProtectedRoute>
+                  <StudentAssessmentsPage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
         </Routes>
       </Router>

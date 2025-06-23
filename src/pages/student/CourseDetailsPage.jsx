@@ -7,7 +7,10 @@ import {
   PhotoIcon,
   PlayIcon,
   ArrowDownTrayIcon,
-  LockClosedIcon
+  LockClosedIcon,
+  AcademicCapIcon,
+  ClipboardDocumentCheckIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/solid';
 import { ClockIcon, FolderIcon, UserIcon } from '@heroicons/react/24/outline';
 import { getData } from '../../services/ApiFetch';
@@ -285,6 +288,46 @@ const CourseDetailsPage = () => {
               ))}
             </div>
           )}
+
+          {/* Assessments Section */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Exercices et Évaluations</h2>
+            
+            <Link
+              to={`/course/${courseId}/assessments`}
+              className="group relative flex items-center justify-between p-4 bg-gradient-to-r from-e-bosy-purple to-purple-100 rounded-lg border border-purple-200 hover:border-purple-300 transition-all duration-200"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="flex-shrink-0">
+                  <AcademicCapIcon className="h-8 w-8 text-e-bosy-purple" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Accéder aux évaluations</h3>
+                  <p className="text-sm text-gray-600">
+                    Exercices pratiques et examens pour valider vos connaissances
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <span className="px-3 py-1 bg-e-bosy-purple text-white text-sm font-medium rounded-full">
+                  Commencer
+                </span>
+                <ChevronRightIcon className="h-5 w-5 text-e-bosy-purple ml-2 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            {/* Ajout d'informations sur les évaluations disponibles */}
+            <div className="mt-4 grid grid-cols-2 gap-4 text-center">
+              <div className="p-3 bg-purple-50 rounded-lg">
+                <ClipboardDocumentCheckIcon className="h-6 w-6 text-e-bosy-purple mx-auto mb-1" />
+                <span className="text-sm text-gray-600">Exercices disponibles</span>
+              </div>
+              <div className="p-3 bg-yellow-50 rounded-lg">
+                <AcademicCapIcon className="h-6 w-6 text-yellow-500 mx-auto mb-1" />
+                <span className="text-sm text-gray-600">Examens finaux</span>
+              </div>
+            </div>
+          </div>
 
           {/* Useful Links Section */}
           <div className="bg-white rounded-lg shadow-md p-6">

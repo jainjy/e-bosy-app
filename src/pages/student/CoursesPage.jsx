@@ -97,6 +97,35 @@ const CoursesPage = () => {
     }
   });
 
+  const renderCourseActions = (course) => {
+    if (!user) {
+      return (
+        <Link 
+          to="/login" 
+          className="w-full block text-center py-2 px-4 bg-e-bosy-purple text-white rounded-md hover:bg-purple-700 transition-colors"
+        >
+          Se connecter pour s'inscrire
+        </Link>
+      );
+    }
+
+    return isEnrolled(course.courseId) ? (
+      <Link 
+        to={`/course/${course.courseId}`}
+        className="w-full block text-center py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+      >
+        Continuer le cours
+      </Link>
+    ) : (
+      <Link 
+        to={`/courses/${course.courseId}/enroll`}
+        className="w-full block text-center py-2 px-4 bg-e-bosy-purple text-white rounded-md hover:bg-purple-700 transition-colors"
+      >
+        S'inscrire au cours
+      </Link>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
@@ -285,22 +314,13 @@ const CoursesPage = () => {
                         </div>
                       </div>
                       <div className="mt-4">
-                        {isEnrolled(course.courseId) ? (
-                          <Link 
-                            to={`/course/${course.courseId}`}
-                            className="w-full block text-center py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                          >
-                            Continuer le cours
-                          </Link>
-                        ) : (
-                          <Link 
-                            to={`/courses/${course.courseId}/enroll`}
-                            className="w-full block text-center py-2 px-4 bg-e-bosy-purple text-white rounded-md hover:bg-purple-700 transition-colors"
-                          >
-                            S'inscrire au cours
-                          </Link>
-                        )}
+                        {renderCourseActions(course)}
                       </div>
+                      {!user && course.isSubscriberOnly && (
+                        <div className="mt-2 text-center text-sm text-gray-500">
+                          Ce cours nécessite un abonnement Premium
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))

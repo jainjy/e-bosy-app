@@ -37,6 +37,12 @@ class MessageService {
         }
       });
 
+      this.connection.on("ConnectedUsers", (userIds) => {
+        if (this.onConnectedUsers) {
+          this.onConnectedUsers(userIds);
+        }
+      });
+
       await this.connection.start();
       await this.connection.invoke("JoinUser", userId);
       
@@ -53,6 +59,10 @@ class MessageService {
 
   setUserStatusHandler(callback) {
     this.onUserStatusChanged = callback;
+  }
+
+  setConnectedUsersHandler(callback) {
+    this.onConnectedUsers = callback;
   }
 
   async getConversations() {
@@ -145,7 +155,8 @@ class MessageService {
         status: 'offline', // État par défaut
         lastMessage: '',
         lastMessageDate: null,
-        unreadCount: 0
+        unreadCount: 0,
+        profilePictureUrl :user.profilePictureUrl,
       }));
     } catch (error) {
       console.error('Error fetching users:', error);

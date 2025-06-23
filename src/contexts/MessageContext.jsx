@@ -46,12 +46,23 @@ export const MessageProvider = ({ children }) => {
       await messageService.startConnection(user.userId);
       messageService.setMessageHandler(handleNewMessage);
       messageService.setUserStatusHandler(handleUserStatusChange);
+      messageService.setConnectedUsersHandler(handleConnectedUsers); // Ajouté
       await loadConversations();
       await loadUsers();
     } catch (error) {
       console.error('Error initializing message service:', error);
       toast.error('Erreur de connexion au service de messagerie');
     }
+  };
+
+  const handleConnectedUsers = (userIds) => {
+    setConversations(prev =>
+      prev.map(conv =>
+        userIds.includes(conv.userId)
+          ? { ...conv, status: 'online', isActive: true }
+          : conv
+      )
+    );
   };
 
   const loadConversations = async () => {
@@ -90,13 +101,13 @@ export const MessageProvider = ({ children }) => {
   const handleNewMessage = (message) => {
     try {
       const parsedMessage = typeof message === 'string' ? JSON.parse(message) : message;
-      
+
       // Mise à jour immédiate des messages si la conversation est active
       setMessages(prev => {
-        // Vérifier si le message appartient à la conversation active
-        if (activeConversation?.userId === parsedMessage.senderId || 
-            activeConversation?.userId === parsedMessage.recipientId) {
-          // Éviter les doublons
+        if (
+          activeConversation?.userId === parsedMessage.senderId ||
+          activeConversation?.userId === parsedMessage.recipientId
+        ) {
           if (prev.some(m => m.messageId === parsedMessage.messageId)) {
             return prev;
           }
@@ -109,15 +120,19 @@ export const MessageProvider = ({ children }) => {
 
       // Mise à jour des conversations
       setConversations(prev => prev.map(conv => {
-        if (conv.userId === parsedMessage.senderId || 
-            conv.userId === parsedMessage.recipientId) {
+        if (conv.userId === parsedMessage.senderId || conv.userId === parsedMessage.recipientId) {
+          // Si la conversation n'est pas active et que le message est pour l'utilisateur courant, incrémente unreadCount
+          const isForMe = parsedMessage.recipientId === user?.userId;
+          const isActive = activeConversation?.userId === (parsedMessage.senderId === user?.userId ? parsedMessage.recipientId : parsedMessage.senderId);
+
           return {
             ...conv,
             lastMessage: parsedMessage.content,
             lastMessageDate: parsedMessage.sentAt,
-            unreadCount: conv.userId === parsedMessage.senderId ? 
-              (conv.unreadCount || 0) + 1 : 
-              conv.unreadCount
+            unreadCount:
+              isForMe && !isActive
+                ? (conv.unreadCount || 0) + 1
+                : conv.unreadCount
           };
         }
         return conv;

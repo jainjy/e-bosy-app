@@ -1,0 +1,23 @@
+.answer-option {
+  @apply relative overflow-hidden;
+}
+
+.answer-option:hover::before {
+  content: '';
+  @apply absolute inset-0 bg-purple-50 transform scale-105 transition-transform duration-300;
+}
+
+.answer-option.selected::before {
+  content: '';
+  @apply absolute inset-0 bg-purple-100 transform scale-100 transition-transform duration-300;
+}
+
+.timer-warning {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}

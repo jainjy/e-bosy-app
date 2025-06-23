@@ -20,7 +20,7 @@ const ForgotPasswordPage = () => {
         throw new Error('Veuillez entrer votre adresse email');
       }
 
-      const [response, error] = await apiHelper('post', 'password/reset-request', { email});
+      const [_, error] = await apiHelper('post', 'password/reset-request', { email});
 
       if (error) {
         throw new Error(error.message || "Une erreur est survenue lors de l'envoi du lien de reinitialisation");

@@ -14,6 +14,7 @@ import {
 import { getData, postData } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import VideoPlayer from '../../components/VideoPlayer';
 
 const API_BASE_URL = "http://localhost:5196";
 
@@ -143,25 +144,11 @@ const LessonPage = () => {
       case 'video':
         return (
           <div className="aspect-video bg-black rounded-lg overflow-hidden">
-            <ReactPlayer
+            <VideoPlayer
               url={`${API_BASE_URL}/${currentLesson.content}`}
-              width="100%"
-              height="100%"
-              controls
-              playing={false} // Ne pas lancer automatiquement
-              light={true} // Afficher une miniature avant la lecture
-              pip={true} // Activer le mode picture-in-picture
-              stopOnUnmount={true} // Arrêter la vidéo quand le composant est démonté
-              onProgress={({ played }) => setProgress(played * 100)}
-              onEnded={handleLessonComplete}
-              config={{
-                file: {
-                  attributes: {
-                    controlsList: 'nodownload', // Empêcher le téléchargement
-                    onContextMenu: e => e.preventDefault() // Désactiver le clic droit
-                  }
-                }
-              }}
+              poster={currentLesson.thumbnail}
+              onProgress={(progress) => setProgress(progress)}
+              onComplete={handleLessonComplete}
             />
           </div>
         );

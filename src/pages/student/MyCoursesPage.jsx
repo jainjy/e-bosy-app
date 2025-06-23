@@ -70,7 +70,7 @@ const MyCoursesPage = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <Navbar />
+     
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Mes Cours</h1>

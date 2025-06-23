@@ -6,7 +6,8 @@ import {
   HomeIcon, AcademicCapIcon, TicketIcon, CreditCardIcon, 
   EnvelopeIcon, ExclamationTriangleIcon, Cog6ToothIcon, 
   ArrowRightOnRectangleIcon, UserGroupIcon, CalendarDaysIcon, 
-  ChartBarIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon 
+  ChartBarIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, 
+  ClipboardDocumentCheckIcon
 } from "@heroicons/react/24/outline";
 import { BellIcon } from "lucide-react";
 
@@ -67,6 +68,14 @@ const Sidebar = ({ userRole, userName, userEmail, userProfilePicture, unreadCoun
       path: "/dashboard/users",
       roles: ["administrateur"],
     },
+    // Dans la const navItems du Sidebar.jsx, ajoutez :
+
+  {
+    name: "Évaluations",
+    icon: ClipboardDocumentCheckIcon,
+    path: "/dashboard/assessments",
+    roles: ["etudiant"],
+  },
 
     {
       name: "Analytics",

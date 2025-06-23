@@ -10,7 +10,7 @@ import {
 import { toast } from 'react-toastify';
 import { messageService } from '../services/MessageService';
 import { useAuth } from '../contexts/AuthContext';
-
+const API_BASE_URL = "http://localhost:5196";
 const MessagesPage = () => {
   const {
     conversations,
@@ -102,6 +102,7 @@ const MessagesPage = () => {
             : conv
         ));
       }
+      console.log(conversations)
     } catch (error) {
       console.error('Error in conversation click:', error);
       toast.error("Erreur lors du chargement des messages");
@@ -165,9 +166,17 @@ const MessagesPage = () => {
               }`}
             >
               <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-lg font-semibold text-white">
-                  {conv.name?.charAt(0).toUpperCase()}
-                </div>
+                {conv.profilePictureUrl ? (
+                  <img 
+                    src={`${API_BASE_URL}${conv.profilePictureUrl}`}
+                    alt={`${conv.name}'s profile`}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-lg font-semibold text-white">
+                    {conv.name?.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full ${
                   conv.status === 'online' ? 'bg-green-500' : 'bg-gray-400'
                 } border-2 border-white shadow-sm`}></div>
@@ -209,9 +218,17 @@ const MessagesPage = () => {
         <div className="flex-1 flex flex-col bg-white rounded-lg shadow-md m-6">
           <div className="flex items-center p-4 border-b border-gray-200">
             <div className="relative">
-              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-lg font-semibold text-gray-700">
-                {activeConversation?.name.split(' ')[0].charAt(0).toUpperCase()}
-              </div>
+              {activeConversation?.profilePictureUrl ? (
+                <img 
+                  src={`${API_BASE_URL}${activeConversation.profilePictureUrl}`}
+                  alt={`${activeConversation.name}'s profile`}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-lg font-semibold text-gray-700">
+                  {activeConversation?.name.split(' ')[0].charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${activeConversation?.status === 'online' ? 'bg-green-500' : 'bg-gray-400'} border border-white`}></div>
             </div>
             <div className="ml-3">
