@@ -40,7 +40,6 @@ const LoginPage = () => {
       setTimeout(() => {
         refreshUser();
         navigate('/dashboard');
-        console.log('User:', user);
       }, 1500);
 
     } catch (err) {

@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useRef } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
 import {
-  ShoppingCartIcon,
   Squares2X2Icon,
   ArrowRightOnRectangleIcon,
   UserPlusIcon,
   Bars3Icon,
   XMarkIcon,
   BellIcon,
-  UserCircleIcon
+  UserCircleIcon,
+  CreditCardIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -41,10 +41,6 @@ const Navbar = () => {
     }
   };
 
-  const toggleProfileDropdown = () => {
-    setIsProfileDropdownOpen(!isProfileDropdownOpen);
-  };
-
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-white p-4 shadow-sm flex items-center justify-between">
       <div className="flex items-center">
@@ -54,19 +50,22 @@ const Navbar = () => {
       {/* Menu pour desktop */}
       <div className="hidden md:flex items-center space-x-6">
         <Link to="/" className="text-gray-600 hover:text-e-bosy-purple">Home</Link>
-        <Link to="/courses" className="text-gray-600 hover:text-e-bosy-purple">Courses</Link>
-        <Link to="/about" className="text-gray-600 hover:text-e-bosy-purple">About</Link>
-        <ShoppingCartIcon className="h-6 w-6 text-gray-600 cursor-pointer hover:text-e-bosy-purple" />
+        <Link to="/courses" className="text-gray-600 hover:text-e-bosy-purple">Cours</Link>
+        <Link to="/about" className="text-gray-600 hover:text-e-bosy-purple">À propos</Link>
 
         {logged ? (
           <div className="flex items-center space-x-4 relative">
             <BellIcon className="h-6 w-6 text-gray-600 cursor-pointer hover:text-e-bosy-purple" />
 
             {/* Profile dropdown */}
-            <div className="relative">
+            <div
+              className="relative"
+              onMouseEnter={() => setIsProfileDropdownOpen(true)}
+              onMouseLeave={() => setIsProfileDropdownOpen(false)}
+            >
               <button
-                onClick={toggleProfileDropdown}
-                className="flex items-center space-x-1 focus:outline-none"
+                onClick={() => navigate("/dashboard/settings")}
+                className="flex items-center focus:outline-none"
               >
                 {user?.profilePictureUrl ? (
                   <img
@@ -80,21 +79,25 @@ const Navbar = () => {
                   </div>
                 )}
               </button>
-
               {isProfileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-50 top-6">
                   <Link
                     to="/dashboard"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                    onClick={() => setIsProfileDropdownOpen(false)}
                   >
                     <Squares2X2Icon className="h-4 w-4 mr-2" />
                     Dashboard
                   </Link>
                   <Link
-                    to="/profile"
+                    to="/subscription"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                    onClick={() => setIsProfileDropdownOpen(false)}
+                  >
+                    <CreditCardIcon className="h-4 w-4 mr-2" />
+                    Abonnements
+                  </Link>
+                  <Link
+                    to="/Dashboard/Settings"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                   >
                     <UserCircleIcon className="h-4 w-4 mr-2" />
                     Profile
@@ -160,19 +163,15 @@ const Navbar = () => {
             className="block text-gray-600 hover:text-e-bosy-purple p-2"
             onClick={() => setIsMenuOpen(false)}
           >
-            Courses
+            Cours
           </Link>
           <Link
             to="/about"
             className="block text-gray-600 hover:text-e-bosy-purple p-2"
             onClick={() => setIsMenuOpen(false)}
           >
-            About
+            À propos
           </Link>
-          <div className="flex items-center p-2 text-gray-600">
-            <ShoppingCartIcon className="h-6 w-6 mr-2" />
-            <span>Cart</span>
-          </div>
 
           {logged ? (
             <>

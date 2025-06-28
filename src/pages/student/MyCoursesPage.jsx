@@ -6,6 +6,7 @@ import { getData } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import Navbar from '../../Components/Navbar';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const API_BASE_URL = "http://localhost:5196";
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
@@ -54,9 +55,7 @@ const MyCoursesPage = () => {
 
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
-        <p className="text-lg text-gray-700">Chargement de vos cours...</p>
-      </div>
+<LoadingSpinner/>
     );
   }
 

@@ -70,7 +70,6 @@ const ScheduleLiveSessionPage = () => {
       recording_url: null, // Initially null
     };
 
-    console.log("Scheduling Live Session:", newLiveSession);
     // In a real application, you would send this data to your backend:
     // try {
     //   const response = await api.post('/live-sessions', newLiveSession);

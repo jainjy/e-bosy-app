@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { EnvelopeIcon } from '@heroicons/react/24/outline';
-import { Toast } from '../components/Toast';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { apiHelper } from '../services/ApiFetch';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -26,11 +26,7 @@ const ForgotPasswordPage = () => {
         throw new Error(error.message || "Une erreur est survenue lors de l'envoi du lien de reinitialisation");
       }
 
-      setToast({ 
-        show: true, 
-        message: 'Un lien de reinitialisation a ete envoye à votre adresse email', 
-        type: 'success' 
-      });
+      toast.success('Un lien de réinitialisation a été envoyé à votre adresse email');
 
       // Redirection après un court delai
       setTimeout(() => {
@@ -38,21 +34,15 @@ const ForgotPasswordPage = () => {
       }, 3000);
 
     } catch (err) {
-      setToast({ show: true, message: err.message, type: 'error' });
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const closeToast = () => {
-    setToast({ ...toast, show: false });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-200 via-pink-200 to-blue-200 flex items-center justify-center p-4">
       {loading && <LoadingSpinner />}
-      {toast.show && <Toast message={toast.message} type={toast.type} onClose={closeToast} />}
-
       <div className="bg-white rounded-lg shadow-xl p-8 md:p-10 w-full max-w-md text-center">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">Mot de passe oublie</h2>
         <p className="text-gray-600 mb-8">

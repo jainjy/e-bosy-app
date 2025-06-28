@@ -108,8 +108,6 @@ const ExercisePage = () => {
         answersProvided: answersProvided
       };
 
-      console.log('Submitting answers:', submission); // Pour le débogage
-
       const [response, error] = await postData('assessments/submissions', submission);
 
       if (error) throw error;

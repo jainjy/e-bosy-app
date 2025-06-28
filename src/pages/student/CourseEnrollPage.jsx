@@ -12,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import Navbar from '../../Components/Navbar';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const CourseEnrollPage = () => {
   const { courseId } = useParams();
@@ -53,7 +54,6 @@ const CourseEnrollPage = () => {
       });
 
       if (error) throw error;
-      console.log(user)
 
       toast.success("Inscription réussie !");
       navigate(`/course/${courseId}`);
@@ -69,20 +69,7 @@ const CourseEnrollPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 pt-20">
         <Navbar />
-        <div className="container mx-auto px-4 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-3/4 mb-8"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="h-96 bg-gray-200 rounded"></div>
-              <div className="space-y-4">
-                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-12 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <LoadingSpinner/>
       </div>
     );
   }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
-  ArrowLeftIcon, 
+import {
+  ArrowLeftIcon,
   PlusIcon,
   AcademicCapIcon,
   ClipboardDocumentCheckIcon,
@@ -17,6 +17,7 @@ import {
 import { getData, deleteData } from '../../services/ApiFetch';
 import { toast } from 'react-hot-toast';
 import AssessmentFormModal from '../../components/AssessmentFormModal';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const AssessmentsPage = () => {
   const { courseId } = useParams();
@@ -42,13 +43,12 @@ const AssessmentsPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         const [courseData] = await getData(`courses/${courseId}`);
         setCourse(courseData);
 
         const [assessmentsData] = await getData(`assessments/course/${courseId}`);
-        
-        // Charger les questions pour chaque évaluation
+
         const assessmentsWithQuestions = await Promise.all(
           assessmentsData.map(async (assessment) => {
             const questions = await fetchQuestions(assessment.assessmentId);
@@ -88,20 +88,20 @@ const AssessmentsPage = () => {
   };
 
   const handleEdit = (assessment) => {
-    setEditingAssessment(assessment);
-    setFormType(assessment.type);
-    setShowAssessmentForm(true);
+    if (assessment) {
+      setEditingAssessment(assessment);
+      setFormType(assessment.type);
+      setShowAssessmentForm(true);
+    }
   };
 
   const handleFormSubmit = async (data) => {
     try {
       if (editingAssessment) {
-        // Mise à jour de l'évaluation dans le state
-        setAssessments(assessments.map(a => 
+        setAssessments(assessments.map(a =>
           a.assessmentId === editingAssessment.assessmentId ? data : a
         ));
       } else {
-        // Ajout d'une nouvelle évaluation
         setAssessments([...assessments, data]);
       }
       setShowAssessmentForm(false);
@@ -113,11 +113,7 @@ const AssessmentsPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="p-6 flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-e-bosy-purple"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
@@ -163,20 +159,20 @@ const AssessmentsPage = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {assessments.map((assessment) => (
-          <div 
-            key={assessment.assessmentId}
+        {assessments.map((assessment,index) => (
+          <div
+            key={assessment.assessmentId+index}
             className={`bg-white p-6 rounded-lg shadow-md border-l-4 ${
-              assessment.type === 'exam' 
-                ? 'border-l-purple-500 border-gray-200' 
+              assessment.type === 'exam'
+                ? 'border-l-purple-500 border-gray-200'
                 : 'border-l-yellow-500 border-gray-200'
             } hover:shadow-lg transition-shadow duration-200`}
           >
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
                 <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-medium ${
-                  assessment.type === 'exam' 
-                    ? 'bg-purple-100 text-purple-800 ring-1 ring-purple-300' 
+                  assessment.type === 'exam'
+                    ? 'bg-purple-100 text-purple-800 ring-1 ring-purple-300'
                     : 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-300'
                 }`}>
                   {assessment.type === 'exam' ? (
@@ -196,7 +192,7 @@ const AssessmentsPage = () => {
                 </h3>
               </div>
               <div className="flex gap-2">
-                <Link
+                <button
                   onClick={(e) => {
                     e.preventDefault();
                     handleEdit(assessment);
@@ -205,7 +201,7 @@ const AssessmentsPage = () => {
                   title="Modifier l'évaluation"
                 >
                   <PencilIcon className="h-5 w-5" />
-                </Link>
+                </button>
                 <button
                   onClick={() => handleDelete(assessment.assessmentId)}
                   className="p-2 text-gray-600 hover:text-red-600 rounded-full hover:bg-red-50 transition-colors"
@@ -218,9 +214,7 @@ const AssessmentsPage = () => {
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className={`p-3 rounded-lg ${
-                assessment.type === 'exam' 
-                  ? 'bg-purple-50' 
-                  : 'bg-yellow-50'
+                assessment.type === 'exam' ? 'bg-purple-50' : 'bg-yellow-50'
               }`}>
                 <div className="flex items-center text-sm text-gray-700">
                   <StarIcon className={`h-5 w-5 mr-2 ${assessment.type === 'exam' ? 'text-purple-500' : 'text-yellow-500'}`} />
@@ -228,9 +222,7 @@ const AssessmentsPage = () => {
                 </div>
               </div>
               <div className={`p-3 rounded-lg ${
-                assessment.type === 'exam' 
-                  ? 'bg-purple-50' 
-                  : 'bg-yellow-50'
+                assessment.type === 'exam' ? 'bg-purple-50' : 'bg-yellow-50'
               }`}>
                 <div className="flex items-center text-sm text-gray-700">
                   <ClockIcon className={`h-5 w-5 mr-2 ${assessment.type === 'exam' ? 'text-purple-500' : 'text-yellow-500'}`} />
@@ -238,9 +230,7 @@ const AssessmentsPage = () => {
                 </div>
               </div>
               <div className={`p-3 rounded-lg ${
-                assessment.type === 'exam' 
-                  ? 'bg-purple-50' 
-                  : 'bg-yellow-50'
+                assessment.type === 'exam' ? 'bg-purple-50' : 'bg-yellow-50'
               }`}>
                 <div className="flex items-center text-sm text-gray-700">
                   <QuestionMarkCircleIcon className={`h-5 w-5 mr-2 ${assessment.type === 'exam' ? 'text-purple-500' : 'text-yellow-500'}`} />
@@ -248,9 +238,7 @@ const AssessmentsPage = () => {
                 </div>
               </div>
               <div className={`p-3 rounded-lg ${
-                assessment.type === 'exam' 
-                  ? 'bg-purple-50' 
-                  : 'bg-yellow-50'
+                assessment.type === 'exam' ? 'bg-purple-50' : 'bg-yellow-50'
               }`}>
                 <div className="flex items-center text-sm text-gray-700">
                   <CalendarIcon className={`h-5 w-5 mr-2 ${assessment.type === 'exam' ? 'text-purple-500' : 'text-yellow-500'}`} />

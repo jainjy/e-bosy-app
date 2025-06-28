@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Chart from "react-apexcharts"; // Assuming you have react-apexcharts installed
 import { BookOpenIcon } from '@heroicons/react/24/outline';
+import { LoadingSpinner } from "../../components/LoadingSpinner";
 const Analytics = () => {
   const [analyticsData, setAnalyticsData] = useState({
     totalRevenue: 0,
@@ -109,7 +110,7 @@ const Analytics = () => {
     fetchAnalyticsData();
   }, [teacherId]);
 
-  if (loading) return <div className="p-4">Loading analytics...</div>;
+  if (loading) return <LoadingSpinner/>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
   // ApexCharts options and series for Revenue Overview

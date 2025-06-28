@@ -102,7 +102,6 @@ const MessagesPage = () => {
             : conv
         ));
       }
-      console.log(conversations)
     } catch (error) {
       console.error('Error in conversation click:', error);
       toast.error("Erreur lors du chargement des messages");

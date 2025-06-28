@@ -16,6 +16,7 @@ import {
   QuestionMarkCircleIcon
 } from '@heroicons/react/24/outline';
 import Navbar from '../../Components/Navbar';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const AssessmentListPage = () => {
   const { courseId } = useParams();
@@ -34,10 +35,12 @@ const AssessmentListPage = () => {
         const [courseData] = await getData(`courses/${courseId}`);
         setCourse(courseData);
 
-        // Récupérer les évaluations
+        // Récupérer les évaluations et filtrer pour ne garder que les exercices
         const [assessmentsData] = await getData(`assessments/course/${courseId}`);
-        // S'assurer que assessmentsData est un tableau
-        setAssessments(Array.isArray(assessmentsData) ? assessmentsData : []);
+        const exercisesOnly = Array.isArray(assessmentsData) 
+          ? assessmentsData.filter(assessment => assessment.type !== 'exam')
+          : [];
+        setAssessments(exercisesOnly);
 
         // Récupérer les soumissions de l'utilisateur si connecté
         if (user?.userId) {
@@ -55,7 +58,7 @@ const AssessmentListPage = () => {
           setUserProgress(progress);
         }
       } catch (error) {
-        toast.error("Erreur lors du chargement des évaluations");
+        toast.error("Erreur lors du chargement des exercices");
       } finally {
         setLoading(false);
       }
@@ -66,12 +69,7 @@ const AssessmentListPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex justify-center items-center h-[calc(100vh-80px)]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-e-bosy-purple"></div>
-        </div>
-      </div>
+<LoadingSpinner/>
     );
   }
 
@@ -79,20 +77,31 @@ const AssessmentListPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+        {/* Header avec bouton de certification */}
         <div className="mb-8">
-          <button
-            onClick={() => navigate(`/course/${courseId}`)}
-            className="flex items-center text-gray-600 hover:text-e-bosy-purple mb-4 transition-colors"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-2" />
-            <span>Retour au cours</span>
-          </button>
+          <div className="flex justify-between items-start mb-4">
+            <button
+              onClick={() => navigate(`/course/${courseId}`)}
+              className="flex items-center text-gray-600 hover:text-e-bosy-purple transition-colors"
+            >
+              <ArrowLeftIcon className="h-5 w-5 mr-2" />
+              <span>Retour au cours</span>
+            </button>
+
+            <Link
+              to={`/course/${courseId}/certification`}
+              className="inline-flex items-center px-6 py-3 bg-e-bosy-purple text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <AcademicCapIcon className="h-5 w-5 mr-2" />
+              Passer l'examen de certification
+            </Link>
+          </div>
+          
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{course?.title}</h1>
-          <p className="text-gray-600">Évaluations et exercices disponibles</p>
+          <p className="text-gray-600">Exercices disponibles</p>
         </div>
 
-        {/* Grid des évaluations */}
+        {/* Grid des exercices */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {assessments.map((assessment) => {
             const progress = userProgress[assessment.assessmentId];
@@ -101,31 +110,14 @@ const AssessmentListPage = () => {
             return (
               <div
                 key={assessment.assessmentId}
-                className={`bg-white rounded-xl shadow-sm border-l-4 ${
-                  assessment.type === 'exam'
-                    ? 'border-l-e-bosy-purple hover:border-l-purple-600'
-                    : 'border-l-yellow-500 hover:border-l-yellow-600'
-                } transition-all duration-200 hover:shadow-md`}
+                className={`bg-white rounded-xl shadow-sm border-l-4 border-l-yellow-500 hover:border-l-yellow-600 transition-all duration-200 hover:shadow-md`}
               >
                 <div className="p-6">
                   {/* Badge Type + Status */}
                   <div className="flex items-center justify-between mb-4">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                      assessment.type === 'exam'
-                        ? 'bg-purple-100 text-purple-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {assessment.type === 'exam' ? (
-                        <>
-                          <AcademicCapIcon className="h-4 w-4 mr-1.5" />
-                          Examen
-                        </>
-                      ) : (
-                        <>
-                          <ClipboardDocumentCheckIcon className="h-4 w-4 mr-1.5" />
-                          Exercice
-                        </>
-                      )}
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                      <ClipboardDocumentCheckIcon className="h-4 w-4 mr-1.5" />
+                      Exercice
                     </span>
                     {isCompleted && (
                       <span className="inline-flex items-center text-green-600 text-sm">
@@ -165,11 +157,7 @@ const AssessmentListPage = () => {
                   {/* Bouton d'action */}
                   <Link
                     to={`/course/${courseId}/exercise/${assessment.assessmentId}`}
-                    className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-white transition-colors ${
-                      assessment.type === 'exam'
-                        ? 'bg-e-bosy-purple hover:bg-purple-700'
-                        : 'bg-yellow-500 hover:bg-yellow-600'
-                    }`}
+                    className="flex items-center justify-between w-full px-4 py-3 rounded-lg text-white bg-yellow-500 hover:bg-yellow-600 transition-colors"
                   >
                     <span className="font-medium">
                       {isCompleted ? 'Réessayer' : 'Commencer'}
@@ -188,15 +176,15 @@ const AssessmentListPage = () => {
           })}
         </div>
 
-        {/* Message si aucune évaluation */}
+        {/* Message si aucun exercice */}
         {assessments.length === 0 && (
           <div className="text-center py-12">
             <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Aucune évaluation disponible
+              Aucun exercice disponible
             </h3>
             <p className="text-gray-500">
-              Les évaluations pour ce cours seront disponibles prochainement.
+              Les exercices pour ce cours seront disponibles prochainement.
             </p>
           </div>
         )}

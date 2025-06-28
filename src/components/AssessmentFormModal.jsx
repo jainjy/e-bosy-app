@@ -23,17 +23,17 @@ const AssessmentFormModal = ({ onClose, onSubmit, courseId, type = 'exercise', a
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
-  // Initialiser le formulaire avec les données de l'évaluation si elle existe
   useEffect(() => {
     if (assessment) {
+
       setFormData({
-        title: assessment.title,
-        type: assessment.type,
+        title: assessment.title || '',
+        type: assessment.type || type,
         timeLimit: assessment.timeLimit || 30,
         courseId: parseInt(courseId)
       });
     }
-  }, [assessment, courseId]);
+  }, [assessment, courseId, type]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,19 +43,17 @@ const AssessmentFormModal = ({ onClose, onSubmit, courseId, type = 'exercise', a
         return;
       }
 
-      const endpoint = assessment 
+      const endpoint = assessment
         ? `assessments/${assessment.assessmentId}`
         : 'assessments';
 
       const method = assessment ? 'PUT' : 'POST';
-      
-      const [data, error] = await (method === 'PUT' 
+
+      const [data, error] = await (method === 'PUT'
         ? putData(endpoint, { ...formData, timeLimit: parseInt(formData.timeLimit) })
         : postData(endpoint, { ...formData, timeLimit: parseInt(formData.timeLimit) })
       );
-
       if (error) throw error;
-
       toast.success(`Évaluation ${assessment ? 'modifiée' : 'créée'} avec succès`);
       onSubmit(data);
     } catch (err) {

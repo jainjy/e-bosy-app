@@ -15,6 +15,7 @@ import { getData, postData } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import VideoPlayer from '../../components/VideoPlayer';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const API_BASE_URL = "http://localhost:5196";
 
@@ -190,9 +191,7 @@ const LessonPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-e-bosy-purple"></div>
-      </div>
+<LoadingSpinner/>
     );
   }
 

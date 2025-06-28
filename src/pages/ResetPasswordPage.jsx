@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LockClosedIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import { Toast } from '../components/Toast';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { apiHelper } from '../services/ApiFetch';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ResetPasswordPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -45,11 +45,7 @@ const ResetPasswordPage = () => {
         throw new Error(error.message || "Echec de la reinitialisation du mot de passe");
       }
 
-      setToast({ 
-        show: true, 
-        message: 'Votre mot de passe a ete reinitialise avec succès', 
-        type: 'success' 
-      });
+      toast.success('Votre mot de passe a été réinitialisé avec succès');
 
       // Redirection après un court delai
       setTimeout(() => {
@@ -57,20 +53,15 @@ const ResetPasswordPage = () => {
       }, 2000);
 
     } catch (err) {
-      setToast({ show: true, message: err.message, type: 'error' });
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const closeToast = () => {
-    setToast({ ...toast, show: false });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-200 via-pink-200 to-blue-200 flex items-center justify-center p-4">
       {loading && <LoadingSpinner />}
-      {toast.show && <Toast message={toast.message} type={toast.type} onClose={closeToast} />}
 
       <div className="bg-white rounded-lg shadow-xl p-8 md:p-10 w-full max-w-md text-center">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">Reinitialiser votre mot de passe</h2>

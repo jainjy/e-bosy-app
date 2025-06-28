@@ -7,15 +7,16 @@ import {
   EnvelopeIcon, ExclamationTriangleIcon, Cog6ToothIcon, 
   ArrowRightOnRectangleIcon, UserGroupIcon, CalendarDaysIcon, 
   ChartBarIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, 
-  ClipboardDocumentCheckIcon
+  ClipboardDocumentCheckIcon,
+  VideoCameraIcon
 } from "@heroicons/react/24/outline";
 import { BellIcon } from "lucide-react";
-
-const Sidebar = ({ userRole, userName, userEmail, userProfilePicture, unreadCount }) => {
+const API_BASE_URL = "http://localhost:5196";
+const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount }) => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState(null);
-  const { logout } = useAuth();
+  const { logout,user } = useAuth();
   const navigate = useNavigate();
 
   const navItems = [
@@ -83,6 +84,12 @@ const Sidebar = ({ userRole, userName, userEmail, userProfilePicture, unreadCoun
       path: "/dashboard/analytics",
       roles: ["administrateur", "enseignant"],
     },
+    {
+      name: "Live Sessions",
+      icon: VideoCameraIcon,
+      path: "/dashboard/live-sessions",
+      roles: ["etudiant", "enseignant"], // Visible pour étudiants et enseignants
+    },
   ];
 
   const toggleSubmenu = (name) => {
@@ -102,7 +109,6 @@ const Sidebar = ({ userRole, userName, userEmail, userProfilePicture, unreadCoun
       confirmButtonText: 'Oui, déconnectez-moi!',
       cancelButtonText: 'Annuler'
     });
-
     if (result.isConfirmed) {
       try {
         await logout();
@@ -172,9 +178,9 @@ const Sidebar = ({ userRole, userName, userEmail, userProfilePicture, unreadCoun
 
       <div className={`p-4 border-t border-gray-200 ${isCollapsed ? "text-center" : ""}`}>
         <div className={`flex ${isCollapsed ? "flex-col items-center" : "items-center space-x-3"} mb-4`}>
-          {userProfilePicture ? (
+          {profilePictureUrl ? (
             <img 
-              src={userProfilePicture} 
+              src={API_BASE_URL+profilePictureUrl} 
               alt="Profile" 
               className="w-10 h-10 rounded-full object-cover" 
             />

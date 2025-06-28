@@ -8,44 +8,61 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// Pages publiques
 import HomePage from "./pages/HomePage";
 import CoursesPage from "./pages/student/CoursesPage";
-import DashboardLayout from "./layouts/DashboardLayout";
-import MyCoursesPage from "./pages/student/MyCoursesPage";
-import CertificatesPage from "./pages/CertificatesPage";
-import SettingsPage from "./pages/SettingsPage";
-import UserManagementPage from "./pages/admin/UserManagementPage";
-import MessagesPage from "./pages/MessagesPage";
-import LessonPage from "./pages/student/LessonPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import AdminOverviewPage from "./pages/admin/AdminOverviewPage";
-import TeacherOverviewPage from "./pages/teacher/TeacherOverviewPage";
-import StudentOverviewPage from "./pages/student/StudentOverviewPage";
 import LoginPage from "./pages/LoginPage";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import SignupPage from "./pages/SignupPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
-import TeacherCoursesPage from "./pages/teacher/TeacherCoursesPage";
-import TeacherLessonsPage from "./pages/teacher/TeacherLessonsPage";
-import ScheduleLiveSessionPage from "./pages/ScheduleLiveSessionPage";
-import LiveSessionPage from "./pages/LiveSessionPage";
-import Analytics from "./pages/teacher/Analytics";
-import CertificateViewPage from "./pages/CertificateViewPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
-import NotificationsPage from "./pages/NotificationsPage";
+import NotFoundPage from "./pages/NotFoundPage";
+
+// Pages cours et leçons
 import CourseDetailsPage from "./pages/student/CourseDetailsPage";
-import LessonFormPage from "./pages/teacher/LessonFormPage";
 import CourseEnrollPage from "./pages/student/CourseEnrollPage";
-import AssessmentsPage from "./pages/teacher/AssessmentsPage";
-import QuestionsPage from "./pages/teacher/QuestionsPage";
-import { MessageProvider } from "./contexts/MessageContext";
-import StudentAssessmentPage from "./pages/student/StudentAssessmentPage";
-import AssessmentResultPage from "./pages/student/AssessmentResultPage";
+import LessonPage from "./pages/student/LessonPage";
+import LessonFormPage from "./pages/teacher/LessonFormPage";
+
+// Pages d'évaluations et résultats
 import ExercisePage from "./pages/student/ExercisePage";
 import AssessmentListPage from "./pages/student/AssessmentListPage";
 import StudentAssessmentsPage from "./pages/student/StudentAssessmentsPage";
 
+// Pages dashboard et rôles
+import DashboardLayout from "./layouts/DashboardLayout";
+import MyCoursesPage from "./pages/student/MyCoursesPage";
+import TeacherCoursesPage from "./pages/teacher/TeacherCoursesPage";
+import TeacherLessonsPage from "./pages/teacher/TeacherLessonsPage";
+import AssessmentsPage from "./pages/teacher/AssessmentsPage";
+import QuestionsPage from "./pages/teacher/QuestionsPage";
+import AdminOverviewPage from "./pages/admin/AdminOverviewPage";
+import TeacherOverviewPage from "./pages/teacher/TeacherOverviewPage";
+import StudentOverviewPage from "./pages/student/StudentOverviewPage";
+
+// Pages diverses
+import CertificatesPage from "./pages/CertificatesPage";
+import CertificateViewPage from "./pages/CertificateViewPage";
+import SettingsPage from "./pages/SettingsPage";
+import UserManagementPage from "./pages/admin/UserManagementPage";
+import MessagesPage from "./pages/MessagesPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import Analytics from "./pages/teacher/Analytics";
+import ScheduleLiveSessionPage from "./pages/ScheduleLiveSessionPage";
+import LiveSessionPage from "./pages/LiveSessionPage";
+import CoursesToCertifyPage from "./pages/student/CoursesToCertifyPage";
+import CertificationExamPage from "./pages/student/CertificationExamPage";
+import CertificationInstructionsPage from "./pages/student/CertificationInstructionsPage";
+
+// Contexts
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { MessageProvider } from "./contexts/MessageContext";
+import { LoadingSpinner } from "./components/LoadingSpinner";
+import { LiveSessionProvider } from "./contexts/LiveSessionContext";
+import LiveSessionsPage from "./pages/LiveSessionsPage";
+import StudentLiveSessionPage from "./pages/student/StudentLiveSessionPage";
+
+// Route protégée
 const ProtectedRoute = ({ children }) => {
   const { logged, loading, refreshUser } = useAuth();
 
@@ -58,7 +75,7 @@ const ProtectedRoute = ({ children }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        Chargement...
+        <LoadingSpinner />
       </div>
     );
   }
@@ -70,58 +87,105 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Dashboard selon le rôle
+function RoleBasedDashboard() {
+  const { user } = useAuth();
+
+  switch (user?.role) {
+    case "administrateur":
+      return <AdminOverviewPage />;
+    case "enseignant":
+      return <TeacherOverviewPage />;
+    default:
+      return <StudentOverviewPage />;
+  }
+}
+
+// Page de cours selon le rôle
+function RoleBasedCoursesPage() {
+  const { user } = useAuth();
+
+  if (user?.role === "etudiant") {
+    return <MyCoursesPage />;
+  }
+  return <TeacherCoursesPage />;
+}
+
+// Composant principal
 function App() {
   return (
     <>
       <Router>
         <Routes>
+          {/* Routes publiques */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/test" element={<StudentLiveSessionPage />} />
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/subscription" element={<SubscriptionPage />} />
+
+          {/* Détail cours, inscription, leçons */}
           <Route path="/course/:courseId" element={<CourseDetailsPage />} />
           <Route
             path="/courses/:courseId/enroll"
             element={<CourseEnrollPage />}
           />
-          <Route path="/course/:courseId/exercise/:assessmentId" element={<ExercisePage />} />
-          <Route
-            path="/live-session/:sessionId"
-            element={<LiveSessionPage />}
-          />
           <Route
             path="/course/:courseId/lesson/:lessonId"
             element={<LessonPage />}
           />
-          {/* Routes pour les évaluations */}
-          <Route 
-            path="/assessment/:assessmentId" 
+          <Route
+            path="/course/:courseId/certification"
             element={
               <ProtectedRoute>
-                <StudentAssessmentPage />
+                <CertificationInstructionsPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/assessment/:assessmentId/result/:submissionId" 
+          <Route
+            path="/course/:courseId/certification/exam"
+            element={
+              <ProtectedRoute>
+                <CertificationExamPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Exercices et évaluations */}
+          <Route
+            path="/course/:courseId/exercise/:assessmentId"
+            element={<ExercisePage />}
+          />
+          <Route
+            path="/assessment/:assessmentId/result/:submissionId"
             element={
               <ProtectedRoute>
                 <AssessmentResultPage />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/course/:courseId/assessments" 
+          <Route
+            path="/course/:courseId/assessments"
             element={
               <ProtectedRoute>
                 <AssessmentListPage />
               </ProtectedRoute>
-            } 
+            }
           />
+
+          {/* Sessions en direct */}
+          <Route
+            path="/live-session/:sessionId"
+            element={<LiveSessionPage />}
+          />
+
+          {/* 404 */}
           <Route path="*" element={<NotFoundPage />} />
+
+          {/* Dashboard et sous-routes */}
           <Route
             path="/dashboard/*"
             element={
@@ -130,6 +194,10 @@ function App() {
               </ProtectedRoute>
             }
           >
+            <Route
+              path="live-sessions"
+              element={<LiveSessionsPage />}
+            />
             <Route index element={<RoleBasedDashboard />} />
             <Route path="courses" element={<RoleBasedCoursesPage />} />
             <Route
@@ -171,6 +239,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="certificates/available"
+              element={
+                <ProtectedRoute>
+                  <CoursesToCertifyPage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
         </Routes>
       </Router>
@@ -183,35 +259,15 @@ function App() {
   );
 }
 
-// Composants pour la gestion des rôles
-function RoleBasedDashboard() {
-  const { user } = useAuth();
-
-  switch (user?.role) {
-    case "administrateur":
-      return <AdminOverviewPage />;
-    case "enseignant":
-      return <TeacherOverviewPage />;
-    default:
-      return <StudentOverviewPage />;
-  }
-}
-
-function RoleBasedCoursesPage() {
-  const { user } = useAuth();
-
-  if (user?.role === "etudiant") {
-    return <MyCoursesPage />;
-  }
-  return <TeacherCoursesPage />;
-}
-
+// Wrapper avec contextes
 export default function AppWrapper() {
   return (
     <AuthProvider>
-      <MessageProvider>
-        <App />
-      </MessageProvider>
+      <LiveSessionProvider>
+        <MessageProvider>
+          <App />
+        </MessageProvider>
+      </LiveSessionProvider>
     </AuthProvider>
   );
 }

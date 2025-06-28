@@ -8,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { QRCode } from 'react-qr-code'; // Import QRCode component as a named export
 import Navbar from '../Components/Navbar'; // Assuming you have a Navbar component
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 const CertificateViewPage = () => {
   const { id } = useParams(); // Get certificate ID from URL parameters
@@ -76,9 +77,7 @@ const CertificateViewPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-20">
-        <p className="text-gray-600">Loading certificate...</p>
-      </div>
+      <LoadingSpinner/>
     );
   }
 
@@ -113,14 +112,13 @@ const CertificateViewPage = () => {
         text: `Check out my certificate from e-BoSy for ${certificate.courseTitle}!`,
         url: window.location.href, // Current URL
       }).then(() => {
-        console.log('Certificate shared successfully');
+
       }).catch((shareError) => {
         console.error('Error sharing certificate:', shareError);
       });
     } else {
       // Fallback for browsers that do not support navigator.share
       alert(`Share this link: ${window.location.href}`);
-      console.log('Web Share API not supported, fallback to manual copy.');
     }
   };
 

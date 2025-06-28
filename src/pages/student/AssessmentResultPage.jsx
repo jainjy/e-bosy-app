@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { getData } from '../../services/ApiFetch';
 import { toast } from 'react-hot-toast';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const AssessmentResultPage = () => {
   const { submissionId } = useParams();
@@ -32,9 +33,7 @@ const AssessmentResultPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-e-bosy-purple"></div>
-      </div>
+<LoadingSpinner/>
     );
   }
 

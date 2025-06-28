@@ -90,17 +90,17 @@ const CourseCard = ({ course, onEdit, onDelete, onPublish }) => {
         <h2 className="text-xl font-bold text-gray-800 mb-2">{course.title}</h2>
         
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center text-gray-600">
+        {course.status === COURSE_STATUS.PUBLISHED ? <div className="flex items-center text-gray-600">
             <UsersIcon className="h-4 w-4 mr-1" />
             <span>{course.studentsEnrolled || 0} étudiants</span>
-          </div>
+          </div> : <></>}
           <div className="flex items-center text-gray-600">
             <Bars3BottomLeftIcon className="h-4 w-4 mr-1" />
             <span>{course.lessonsCount || 0} leçons</span>
           </div>
         </div>
 
-        {course.status === COURSE_STATUS.DRAFT && (
+        {/* {course.status === COURSE_STATUS.DRAFT && (
           <div className="mb-4">
             <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div
@@ -112,7 +112,7 @@ const CourseCard = ({ course, onEdit, onDelete, onPublish }) => {
               Progression: {course.completionPercentage}%
             </p>
           </div>
-        )}
+        )} */}
 
         <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
           <Link

@@ -1,9 +1,9 @@
-import React from 'react-dom'; // No need for this import, remove it
-import { Outlet } from 'react-router-dom'; // <--- Add this import
+import React from 'react-dom'; 
+import { Outlet } from 'react-router-dom'; 
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 
-const DashboardLayout = () => { // Remove children prop as Outlet handles it
+const DashboardLayout = () => { 
   const { user } = useAuth();
 
   return (
@@ -12,10 +12,10 @@ const DashboardLayout = () => { // Remove children prop as Outlet handles it
         userRole={user?.role}
         userName={user?.name}
         userEmail={user?.email}
-        userProfilePicture={user?.profilePicture}
+        profilePictureUrl={user?.profilePictureUrl}
       />
       <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-        <Outlet /> {/* <--- This is where your nested routes will render */}
+        <Outlet /> 
       </main>
     </div>
   );

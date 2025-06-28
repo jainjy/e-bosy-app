@@ -57,9 +57,6 @@ const CourseFormModal = ({ onClose, onSubmit, course }) => {
 
   useEffect(() => {
     if (course && categories.length > 0) {
-      console.log('Course data:', course);
-      console.log('Categories:', categories);
-  
       setCourseData({
         courseId: course.courseId,
         title: course.title,

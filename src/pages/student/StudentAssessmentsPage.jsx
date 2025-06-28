@@ -14,6 +14,7 @@ import {
   StarIcon,
 } from '@heroicons/react/24/outline';
 import Navbar from '../../Components/Navbar';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const StudentAssessmentsPage = () => {
   const [courses, setCourses] = useState([]);
@@ -26,97 +27,104 @@ const StudentAssessmentsPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            
-            const [enrollmentsData, enrollmentsError] = await getData(`enrollments/student/${user.userId}`);
-            
-            if (enrollmentsError) {
-                console.error('Erreur lors de la récupération des inscriptions:', enrollmentsError);
-                setError("Impossible de charger vos inscriptions");
-                return;
-            }
-
-            if (!enrollmentsData || enrollmentsData.length === 0) {
-                setCourses([]);
-                return;
-            }
-
-            // Transformez les données pour inclure les évaluations
-            const coursesWithAssessments = enrollmentsData.map(enrollment => ({
-                ...enrollment.course,
-                assessments: enrollment.course.assessments || []
-            }));
-
-            console.log('Cours avec évaluations:', coursesWithAssessments);
-            
-            setCourses(coursesWithAssessments);
-
-            if (coursesWithAssessments.length > 0) {
-                setSelectedCourse(coursesWithAssessments[0]);
-                const firstCourseAssessments = coursesWithAssessments[0].assessments || [];
-                console.log('Évaluations du premier cours:', firstCourseAssessments);
-                setAssessments(firstCourseAssessments);
-            }
-
-        } catch (err) {
-            console.error('Erreur:', err);
-            setError("Une erreur est survenue lors du chargement des données");
-        } finally {
-            setLoading(false);
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const [enrollmentsData, enrollmentsError] = await getData(`enrollments/student/${user.userId}`);
+        
+        if (enrollmentsError) {
+          console.error('Erreur lors de la récupération des inscriptions:', enrollmentsError);
+          setError("Impossible de charger vos inscriptions");
+          return;
         }
+
+        if (!enrollmentsData || enrollmentsData.length === 0) {
+          setCourses([]);
+          return;
+        }
+
+        // Filtrer pour ne garder que les exercices
+        const coursesWithExercises = enrollmentsData.map(enrollment => ({
+          ...enrollment.course,
+          assessments: (enrollment.course.assessments || []).filter(a => a.type !== 'exam')
+        }));
+        
+        setCourses(coursesWithExercises);
+
+        if (coursesWithExercises.length > 0) {
+          setSelectedCourse(coursesWithExercises[0]);
+          const firstCourseExercises = coursesWithExercises[0].assessments || [];
+          setAssessments(firstCourseExercises);
+        }
+
+      } catch (err) {
+        console.error('Erreur:', err);
+        setError("Une erreur est survenue lors du chargement des données");
+      } finally {
+        setLoading(false);
+      }
     };
 
     if (user?.userId) {
-        fetchData();
+      fetchData();
     }
-}, [user?.userId]);
+  }, [user?.userId]);
 
-const handleCourseChange = async (courseId) => {
+  const handleCourseChange = async (courseId) => {
     try {
-        setLoading(true);
-        const selectedCourse = courses.find(c => c.courseId === courseId);
-        setSelectedCourse(selectedCourse);
-        setAssessments(selectedCourse?.assessments || []);
+      setLoading(true);
+      const selectedCourse = courses.find(c => c.courseId === courseId);
+      setSelectedCourse(selectedCourse);
+      setAssessments(selectedCourse?.assessments || []);
     } catch (error) {
-        console.error('Error changing course:', error);
+      console.error('Error changing course:', error);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Mes Évaluations</h1>
-          <p className="mt-2 text-gray-600">Gérez vos exercices et examens par cours</p>
+          <h1 className="text-3xl font-bold text-gray-900">Mes Exercices</h1>
+          <p className="mt-2 text-gray-600">Pratiquez et testez vos connaissances</p>
         </div>
 
-        {/* Sélecteur de cours */}
-        <div className="mb-8">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Sélectionner un cours
-          </label>
-          <select
-            className="w-full md:w-1/2 rounded-lg border-gray-300 shadow-sm focus:border-e-bosy-purple focus:ring-e-bosy-purple"
-            onChange={(e) => handleCourseChange(Number(e.target.value))}
-            value={selectedCourse?.courseId || ''}
-          >
-            {courses.map(course => (
-              <option key={course.courseId} value={course.courseId}>
-                {course.title}
-              </option>
-            ))}
-          </select>
+        {/* Sélecteur de cours et bouton de certification */}
+        <div className="mb-8 flex flex-col md:flex-row gap-4 items-start md:items-center">
+          <div className="flex-grow">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Sélectionner un cours
+            </label>
+            <select
+              className="w-full rounded-lg border-gray-300 shadow-sm focus:border-e-bosy-purple focus:ring-e-bosy-purple"
+              onChange={(e) => handleCourseChange(Number(e.target.value))}
+              value={selectedCourse?.courseId || ''}
+            >
+              {courses.map(course => (
+                <option key={course.courseId} value={course.courseId}>
+                  {course.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedCourse && (
+            <Link
+              to={`/course/${selectedCourse.courseId}/certification`}
+              className="inline-flex items-center px-6 py-3 bg-e-bosy-purple text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <AcademicCapIcon className="h-5 w-5 mr-2" />
+              Passer l'examen de certification
+            </Link>
+          )}
         </div>
 
         {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-e-bosy-purple"></div>
-          </div>
+<LoadingSpinner/>
         ) : error ? (
           <div className="text-center text-red-500">{error}</div>
         ) : (

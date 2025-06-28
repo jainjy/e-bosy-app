@@ -291,7 +291,7 @@ const QuestionsPage = () => {
         <div className="space-y-6">
           {questions.map((question, index) => (
             <div
-              key={question.questionId}
+              key={question.questionId+index}
               className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:border-e-bosy-purple transition-colors"
             >
               <div 

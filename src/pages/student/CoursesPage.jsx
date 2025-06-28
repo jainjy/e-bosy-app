@@ -13,6 +13,7 @@ import { StarIcon } from '@heroicons/react/20/solid';
 import { getData } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEnrollments } from '../../hooks/useEnrollments';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const API_BASE_URL = "http://localhost:5196";
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
@@ -46,7 +47,6 @@ const CoursesPage = () => {
 
         // Utiliser directement les données sans pagination
         setCourses(coursesData);
-        console.log(coursesData)
         setCategories(categoriesData);
       } catch (err) {
         setError(err.message);
@@ -128,12 +128,7 @@ const CoursesPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-e-bosy-purple mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement des cours...</p>
-        </div>
-      </div>
+<LoadingSpinner/>
     );
   }
 
@@ -297,10 +292,6 @@ const CoursesPage = () => {
                           <div className="flex items-center gap-1 text-sm text-gray-600">
                             <UserIcon className="h-4 w-4" />
                             <span>{course.teacher?.firstName} {course.teacher?.lastName}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-sm text-gray-600">
-                            <AcademicCapIcon className="h-4 w-4" />
-                            <span>{course.status === 'publier' ? 'Publié' : 'Brouillon'}</span>
                           </div>
                         </div>
                         <div className="flex items-center justify-between">

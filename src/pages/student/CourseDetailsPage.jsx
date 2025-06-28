@@ -17,6 +17,7 @@ import { getData } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import Navbar from '../../Components/Navbar';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 
 const API_BASE_URL = "http://localhost:5196";
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
@@ -39,7 +40,6 @@ const CourseDetailsPage = () => {
         const [courseData, courseError] = await getData(`courses/${courseId}`);
         if (courseError) throw courseError;
         setCourse(courseData);
-        console.log("Course Data:", courseData);
 
         // Vérifier si l'utilisateur est inscrit
         if (user?.userId) {
@@ -101,12 +101,7 @@ const CourseDetailsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-e-bosy-purple"></div>
-          <p className="mt-4 text-gray-600">Chargement du cours...</p>
-        </div>
-      </div>
+      <LoadingSpinner/>
     );
   }
 

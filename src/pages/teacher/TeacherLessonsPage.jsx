@@ -35,6 +35,7 @@ import { CSS } from '@dnd-kit/utilities';
 import SectionFormModal from "../../components/SectionFormModal"; // Import the new modal
 import { getData, postData, putData, deleteData } from "../../services/ApiFetch";
 import { toast } from "react-toastify";
+import { LoadingSpinner } from "../../components/LoadingSpinner";
 
 // --- SortableItem Component for Lessons ---
 // This component wraps each draggable lesson
@@ -445,9 +446,7 @@ const TeacherLessonsPage = () => {
 
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen text-center text-gray-600">
-        Chargement du cours et des leçons...
-      </div>
+      <LoadingSpinner/>
     );
   }
 
@@ -559,9 +558,6 @@ const TeacherLessonsPage = () => {
                         </p>
                       )}
                     </div>
-                    {console.log('Sections:', sortedSections)}
-                    {console.log('Lessons:', lessons)}
-                    {console.log('Lessons for section:', section.title, getLessonsForSection(section.title))}
                   </SortableContext>
                 </SortableSectionItem>
               ))
