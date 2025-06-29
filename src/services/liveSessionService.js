@@ -5,14 +5,32 @@ class LiveSessionService {
     this.baseUrl = 'http://localhost:5196/api/livesessions';
   }
 
+  async getLiveSession(sessionId) {
+    const [data, error] = await getData(`${this.baseUrl}/${sessionId}`);
+    if (error) throw error;
+    return data;
+  }
+
   async createLiveSession(sessionData) {
     const [data, error] = await postData(`${this.baseUrl}`, sessionData);
     if (error) throw error;
     return data;
   }
 
-  async getLiveSession(sessionId) {
-    const [data, error] = await getData(`${this.baseUrl}/${sessionId}`);
+  async endSession(sessionId) {
+    const [data, error] = await postData(`${this.baseUrl}/${sessionId}/end`);
+    if (error) throw error;
+    return data;
+  }
+
+  async joinSession(sessionId, userId) {
+    const [data, error] = await postData(`${this.baseUrl}/${sessionId}/attendees/${userId}`);
+    if (error) throw error;
+    return data;
+  }
+
+  async leaveSession(sessionId, userId) {
+    const [data, error] = await getData(`${this.baseUrl}/${sessionId}/attendees/${userId}`);
     if (error) throw error;
     return data;
   }
@@ -23,9 +41,15 @@ class LiveSessionService {
     return data;
   }
 
-  async uploadRecording(sessionId, recordingFile) {
+  async getPastSessions() {
+    const [data, error] = await getData(`${this.baseUrl}/past`);
+    if (error) throw error;
+    return data;
+  }
+
+  async uploadRecording(sessionId, file) {
     const formData = new FormData();
-    formData.append('recordingFile', recordingFile);
+    formData.append('recording', file);
     
     const [data, error] = await postData(
       `${this.baseUrl}/${sessionId}/upload-recording`,
@@ -33,22 +57,6 @@ class LiveSessionService {
       true
     );
     
-    if (error) throw error;
-    return data;
-  }
-
-  async addAttendee(sessionId, attendeeId) {
-    const [data, error] = await postData(
-      `${this.baseUrl}/${sessionId}/attendees/${attendeeId}`
-    );
-    if (error) throw error;
-    return data;
-  }
-
-  async removeAttendee(sessionId, attendeeId) {
-    const [data, error] = await getData(
-      `${this.baseUrl}/${sessionId}/attendees/${attendeeId}`
-    );
     if (error) throw error;
     return data;
   }

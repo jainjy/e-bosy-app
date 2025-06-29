@@ -160,26 +160,12 @@ function App() {
             element={<ExercisePage />}
           />
           <Route
-            path="/assessment/:assessmentId/result/:submissionId"
-            element={
-              <ProtectedRoute>
-                <AssessmentResultPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/course/:courseId/assessments"
             element={
               <ProtectedRoute>
                 <AssessmentListPage />
               </ProtectedRoute>
             }
-          />
-
-          {/* Sessions en direct */}
-          <Route
-            path="/live-session/:sessionId"
-            element={<LiveSessionPage />}
           />
 
           {/* 404 */}
@@ -194,10 +180,6 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route
-              path="live-sessions"
-              element={<LiveSessionsPage />}
-            />
             <Route index element={<RoleBasedDashboard />} />
             <Route path="courses" element={<RoleBasedCoursesPage />} />
             <Route
@@ -218,10 +200,20 @@ function App() {
             <Route path="messages" element={<MessagesPage />} />
             <Route path="users" element={<UserManagementPage />} />
             <Route path="analytics" element={<Analytics />} />
+            <Route path="live-sessions" element={<LiveSessionsPage />} />
+            <Route
+              path="live-session/:sessionId"
+              element={<LiveSessionPage />}
+            />
             <Route
               path="live-sessions/schedule"
               element={<ScheduleLiveSessionPage />}
             />
+            <Route
+              path="student/live-session/:sessionId"
+              element={<StudentLiveSessionPage />}
+            />
+
             <Route
               path="courses/:courseId/lessons/:lessonId/edit"
               element={<LessonFormPage />}

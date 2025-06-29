@@ -41,6 +41,7 @@ const AssessmentListPage = () => {
           ? assessmentsData.filter(assessment => assessment.type !== 'exam')
           : [];
         setAssessments(exercisesOnly);
+        console.log(courseData,assessmentsData)
 
         // Récupérer les soumissions de l'utilisateur si connecté
         if (user?.userId) {
