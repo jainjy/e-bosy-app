@@ -58,7 +58,6 @@ import CertificationInstructionsPage from "./pages/student/CertificationInstruct
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { MessageProvider } from "./contexts/MessageContext";
 import { LoadingSpinner } from "./components/LoadingSpinner";
-import { LiveSessionProvider } from "./contexts/LiveSessionContext";
 import LiveSessionsPage from "./pages/LiveSessionsPage";
 import StudentLiveSessionPage from "./pages/student/StudentLiveSessionPage";
 
@@ -255,11 +254,9 @@ function App() {
 export default function AppWrapper() {
   return (
     <AuthProvider>
-      <LiveSessionProvider>
         <MessageProvider>
           <App />
         </MessageProvider>
-      </LiveSessionProvider>
     </AuthProvider>
   );
 }

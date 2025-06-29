@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { liveSessionService } from "../services/liveSessionService";
 import {
@@ -6,18 +6,35 @@ import {
   ClockIcon,
   VideoCameraIcon,
 } from "@heroicons/react/24/outline";
-
+import { getData } from "../services/ApiFetch";
+import { useAuth } from "../contexts/AuthContext";
 const ScheduleLiveSessionPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [courses, setCourses] = useState([]);
   const [formData, setFormData] = useState({
     title: "",
     courseId: "",
     startTime: "",
     endTime: "",
-    description: ""
+    description: "",
+    HostId: user.userId
   });
-  const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const [data, error] = await getData("courses/teacher/"+user.userId);
+        if (error) throw error;
+        setCourses(data);
+        console.log(data);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+    fetchCourses();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -64,12 +81,6 @@ const ScheduleLiveSessionPage = () => {
     }
   };
 
-  // Mock courses - replace with actual API call
-  const courses = [
-    { id: 1, title: "Advanced JavaScript" },
-    { id: 2, title: "React Fundamentals" },
-    { id: 3, title: "Node.js Backend" }
-  ];
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
@@ -98,7 +109,7 @@ const ScheduleLiveSessionPage = () => {
           >
             <option value="">Select a course</option>
             {courses.map(course => (
-              <option key={course.id} value={course.id}>{course.title}</option>
+              <option key={user.userId+course.courseId} value={course.courseId}>{course.title}</option>
             ))}
           </select>
           {errors.courseId && <p className="text-red-500 text-sm mt-1">{errors.courseId}</p>}

@@ -1,4 +1,4 @@
-import { postData, getData } from './ApiFetch';
+import { postData, getData, putData } from './ApiFetch';
 
 class LiveSessionService {
   constructor() {
@@ -13,6 +13,18 @@ class LiveSessionService {
 
   async createLiveSession(sessionData) {
     const [data, error] = await postData(`${this.baseUrl}`, sessionData);
+    if (error) throw error;
+    return data;
+  }
+
+  async updateLiveSession(sessionId, sessionData) {
+    const [data, error] = await putData(`${this.baseUrl}/${sessionId}`, sessionData);
+    if (error) throw error;
+    return data;
+  }
+
+  async deleteLiveSession(sessionId) {
+    const [data, error] = await postData(`${this.baseUrl}/${sessionId}/delete`);
     if (error) throw error;
     return data;
   }
@@ -43,6 +55,18 @@ class LiveSessionService {
 
   async getPastSessions() {
     const [data, error] = await getData(`${this.baseUrl}/past`);
+    if (error) throw error;
+    return data;
+  }
+
+  async getLiveSessionsByCourse(courseId) {
+    const [data, error] = await getData(`${this.baseUrl}/course/${courseId}`);
+    if (error) throw error;
+    return data;
+  }
+
+  async getLiveSessionsByHost(hostId) {
+    const [data, error] = await getData(`${this.baseUrl}/host/${hostId}`);
     if (error) throw error;
     return data;
   }
