@@ -37,7 +37,7 @@ export const MessageProvider = ({ children }) => {
       setConversations(filteredUsers);
     } catch (error) {
       console.error('Error loading users:', error);
-      toast.error('Erreur lors du chargement des utilisateurs');
+      // toast.error('Erreur lors du chargement des utilisateurs');
     }
   };
 
@@ -50,8 +50,8 @@ export const MessageProvider = ({ children }) => {
       await loadConversations();
       await loadUsers();
     } catch (error) {
-      console.error('Error initializing message service:', error);
-      toast.error('Erreur de connexion au service de messagerie');
+      console.log('Error initializing message service:', error);
+      // toast.error('Erreur de connexion au service de messagerie');
     }
   };
 
@@ -94,7 +94,7 @@ export const MessageProvider = ({ children }) => {
       scrollToBottom();
     } catch (error) {
       console.error('Error loading messages:', error);
-      toast.error('Erreur lors du chargement des messages');
+      // toast.error('Erreur lors du chargement des messages');
     }
   };
 
@@ -178,7 +178,7 @@ export const MessageProvider = ({ children }) => {
       return result;
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Erreur lors de l\'envoi du message');
+      //toast.error('Erreur lors de l\'envoi du message');
       throw error;
     }
   };

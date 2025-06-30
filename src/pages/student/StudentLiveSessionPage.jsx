@@ -1,5 +1,8 @@
+// src/pages/student/StudentLiveSessionPage.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import Peer from "peerjs";
+import { signalRService } from "../../services/signalRService";
 import {
   ArrowLeftIcon,
   VideoCameraIcon,
@@ -8,94 +11,169 @@ import {
   UsersIcon,
   ChatBubbleLeftRightIcon,
   HandRaisedIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ArrowPathIcon,
   SpeakerWaveIcon,
   SpeakerXMarkIcon,
 } from "@heroicons/react/24/outline";
+import { useAuth } from "../../contexts/AuthContext";
 
 const StudentLiveSessionPage = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const videoRef = useRef(null);
   const chatInputRef = useRef(null);
+  const peerRef = useRef(null);
+  const localStream = useRef(null);
+
   const [isMicrophoneMuted, setIsMicrophoneMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [activeTab, setActiveTab] = useState("video");
   const [session, setSession] = useState(null);
-  const [isConnected, setIsConnected] = useState(true); // Simulation de connexion
+  const [isConnected, setIsConnected] = useState(false);
+  const [participants, setParticipants] = useState([]);
 
-  // Simuler les données de session
+  // Initialisation de PeerJS
   useEffect(() => {
-    const mockSession = {
-      id: sessionId,
-      course_id: 1,
-      title: "Live Session: Advanced JavaScript",
-      start_time: new Date().toISOString(),
-      end_time: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      host_id: 2,
-      video_url: "https://example.com/live/123",
-      attendees_ids: [1, 3, 4, 5],
-      recording_url: null,
-      course_title: "Advanced JavaScript",
-      host_name: "Prof. Dupont",
-      participants: [
-        { id: 2, name: "Prof. Dupont", role: "Host", isSpeaking: true },
-        { id: 1, name: "Vous", role: "Student", isSpeaking: false },
-        { id: 3, name: "Marie Durand", role: "Student", isSpeaking: false },
-        { id: 4, name: "Jean Martin", role: "Student", isSpeaking: false },
-      ],
-    };
-    setSession(mockSession);
-  }, [sessionId]);
+    peerRef.current = new Peer(user.userId.toString(), {
+      host: "localhost",
+      port: 9000,
+      path: "/peerjs",
+    });
 
-  // Simuler le chat
-  const sendChatMessage = (messageText) => {
-    if (!messageText.trim()) return;
-    
-    const newMessage = {
-      id: Date.now(),
-      text: messageText,
-      sender: { id: 1, name: "Vous" },
-      timestamp: new Date().toISOString(),
+    peerRef.current.on("open", (id) => {
+      console.log("PeerJS ID:", id);
+    });
+
+    peerRef.current.on("call", (call) => {
+      call.answer(localStream.current);
+      call.on("stream", (remoteStream) => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = remoteStream;
+          videoRef.current.play();
+        }
+      });
+    });
+
+    return () => {
+      peerRef.current.destroy();
     };
-    
-    setChatMessages([...chatMessages, newMessage]);
-    chatInputRef.current.value = "";
-    
-    // Simuler une réponse du professeur
-    if (messageText.toLowerCase().includes("question")) {
-      setTimeout(() => {
-        setChatMessages(prev => [...prev, {
-          id: Date.now() + 1,
-          text: "Je répondrai à votre question après cette démonstration.",
-          sender: { id: 2, name: "Prof. Dupont" },
-          timestamp: new Date().toISOString(),
-        }]);
-      }, 2000);
+  }, [user.userId]);
+
+  // Connexion à SignalR
+  useEffect(() => {
+    signalRService.startConnection(sessionId).then(() => {
+      signalRService.joinSession(sessionId, user.userId.toString());
+      setIsConnected(true);
+    });
+
+    signalRService.connection.on("ParticipantsUpdated", (updatedParticipants) => {
+      setParticipants(updatedParticipants);
+    });
+
+    signalRService.connection.on("ReceiveChatMessage", (message) => {
+      setChatMessages((prev) => [...prev, message]);
+    });
+
+    signalRService.connection.on("ReceiveControl", (controlData) => {
+      console.log("Contrôle reçu:", controlData);
+    });
+
+    signalRService.connection.on("SessionEnded", () => {
+      navigate("/dashboard/live-sessions");
+    });
+
+    return () => {
+      signalRService.leaveSession(sessionId, user.userId.toString());
+      signalRService.stopConnection();
+    };
+  }, [sessionId, user.userId, navigate]);
+
+  // Démarrer le flux local
+  const startLocalStream = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+      localStream.current = stream;
+      updateTrackStates();
+    } catch (err) {
+      console.error("Erreur d'accès aux médias:", err);
+      setIsCameraOff(true);
+      setIsMicrophoneMuted(true);
     }
   };
 
-  // Simuler le flux vidéo (remplacé par une image de placeholder en simulation)
-  useEffect(() => {
-    if (videoRef.current) {
-      // Dans une vraie implémentation, vous utiliseriez WebRTC ici
-      videoRef.current.src = "https://placehold.co/800x450?text=Flux+Live+du+Professeur";
-      videoRef.current.controls = false;
+  const updateTrackStates = () => {
+    if (localStream.current) {
+      localStream.current.getVideoTracks().forEach((track) => {
+        track.enabled = !isCameraOff;
+      });
+      localStream.current.getAudioTracks().forEach((track) => {
+        track.enabled = !isMicrophoneMuted;
+      });
     }
-  }, []);
+  };
 
-  // Gestion de la fin de session
+  // Chargement des données de session
+  useEffect(() => {
+    const fetchSession = async () => {
+      try {
+        const response = await fetch(`http://localhost:5196/api/livesessions/${sessionId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("user_token")}`,
+          },
+        });
+        const sessionData = await response.json();
+        setSession(sessionData);
+        setParticipants(sessionData.attendeesIds || []);
+      } catch (error) {
+        console.error("Erreur lors du chargement de la session:", error);
+      }
+    };
+    fetchSession();
+    startLocalStream();
+  }, [sessionId]);
+
+  const sendChatMessage = (messageText) => {
+    if (!messageText.trim()) return;
+    const newMessage = {
+      id: Date.now(),
+      text: messageText,
+      sender: user,
+      timestamp: new Date().toISOString(),
+    };
+    signalRService.sendChatMessage(sessionId, user.firstName + " " + user.lastName, messageText);
+    setChatMessages((prev) => [...prev, newMessage]);
+    chatInputRef.current.value = "";
+  };
+
+  const toggleMute = () => {
+    setIsMicrophoneMuted((prev) => !prev);
+    updateTrackStates();
+    signalRService.sendControl(sessionId, { type: "audio", state: !isMicrophoneMuted ? "muted" : "unmuted" });
+  };
+
+  const toggleCamera = () => {
+    setIsCameraOff((prev) => !prev);
+    updateTrackStates();
+    signalRService.sendControl(sessionId, { type: "video", state: !isCameraOff ? "off" : "on" });
+  };
+
+  const toggleHandRaise = () => {
+    setIsHandRaised((prev) => !prev);
+    signalRService.sendControl(sessionId, { type: "hand", raised: !isHandRaised });
+  };
+
   const handleLeaveSession = () => {
     if (window.confirm("Quitter cette session live ?")) {
+      signalRService.leaveSession(sessionId, user.userId.toString());
       navigate("/dashboard/live-sessions");
     }
   };
 
-  // Formatage de la date
   const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString("fr-FR", {
       hour: "2-digit",
@@ -107,10 +185,7 @@ const StudentLiveSessionPage = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <Link 
-        to="/dashboard/live-sessions" 
-        className="flex items-center text-gray-600 hover:underline mb-6"
-      >
+      <Link to="/dashboard/live-sessions" className="flex items-center text-gray-600 hover:underline mb-6">
         <ArrowLeftIcon className="h-4 w-4 mr-2" />
         Retour aux sessions live
       </Link>
@@ -121,20 +196,20 @@ const StudentLiveSessionPage = () => {
             {session.title} <span className="ml-3 px-2 py-1 bg-red-500 text-white text-xs rounded-full">LIVE</span>
           </h1>
           <div className="flex items-center text-gray-500 text-sm mt-3 space-x-4">
-            <span><UsersIcon className="h-4 w-4 mr-1 inline" /> {session.participants.length} participants</span>
-            <span>Hôte: {session.host_name}</span>
+            <span>
+              <UsersIcon className="h-4 w-4 mr-1 inline" /> {participants.length} participants
+            </span>
+            <span>Hôte: {session.host?.firstName + " " + session.host?.lastName}</span>
           </div>
         </div>
         <div className="text-sm bg-gray-100 px-2 py-1 rounded text-gray-800">
-          Cours: {session.course_title}
+          Cours: {session.course?.title}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Zone principale */}
         <div className="lg:col-span-3">
           <div className="bg-white p-6 rounded-lg shadow-sm">
-            {/* Onglets */}
             <div className="flex border-b border-gray-200 mb-6">
               <button
                 className={`py-2 px-4 font-medium ${
@@ -158,17 +233,14 @@ const StudentLiveSessionPage = () => {
               </button>
             </div>
 
-            {/* Contenu des onglets */}
             {activeTab === "video" ? (
               <div className="aspect-video bg-black rounded-lg relative overflow-hidden">
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
-                  muted
                   className="w-full h-full object-cover"
                 />
-                
                 <div className="absolute bottom-4 left-4 flex items-center space-x-2">
                   <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">LIVE</span>
                 </div>
@@ -178,14 +250,18 @@ const StudentLiveSessionPage = () => {
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {chatMessages.length > 0 ? (
                     chatMessages.map((msg) => (
-                      <div 
-                        key={msg.id} 
-                        className={`flex ${msg.sender.id === 1 ? 'justify-end' : 'justify-start'}`}
+                      <div
+                        key={msg.id}
+                        className={`flex ${msg.sender.userId === user.userId ? "justify-end" : "justify-start"}`}
                       >
-                        <div className={`max-w-xs p-3 rounded-lg ${msg.sender.id === 1 ? 'bg-purple-600 text-white' : 'bg-gray-200'}`}>
+                        <div
+                          className={`max-w-xs p-3 rounded-lg ${
+                            msg.sender.userId === user.userId ? "bg-purple-600 text-white" : "bg-gray-200"
+                          }`}
+                        >
                           <p className="text-sm">{msg.text}</p>
                           <p className="text-xs opacity-70 mt-1">
-                            {msg.sender.name} • {formatTime(msg.timestamp)}
+                            {msg.sender.firstName + " " + msg.sender.lastName} • {formatTime(msg.timestamp)}
                           </p>
                         </div>
                       </div>
@@ -197,7 +273,7 @@ const StudentLiveSessionPage = () => {
                   )}
                 </div>
                 <div className="p-4 border-t">
-                  <form 
+                  <form
                     onSubmit={(e) => {
                       e.preventDefault();
                       sendChatMessage(chatInputRef.current.value);
@@ -221,40 +297,28 @@ const StudentLiveSessionPage = () => {
               </div>
             )}
 
-            {/* Contrôles */}
             <div className="flex justify-center space-x-4 mt-6">
               <button
-                onClick={() => setIsMicrophoneMuted(!isMicrophoneMuted)}
-                className={`p-3 rounded-full ${isMicrophoneMuted ? 'bg-gray-300' : 'bg-purple-600'} text-white`}
+                onClick={toggleMute}
+                className={`p-3 rounded-full ${isMicrophoneMuted ? "bg-gray-300" : "bg-purple-600"} text-white`}
                 title={isMicrophoneMuted ? "Activer le microphone" : "Désactiver le microphone"}
               >
-                {isMicrophoneMuted ? (
-                  <SpeakerXMarkIcon className="h-6 w-6" />
-                ) : (
-                  <SpeakerWaveIcon className="h-6 w-6" />
-                )}
+                {isMicrophoneMuted ? <SpeakerXMarkIcon className="h-6 w-6" /> : <SpeakerWaveIcon className="h-6 w-6" />}
               </button>
-
               <button
-                onClick={() => setIsCameraOff(!isCameraOff)}
-                className={`p-3 rounded-full ${isCameraOff ? 'bg-gray-300' : 'bg-purple-600'} text-white`}
+                onClick={toggleCamera}
+                className={`p-3 rounded-full ${isCameraOff ? "bg-gray-300" : "bg-purple-600"} text-white`}
                 title={isCameraOff ? "Activer la caméra" : "Désactiver la caméra"}
               >
-                {isCameraOff ? (
-                  <VideoCameraSlashIcon className="h-6 w-6" />
-                ) : (
-                  <VideoCameraIcon className="h-6 w-6" />
-                )}
+                {isCameraOff ? <VideoCameraSlashIcon className="h-6 w-6" /> : <VideoCameraIcon className="h-6 w-6" />}
               </button>
-
               <button
-                onClick={() => setIsHandRaised(!isHandRaised)}
-                className={`p-3 rounded-full ${isHandRaised ? 'bg-yellow-500' : 'bg-purple-600'} text-white`}
+                onClick={toggleHandRaise}
+                className={`p-3 rounded-full ${isHandRaised ? "bg-yellow-500" : "bg-purple-600"} text-white`}
                 title={isHandRaised ? "Baisser la main" : "Lever la main"}
               >
                 <HandRaisedIcon className="h-6 w-6" />
               </button>
-
               <button
                 onClick={handleLeaveSession}
                 className="p-3 rounded-full bg-red-600 text-white hover:bg-red-700 px-4"
@@ -272,30 +336,20 @@ const StudentLiveSessionPage = () => {
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h3 className="text-lg font-semibold mb-4">Participants</h3>
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {session.participants.map((participant) => (
-                <div 
-                  key={participant.id} 
-                  className="flex items-center p-2 rounded hover:bg-gray-50"
-                >
-                  <div className="relative">
-                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                      {participant.name.charAt(0)}
-                    </div>
-                    {participant.isSpeaking && (
-                      <div className="absolute -top-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white"></div>
-                    )}
+              {participants.map((pId) => (
+                <div key={pId} className="flex items-center p-2 rounded hover:bg-gray-50">
+                  <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                    {pId === user.userId.toString() ? "V" : pId}
                   </div>
                   <div className="ml-3">
-                    <p className="font-medium">
-                      {participant.name} 
-                      {participant.id === 1 && " (Vous)"}
+                    <p className="font-medium">{pId === user.userId.toString() ? "Vous" : `Participant ${pId}`}</p>
+                    <p className="text-xs text-gray-500">
+                      {pId === session.hostId.toString() ? "Hôte" : "Étudiant"}
                     </p>
-                    <p className="text-xs text-gray-500">{participant.role}</p>
                   </div>
                 </div>
               ))}
@@ -307,12 +361,12 @@ const StudentLiveSessionPage = () => {
             <div className="space-y-3">
               <div>
                 <p className="text-sm text-gray-500">Cours</p>
-                <p className="font-medium">{session.course_title}</p>
+                <p className="font-medium">{session.course?.title}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Horaire</p>
                 <p className="font-medium">
-                  {formatTime(session.start_time)} - {formatTime(session.end_time)}
+                  {formatTime(session.startTime)} - {formatTime(session.endTime)}
                 </p>
               </div>
               <div>

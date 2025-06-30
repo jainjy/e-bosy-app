@@ -42,13 +42,12 @@ class MessageService {
           this.onConnectedUsers(userIds);
         }
       });
-
       await this.connection.start();
       await this.connection.invoke("JoinUser", userId);
       
       return true;
     } catch (error) {
-      console.error("SignalR Connection Error:", error);
+      console.log("SignalR Connection Error:", error);
       throw error;
     }
   }
