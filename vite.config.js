@@ -19,7 +19,9 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       'buffer',
-      'process'
+      'process',      '@react-pdf-viewer/core',
+      '@react-pdf-viewer/default-layout',
+      'pdfjs-dist'
     ],
     esbuildOptions: {
       target: 'es2020',
@@ -37,5 +39,8 @@ export default defineConfig({
             secure: false
         }
     }
-}
+}, build: {
+  commonjsOptions: {
+    include: [/node_modules/],
+  }},
 });
