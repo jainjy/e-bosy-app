@@ -5,7 +5,7 @@ import { UserCircleIcon, KeyIcon, CameraIcon, XMarkIcon } from '@heroicons/react
 import { putData } from '../services/ApiFetch';
 import { motion } from 'framer-motion'; // Pour les animations
 
-const API_BASE_URL = "http://localhost:5196";
+const API_BASE_URL = "http://localhost:5000";
 
 // Ajoutez cette fonction utilitaire avant le composant
 const getInitials = (firstName, lastName, email) => {

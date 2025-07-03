@@ -20,8 +20,9 @@ import CourseFormModal from "../../components/CourseFormModal";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import { getData, deleteData, postData, putData, patchData } from "../../services/ApiFetch";
 import { useAuth } from '../../contexts/AuthContext';
+import { EllipsisVerticalIcon } from "lucide-react";
 
-const API_BASE_URL = "http://localhost:5196";
+const API_BASE_URL = "http://localhost:5000";
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
 
 const COURSE_STATUS = {
@@ -63,6 +64,12 @@ const CourseStats = ({ courses }) => {
 };
 
 const CourseCard = ({ course, onEdit, onDelete, onPublish }) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 transition-all duration-300 hover:shadow-md">
       <div className="relative">
@@ -75,7 +82,7 @@ const CourseCard = ({ course, onEdit, onDelete, onPublish }) => {
             e.target.src = DEFAULT_COURSE_IMAGE;
           }}
         />
-        <span 
+        <span
           className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold ${
             course.status === COURSE_STATUS.PUBLISHED
               ? "bg-green-100 text-green-800"
@@ -88,73 +95,74 @@ const CourseCard = ({ course, onEdit, onDelete, onPublish }) => {
 
       <div className="p-6">
         <h2 className="text-xl font-bold text-gray-800 mb-2">{course.title}</h2>
-        
+
         <div className="flex items-center justify-between mb-4">
-        {course.status === COURSE_STATUS.PUBLISHED ? <div className="flex items-center text-gray-600">
-            <UsersIcon className="h-4 w-4 mr-1" />
-            <span>{course.studentsEnrolled || 0} étudiants</span>
-          </div> : <></>}
+          {course.status === COURSE_STATUS.PUBLISHED ? (
+            <div className="flex items-center text-gray-600">
+              <UsersIcon className="h-4 w-4 mr-1" />
+              <span>{course.studentsEnrolled || 0} étudiants</span>
+            </div>
+          ) : null}
           <div className="flex items-center text-gray-600">
             <Bars3BottomLeftIcon className="h-4 w-4 mr-1" />
             <span>{course.lessonsCount || 0} leçons</span>
           </div>
         </div>
 
-        {/* {course.status === COURSE_STATUS.DRAFT && (
-          <div className="mb-4">
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-e-bosy-purple h-2.5 rounded-full transition-all duration-300"
-                style={{ width: `${course.completionPercentage}%` }}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Progression: {course.completionPercentage}%
-            </p>
-          </div>
-        )} */}
-
         <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
           <Link
             to={`/dashboard/courses/${course.courseId}/lessons`}
-            className="flex-1 flex items-center justify-center px-3 py-2 bg-e-bosy-purple text-white rounded-md hover:bg-purple-700 transition-colors duration-200"
+            className="flex-1 flex items-center justify-center py-2 bg-e-bosy-purple text-white rounded-md hover:bg-purple-700 transition-colors duration-200"
           >
             <Bars3BottomLeftIcon className="h-4 w-4 mr-1" />
             Gérer les leçons
           </Link>
-          
+
           <Link
             to={`/dashboard/courses/${course.courseId}/assessments`}
-            className="flex-1 flex items-center justify-center px-3 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors duration-200"
+            className="flex-1 flex items-center justify-center py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors duration-200"
           >
             <AcademicCapIcon className="h-4 w-4 mr-1" />
             Exercices & Examens
           </Link>
 
-          <button
-            onClick={() => onEdit(course)}
-            className="flex-1 flex items-center justify-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-200"
-          >
-            <PencilIcon className="h-4 w-4 mr-1" />
-            Modifier
-          </button>
-
-          {course.status === COURSE_STATUS.DRAFT ? (
+          <div className="relative">
             <button
-              onClick={() => onPublish(course.courseId)}
-              className="flex-1 flex items-center justify-center px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200"
+              onClick={toggleMenu}
+              className="flex items-center justify-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-200"
             >
-              <ArrowPathIcon className="h-4 w-4 mr-1" />
-              Publier
+              <EllipsisVerticalIcon className="h-5 w-5" />
             </button>
-          ) : (
-            <button
-              onClick={() => onDelete(course.courseId)}
-              className="flex items-center justify-center px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors duration-200"
-            >
-              <TrashIcon className="h-4 w-4" />
-            </button>
-          )}
+            {isMenuOpen && (
+              <div className="absolute right-10 bottom-12 mt-2 w-50 bg-white rounded-md shadow-xl z-10">
+                <div className="py-1">
+                  <button
+                    onClick={() => onEdit(course)}
+                    className="flex items-center justify-start w-full px-4 py-2 text-md text-gray-700 hover:bg-gray-100"
+                  >
+                    <PencilIcon className="h-4 w-4 mr-2" />
+                    Modifier
+                  </button>
+                  {course.status === COURSE_STATUS.DRAFT && (
+                    <button
+                      onClick={() => onPublish(course)}
+                      className="flex items-center justify-start w-full px-4 py-2 text-md text-green-600 hover:bg-green-100"
+                    >
+                      <ArrowPathIcon className="h-4 w-4 mr-2" />
+                      Publier
+                    </button>
+                  )}
+                   <button
+                      onClick={() => onDelete(course.courseId)}
+                      className="flex items-center justify-start w-full px-4 py-2 text-md text-red-600 hover:bg-red-100"
+                    >
+                      <TrashIcon className="h-4 w-4 mr-2" />
+                      Supprimer
+                    </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -240,24 +248,30 @@ const TeacherCoursesPage = () => {
     }
   };
 
-  const handlePublish = async (id) => {
+  const handlePublish = async (course) => {
     try {
-      const [_, error] = await patchData(`courses/${id}/status`, { 
-        status: COURSE_STATUS.PUBLISHED 
-      });
+      if(course.lessonsCount>0){
+        const [_, error] = await patchData(`courses/${course.courseId}/status`, { 
+          status: COURSE_STATUS.PUBLISHED 
+        });
+        if (error) throw new Error(error.message);
       
-      if (error) throw new Error(error.message);
+        setCourses(courses.map((course) =>
+          course.courseId === id ? { 
+            ...course, 
+            status: COURSE_STATUS.PUBLISHED, 
+            studentsEnrolled: 0, 
+            rating: 0 
+          } : course
+        ));
+        
+        toast.success("Cours publié avec succès");
+
+      }else{
+        toast.info("il y a aucun lecons dans ce cours ,vous ne pouvez pas le publier")
+      }
       
-      setCourses(courses.map((course) =>
-        course.courseId === id ? { 
-          ...course, 
-          status: COURSE_STATUS.PUBLISHED, 
-          studentsEnrolled: 0, 
-          rating: 0 
-        } : course
-      ));
-      
-      toast.success("Cours publié avec succès");
+  
     } catch (error) {
       toast.error(error.message);
     }
@@ -430,3 +444,4 @@ const TeacherCoursesPage = () => {
 };
 
 export default TeacherCoursesPage;
+

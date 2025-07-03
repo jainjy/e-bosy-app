@@ -69,7 +69,7 @@ const Navbar = () => {
               >
                 {user?.profilePictureUrl ? (
                   <img
-                    src={"http://localhost:5196/" + user.profilePictureUrl}
+                    src={"http://localhost:5000/" + user.profilePictureUrl}
                     alt="Profile"
                     className="w-8 h-8 rounded-full object-cover"
                   />

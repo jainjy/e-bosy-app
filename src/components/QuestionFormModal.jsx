@@ -63,7 +63,6 @@ const QuestionFormModal = ({
                   })}
                 >
                   <option value="multiple_choice">Choix multiple</option>
-                  <option value="true_false">Vrai/Faux</option>
                   <option value="single_choice">Choix unique</option>
                 </select>
               </div>

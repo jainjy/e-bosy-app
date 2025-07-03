@@ -13,7 +13,7 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import LiveSessionFormModal from "../components/LiveSessionFormModal";
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
 
 const LiveSessionsPage = () => {
   const { user } = useAuth();
@@ -27,9 +27,10 @@ const LiveSessionsPage = () => {
   const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
-      const data = filter === "upcoming"
-        ? await liveSessionService.getUpcomingSessions()
-        : await liveSessionService.getPastSessions();
+      const data =
+        filter === "upcoming"
+          ? await liveSessionService.getUpcomingSessions()
+          : await liveSessionService.getPastSessions();
       setSessions(data);
     } catch (error) {
       console.error("Error fetching sessions:", error);
@@ -45,17 +46,17 @@ const LiveSessionsPage = () => {
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("fr-FR", {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     });
   };
 
   const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString("fr-FR", {
-      hour: '2-digit',
-      minute: '2-digit'
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -67,7 +68,7 @@ const LiveSessionsPage = () => {
   };
 
   const isHost = (session) => {
-    return user?.userId === session.hostId || user?.role === 'administrateur';
+    return user?.userId === session.hostId || user?.role === "administrateur";
   };
 
   const handleOpenModal = (session = null) => {
@@ -83,10 +84,16 @@ const LiveSessionsPage = () => {
   const handleSaveSession = async (sessionData) => {
     try {
       await fetchSessions(); // Refresh the sessions list
-      toast.success(`Session ${editingSession ? 'mise à jour' : 'créée'} avec succès`);
+      toast.success(
+        `Session ${editingSession ? "mise à jour" : "créée"} avec succès`
+      );
     } catch (error) {
       console.error("Error saving session:", error);
-      toast.error(`Erreur lors de la ${editingSession ? 'mise à jour' : 'création'} de la session`);
+      toast.error(
+        `Erreur lors de la ${
+          editingSession ? "mise à jour" : "création"
+        } de la session`
+      );
     }
   };
 
@@ -112,24 +119,34 @@ const LiveSessionsPage = () => {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Sessions en direct</h1>
-        <button
-          onClick={() => handleOpenModal()}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Planifier une session
-        </button>
+        {user?.role=="enseignant" &&
+          <button
+            onClick={() => handleOpenModal()}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Planifier une session
+          </button>
+        }
       </div>
 
       <div className="flex border-b mb-6">
         <button
-          className={`py-2 px-4 ${filter === "upcoming" ? "border-b-2 border-blue-500 font-medium text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+          className={`py-2 px-4 ${
+            filter === "upcoming"
+              ? "border-b-2 border-blue-500 font-medium text-blue-600"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
           onClick={() => setFilter("upcoming")}
         >
           À venir
         </button>
         <button
-          className={`py-2 px-4 ${filter === "past" ? "border-b-2 border-blue-500 font-medium text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+          className={`py-2 px-4 ${
+            filter === "past"
+              ? "border-b-2 border-blue-500 font-medium text-blue-600"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
           onClick={() => setFilter("past")}
         >
           Passées
@@ -144,9 +161,10 @@ const LiveSessionsPage = () => {
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <VideoCameraIcon className="h-16 w-16 mx-auto text-gray-300" />
           <h3 className="mt-4 text-lg font-medium text-gray-700">
-            Aucune session {filter === "upcoming" ? "à venir" : "passée"} pour le moment
+            Aucune session {filter === "upcoming" ? "à venir" : "passée"} pour
+            le moment
           </h3>
-          {filter === "upcoming" && (
+          {filter === "upcoming" && user?.role=="enseignant" && (
             <button
               onClick={() => handleOpenModal()}
               className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg inline-flex items-center transition-colors"
@@ -159,10 +177,15 @@ const LiveSessionsPage = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sessions.map((session) => (
-            <div key={session.id} className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white">
+            <div
+              key={session.id}
+              className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white"
+            >
               <div className="p-5">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-semibold text-gray-800">{session.title}</h3>
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    {session.title}
+                  </h3>
                   {isHost(session) && (
                     <div className="flex space-x-2">
                       <button
@@ -188,22 +211,25 @@ const LiveSessionsPage = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {session.course?.title && (
                   <p className="text-gray-600 mb-4 text-sm">
                     Cours: {session.course.title}
                   </p>
                 )}
-                
+
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center text-gray-600 text-sm">
                     <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
                     <span>{formatDate(session.startTime)}</span>
                   </div>
-                  
+
                   <div className="flex items-center text-gray-600 text-sm">
                     <ClockIcon className="h-4 w-4 mr-2 text-gray-400" />
-                    <span>{formatTime(session.startTime)} - {formatTime(session.endTime)}</span>
+                    <span>
+                      {formatTime(session.startTime)} -{" "}
+                      {formatTime(session.endTime)}
+                    </span>
                   </div>
 
                   {session.attendeesCount > 0 && (

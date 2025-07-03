@@ -8,7 +8,7 @@ import { getData, postData, putData } from './ApiFetch';
 class MessageService {
   constructor() {
     this.connection = null;
-    this.baseUrl = 'http://localhost:5196';
+    this.baseUrl = 'http://localhost:5000';
     this.hubUrl = `${this.baseUrl}/messageHub`;
   }
 

@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Configuration de base de l'API
 const API_CONFIG = {
-  baseURL: "http://127.0.0.1:5196/api/",
+  baseURL: "http://127.0.0.1:5000/api/",
   timeout: 10000, // Timeout de 10 secondes
   headers: {
     "Content-Type": "application/json",

@@ -121,7 +121,7 @@ const StudentLiveSessionPage = () => {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const response = await fetch(`http://localhost:5196/api/livesessions/${sessionId}`, {
+        const response = await fetch(`http://localhost:5000/api/livesessions/${sessionId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("user_token")}`,
           },

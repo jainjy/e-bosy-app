@@ -8,7 +8,7 @@ class WebSocketService {
 
   connect(sessionId, userId) {
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(`http://localhost:5196/liveHub?sessionId=${sessionId}&userId=${userId}`)
+      .withUrl(`http://localhost:5000/liveHub?sessionId=${sessionId}&userId=${userId}`)
       .withAutomaticReconnect()
       .build();
 

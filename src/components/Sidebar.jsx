@@ -11,7 +11,7 @@ import {
   VideoCameraIcon
 } from "@heroicons/react/24/outline";
 import { BellIcon } from "lucide-react";
-const API_BASE_URL = "http://localhost:5196";
+const API_BASE_URL = "http://localhost:5000";
 const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount }) => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -39,9 +39,9 @@ const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount
       roles: ["etudiant"],
     },
     {
-      name: "Purchases",
+      name: "Abonnements",
       icon: CreditCardIcon,
-      path: "/dashboard/purchases",
+      path: "/dashboard/abonement",
       roles: ["etudiant"],
     },
     {

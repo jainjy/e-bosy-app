@@ -8,7 +8,7 @@ import { toast } from 'react-hot-toast';
 import Navbar from '../../Components/Navbar';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 
-const API_BASE_URL = "http://localhost:5196";
+const API_BASE_URL = "http://localhost:5000";
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
 
 const MyCoursesPage = () => {

@@ -15,7 +15,8 @@ import {
 } from '@heroicons/react/24/outline';
 import Navbar from '../../Components/Navbar';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
-
+const API_BASE_URL = "http://localhost:5000";
+const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
 const CoursesToCertifyPage = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,8 +30,10 @@ const CoursesToCertifyPage = () => {
       try {
         setLoading(true);
         const [data, error] = await getData(`enrollments/certificates/available/${user.userId}`);
+        
         if (!error) {
           setCourses(data || []);
+          console.log(data)
         } else {
           setError("Erreur lors du chargement des cours");
         }
@@ -131,7 +134,7 @@ const CoursesToCertifyPage = () => {
                 {/* Image du cours */}
                 <div className="h-48 overflow-hidden rounded-t-lg">
                   <img
-                    src={course.imageUrl || '/default-course-image.jpg'}
+                    src={course.thumbnailUrl?API_BASE_URL+course.thumbnailUrl: DEFAULT_COURSE_IMAGE}
                     alt={course.title}
                     className="w-full h-full object-cover"
                   />
@@ -158,10 +161,6 @@ const CoursesToCertifyPage = () => {
                     <div className="flex items-center text-gray-600">
                       <UserIcon className="h-5 w-5 mr-2 text-e-bosy-purple" />
                       <span className="text-sm">{course.teacher?.firstName} {course.teacher?.lastName}</span>
-                    </div>
-                    <div className="flex items-center text-gray-600">
-                      <BookOpenIcon className="h-5 w-5 mr-2 text-e-bosy-purple" />
-                      <span className="text-sm">{course.lessonCount || 0} leçons</span>
                     </div>
                   </div>
 

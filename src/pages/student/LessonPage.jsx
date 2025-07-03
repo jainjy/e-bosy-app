@@ -17,7 +17,7 @@ import { toast } from 'react-hot-toast';
 import VideoPlayer from '../../components/VideoPlayer';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 
-const API_BASE_URL = "http://localhost:5196";
+const API_BASE_URL = "http://localhost:5000";
 
 const LessonPage = () => {
   const { courseId, lessonId } = useParams();

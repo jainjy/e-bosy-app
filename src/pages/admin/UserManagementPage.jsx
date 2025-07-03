@@ -294,7 +294,7 @@ const UserManagementPage = () => {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           {user.profilePictureUrl ? (
-                            <img className="h-10 w-10 rounded-full object-cover" src={"http://localhost:5196/" + user.profilePictureUrl} alt={`${user.firstName} ${user.lastName}`} />
+                            <img className="h-10 w-10 rounded-full object-cover" src={"http://localhost:5000/" + user.profilePictureUrl} alt={`${user.firstName} ${user.lastName}`} />
                           ) : (
                             <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-semibold text-sm">
                               {`${user.firstName[0]}${user.lastName[0]}`.toUpperCase()}

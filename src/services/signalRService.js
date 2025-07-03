@@ -10,7 +10,7 @@ class SignalRService {
   async startConnection(sessionId) {
     try {
       this.connection = new HubConnectionBuilder()
-        .withUrl(`http://localhost:5196/liveHub?sessionId=${sessionId}`, {
+        .withUrl(`http://localhost:5000/liveHub?sessionId=${sessionId}`, {
           skipNegotiation: true,
           transport: 1 // WebSockets seulement
         })

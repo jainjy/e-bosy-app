@@ -62,13 +62,8 @@ const SortableLessonItem = ({ lesson, courseId, handleDeleteLesson }) => {
       case "external_video_url":
       case "uploaded_video_file":
         return <VideoCameraIcon className="h-4 w-4 inline-block mr-1 text-gray-500" />;
-      case "text":
       case "pdf":
         return <DocumentTextIcon className="h-4 w-4 inline-block mr-1 text-gray-500" />;
-      case "image":
-        return <PhotoIcon className="h-4 w-4 inline-block mr-1 text-gray-500" />;
-      case "ar":
-        return <CubeTransparentIcon className="h-4 w-4 inline-block mr-1 text-gray-500" />;
       default:
         return <PlayCircleIcon className="h-4 w-4 inline-block mr-1 text-gray-500" />;
     }
@@ -95,19 +90,19 @@ const SortableLessonItem = ({ lesson, courseId, handleDeleteLesson }) => {
         <h3 className="text-md font-semibold text-gray-800 flex-grow">
           {lesson.title}
         </h3>
-        {lesson.is_subscriber_only && (
+        {lesson.isSubscriberOnly && (
           <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 flex-shrink-0">
             Abonnés seulement
           </span>
         )}
-        {!lesson.is_subscriber_only && (
+        {!lesson.isSubscriberOnly && (
           <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 flex-shrink-0">
             Gratuit (Aperçu)
           </span>
         )}
         <span className="ml-auto text-gray-500 text-sm flex-shrink-0 flex items-center">
-          {getContentTypeIcon(lesson.content_type)}
-          {lesson.content_type.replace(/_/g, " ")}
+          {getContentTypeIcon(lesson.contentType)}
+          {lesson.contentType.replace(/_/g, " ")}
         </span>
       </div>
 
@@ -217,9 +212,9 @@ const TeacherLessonsPage = () => {
         if (error) throw error;
 
         setCourse({
-          id: data.course.courseId,
-          title: data.course.title,
-          status: data.course.status,
+          id: data.courseId,
+          title: data.title,
+          status: data.status,
           sections: data.sections.map(section => ({
             id: uuidv4(), // Générer un ID unique pour la section
             title: section.title,
@@ -233,10 +228,11 @@ const TeacherLessonsPage = () => {
           position_in_section: lesson.position,
           title: lesson.title,
           content: lesson.content,
-          content_type: lesson.contentType,
+          contentType: lesson.contentType,
           course_id: lesson.courseId,
-          is_subscriber_only: lesson.isSubscriberOnly
+          isSubscriberOnly: lesson.isSubscriberOnly
         })));
+        console.log(data)
       } catch (err) {
         setError("Échec du chargement du cours et des leçons.");
         toast.error("Erreur lors du chargement des données");

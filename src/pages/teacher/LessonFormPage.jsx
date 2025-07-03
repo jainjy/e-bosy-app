@@ -5,8 +5,6 @@ import {
   ArrowLeftIcon,
   VideoCameraIcon,
   DocumentTextIcon,
-  PhotoIcon,
-  CubeIcon, // For AR content type
   CloudArrowUpIcon, // For upload icon
 } from "@heroicons/react/24/outline";
 import { postData, putData, getData } from "../../services/ApiFetch";
@@ -22,11 +20,11 @@ const LessonFormPage = () => {
 
   const [lesson, setLesson] = useState({
     title: "",
-    content: "",
-    content_type: "text",
+    content: "", // This will hold URL for external video, or be empty for file uploads
+    contentType: "external_video_url", // Default to external video URL
     course_id: courseId,
-    is_subscriber_only: false,
-    section_title: "", // Ajout du titre de la section
+    isSubscriberOnly: false,
+    sectionTitle: "", // Ajout du titre de la section
     position: 1, // Position par défaut
   });
   const [loading, setLoading] = useState(true);
@@ -41,13 +39,18 @@ const LessonFormPage = () => {
     content: lesson.content || '',
     editable: true,
     onUpdate: ({ editor }) => {
-      setLesson(prev => ({ ...prev, content: editor.getHTML() }));
+      // Only update content if contentType is 'text' (though we removed 'text' option)
+      // For this specific request, we're removing the text editor.
+      // If you re-introduce 'text' type, ensure this logic is re-enabled.
+      // setLesson(prev => ({ ...prev, content: editor.getHTML() }));
     },
   });
 
   useEffect(() => {
     if (editor) {
-      editor.commands.setContent(lesson.content, false)
+      // Only set content for text-based content types if they were to exist.
+      // For external_video_url, content is a simple string, not HTML.
+      // editor.commands.setContent(lesson.content, false)
     }
   }, [lesson.content, editor])
 
@@ -62,20 +65,17 @@ const LessonFormPage = () => {
           setLesson({
             title: data.title,
             content: data.content,
-            content_type: data.contentType,
+            contentType: data.contentType,
             course_id: data.courseId,
-            is_subscriber_only: data.isSubscriberOnly,
-            section_title: data.sectionTitle,
+            isSubscriberOnly: data.isSubscriberOnly,
+            sectionTitle: data.sectionTitle,
             position: data.position
           });
 
-          // Si c'est un fichier, mettre à jour l'état du fichier
+          // If it's an uploaded file, set the file state for display
           if (
-            data.contentType === "uploaded_video_file" ||
-            data.contentType === "image" ||
-            data.contentType === "pdf" ||
-            data.contentType === "ar" ||
-            data.contentType === "other_file"
+            data.contentType === "video" || // Changed from uploaded_video_file
+            data.contentType === "pdfs" // Changed from pdf
           ) {
             setFile({ name: data.content.split("/").pop() || "Fichier Existant" });
           }
@@ -116,33 +116,40 @@ const LessonFormPage = () => {
 
       // Aligner les types avec le backend
       if (uploadedFile.type.startsWith("video/")) {
-        newContentType = "videos";
-      } else if (uploadedFile.type.startsWith("image/")) {
-        newContentType = "images";
+        newContentType = "video"; // Matches backend folder "videos"
       } else if (uploadedFile.type === "application/pdf") {
-        newContentType = "pdfs";
-      } else if (uploadedFile.type.includes("glb") || uploadedFile.type.includes("usdz")) {
-        newContentType = "ar";
+        newContentType = "pdfs"; // Matches backend folder "pdfs"
+      } else {
+        // Fallback for unsupported file types, though dropzone can be configured to only accept certain types
+        toast.error("Type de fichier non supporté.");
+        setFile(null);
+        return;
       }
 
       setLesson((prev) => ({
         ...prev,
-        content_type: newContentType,
+        contentType: newContentType,
+        content: "", // Clear content as it's now a file upload
       }));
     }
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    // Accept only video and PDF files
+    accept: {
+      'video/*': ['.mp4', '.mov', '.avi', '.webm'],
+      'application/pdf': ['.pdf']
+    }
+  });
 
-  // --- Form Handlers ---
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setLesson((prev) => {
       let newState = { ...prev, [name]: type === "checkbox" ? checked : value };
 
-      // When content_type changes, reset file and content for new input type
-      if (name === "content_type") {
-        setFile(null); // Clear file from dropzone preview
+      if (name === "contentType") {
+        setFile(null); // Clear file from dropzone preview when content type changes
         newState.content = ""; // Clear content value for new type
       }
       return newState;
@@ -158,22 +165,27 @@ const LessonFormPage = () => {
       const formData = new FormData();
       formData.append('title', lesson.title);
       formData.append('courseId', courseId);
-      formData.append('contentType', lesson.content_type);
-      formData.append('isSubscriberOnly', lesson.is_subscriber_only);
-      formData.append('sectionTitle', lesson.section_title || '');
+      formData.append('contentType', lesson.contentType);
+      formData.append('isSubscriberOnly', lesson.isSubscriberOnly);
+      formData.append('sectionTitle', lesson.sectionTitle || '');
       formData.append('position', lesson.position || 1);
-      formData.append('content', 'contenue'); // Envoyer une chaîne vide pour le champ content
 
-      // Pour les types avec fichiers
-      if (file && (lesson.content_type === "video" || 
-                   lesson.content_type === "image" || 
-                   lesson.content_type === "pdf" || 
-                   lesson.content_type === "ar")) {
-        formData.append('contentFile', file);
-        
-      } 
-      // Pour les types texte ou URL
-      else {
+      // Handle content based on type
+      if (lesson.contentType === "video" || lesson.contentType === "pdfs") {
+        if (file) {
+          formData.append('contentFile', file);
+        } else if (!lessonId) { // If creating a new lesson and no file is selected for file-based types
+          throw new Error("Veuillez télécharger un fichier pour ce type de contenu.");
+        }
+        // If editing and no new file is selected, the existing content path will be used by backend
+        // We don't append 'content' string for file uploads
+      } else if (lesson.contentType === "external_video_url") {
+        if (!lesson.content) {
+          throw new Error("Veuillez entrer l'URL de la vidéo externe.");
+        }
+        formData.append('content', lesson.content);
+      } else {
+        // This case should ideally not be hit with the current select options
         formData.append('content', lesson.content || '');
       }
 
@@ -201,13 +213,11 @@ const LessonFormPage = () => {
   const getContentTypeLabel = (contentType) => {
     switch (contentType) {
       case 'video':
-        return 'VIDÉO';
-      case 'image':
-        return 'IMAGE';
-      case 'pdf':
+        return 'VIDÉO (Upload)';
+      case 'pdfs':
         return 'PDF';
-      case 'ar':
-        return 'RÉALITÉ AUGMENTÉE';
+      case 'external_video_url':
+        return 'VIDÉO (Lien Externe)';
       default:
         return contentType.toUpperCase();
     }
@@ -215,14 +225,10 @@ const LessonFormPage = () => {
 
   const getFileTypeMessage = (contentType) => {
     switch (contentType) {
-      case 'videos':
-        return "MP4, MOV, AVI (max 100MB)";
-      case 'images':
-        return "PNG, JPG, GIF (max 10MB)";
+      case 'video':
+        return "MP4, MOV, AVI, WEBM (max 100MB)";
       case 'pdfs':
         return "PDF (max 20MB)";
-      case 'ar':
-        return "GLB, USDZ (max 50MB)";
       default:
         return "Type de fichier non supporté";
     }
@@ -230,7 +236,7 @@ const LessonFormPage = () => {
 
   if (loading) {
     return (
-<LoadingSpinner/>
+      <LoadingSpinner />
     );
   }
 
@@ -276,13 +282,13 @@ const LessonFormPage = () => {
 
         {/* Section Selector */}
         <div>
-          <label htmlFor="section_title" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="sectionTitle" className="block text-sm font-medium text-gray-700 mb-1">
             Section
           </label>
           <select
-            id="section_title"
-            name="section_title"
-            value={lesson.section_title}
+            id="sectionTitle"
+            name="sectionTitle"
+            value={lesson.sectionTitle}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
             required
@@ -298,64 +304,24 @@ const LessonFormPage = () => {
 
         {/* Content Type Selection */}
         <div>
-          <label htmlFor="content_type" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="contentType" className="block text-sm font-medium text-gray-700 mb-1">
             Type de contenu
           </label>
           <select
-            id="content_type"
-            name="content_type"
-            value={lesson.content_type}
+            id="contentType"
+            name="contentType"
+            value={lesson.contentType}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
           >
-            <option value="text">Texte</option>
             <option value="external_video_url">Video (URL YouTube/Vimeo)</option>
-            <option value="videos">Video (Upload)</option>
-            <option value="images">Image</option>
+            <option value="video">Video (Upload)</option>
             <option value="pdfs">PDF</option>
-            <option value="ar">Contenu AR</option>
           </select>
         </div>
 
-        {/* Dynamic Content Input based on content_type */}
-        {lesson.content_type === "text" && (
-          <div>
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-              Contenu textuel de la leçon
-            </label>
-            <div className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl">
-              <EditorContent editor={editor} />
-            </div>
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleBold().run()}
-                className={`p-2 rounded ${editor?.isActive('bold') ? 'bg-gray-200' : ''}`}
-              >
-                Gras
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleItalic().run()}
-                className={`p-2 rounded ${editor?.isActive('italic') ? 'bg-gray-200' : ''}`}
-              >
-                Italique
-              </button>
-              <button
-                type="button"
-                onClick={() => editor?.chain().focus().toggleBulletList().run()}
-                className={`p-2 rounded ${editor?.isActive('bulletList') ? 'bg-gray-200' : ''}`}
-              >
-                Liste
-              </button>
-            </div>
-            <p className="mt-2 text-sm text-gray-500">
-              Le texte de la leçon sera stocké dans la colonne `content` de votre base de données.
-            </p>
-          </div>
-        )}
-
-        {lesson.content_type === "external_video_url" && (
+        {/* Conditional Content Input */}
+        {lesson.contentType === "external_video_url" && (
           <div>
             <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
               URL Video Externe (YouTube/Vimeo)
@@ -376,13 +342,10 @@ const LessonFormPage = () => {
           </div>
         )}
 
-        {(lesson.content_type === "videos" ||
-          lesson.content_type === "images" ||
-          lesson.content_type === "pdfs" ||
-          lesson.content_type === "ar") && (
+        {(lesson.contentType === "video" || lesson.contentType === "pdfs") && (
           <div>
             <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700 mb-1">
-              Télécharger un fichier ({getContentTypeLabel(lesson.content_type)})
+              Télécharger un fichier ({getContentTypeLabel(lesson.contentType)})
             </label>
             <div
               {...getRootProps()}
@@ -392,17 +355,11 @@ const LessonFormPage = () => {
               <div className="text-center">
                 {file ? (
                   <>
-                    {lesson.content_type === "videos" && (
+                    {lesson.contentType === "video" && (
                       <VideoCameraIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />
                     )}
-                    {lesson.content_type === "images" && (
-                      <PhotoIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />
-                    )}
-                    {lesson.content_type === "pdfs" && (
+                    {lesson.contentType === "pdfs" && (
                       <DocumentTextIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />
-                    )}
-                    {lesson.content_type === "ar" && (
-                      <CubeIcon className="mx-auto h-12 w-12 text-e-bosy-purple" />
                     )}
                     <p className="text-e-bosy-purple text-lg font-medium mt-2">
                       Fichier selectionne: {file.name}
@@ -421,7 +378,7 @@ const LessonFormPage = () => {
                       ou glissez-deposez ici
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
-                      {getFileTypeMessage(lesson.content_type)}
+                      {getFileTypeMessage(lesson.contentType)}
                     </p>
                   </>
                 )}
@@ -440,13 +397,13 @@ const LessonFormPage = () => {
         <div className="flex items-center">
           <input
             type="checkbox"
-            id="is_subscriber_only"
-            name="is_subscriber_only"
-            checked={lesson.is_subscriber_only}
+            id="isSubscriberOnly"
+            name="isSubscriberOnly"
+            checked={lesson.isSubscriberOnly}
             onChange={handleChange}
             className="h-4 w-4 text-e-bosy-purple border-gray-300 rounded focus:ring-e-bosy-purple"
           />
-          <label htmlFor="is_subscriber_only" className="ml-2 block text-sm text-gray-900">
+          <label htmlFor="isSubscriberOnly" className="ml-2 block text-sm text-gray-900">
             Reserve aux abonnes (non disponible en aperçu gratuit)
           </label>
         </div>
@@ -459,7 +416,7 @@ const LessonFormPage = () => {
             disabled={loading}
           >
             {loading ? (
-              <LoadingSpinner/>
+              <LoadingSpinner />
             ) : lessonId ? (
               "Mettre à jour la Leçon"
             ) : (

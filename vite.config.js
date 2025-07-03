@@ -4,17 +4,38 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   define: {
-    global: 'window',
     'process.env': {},
-  },
-  optimizeDeps: {
-    exclude: ['simple-peer'],
+    'process': JSON.stringify({ env: {} }),
+    'global': 'window'
   },
   resolve: {
     alias: {
-      stream: 'stream-browserify',
-      events: 'events',
-      util: 'util',
-    },
+      'simple-peer': 'simple-peer/simplepeer.min.js',
+      'buffer': 'buffer/',
+      'stream': 'stream-browserify',
+      'crypto': 'crypto-browserify'
+    }
   },
+  optimizeDeps: {
+    include: [
+      'buffer',
+      'process'
+    ],
+    esbuildOptions: {
+      target: 'es2020',
+      define: {
+        global: 'globalThis'
+      }
+    }
+  },
+  server: {
+    proxy: {
+        '/livehub': {
+            target: 'http://localhost:5000',
+            changeOrigin: true,
+            ws: true,
+            secure: false
+        }
+    }
+}
 });

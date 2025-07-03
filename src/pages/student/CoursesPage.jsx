@@ -15,7 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useEnrollments } from '../../hooks/useEnrollments';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 
-const API_BASE_URL = "http://localhost:5196";
+const API_BASE_URL = "http://localhost:5000";
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
 
 const CoursesPage = () => {

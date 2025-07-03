@@ -10,7 +10,7 @@ import {
 import { toast } from 'react-toastify';
 import { messageService } from '../services/MessageService';
 import { useAuth } from '../contexts/AuthContext';
-const API_BASE_URL = "http://localhost:5196";
+const API_BASE_URL = "http://localhost:5000";
 const MessagesPage = () => {
   const {
     conversations,
