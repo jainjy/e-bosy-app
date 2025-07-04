@@ -33,12 +33,12 @@ export default defineConfig({
   server: {
     proxy: {
         '/livehub': {
-            target: 'http://localhost:5000',
+            target: 'http://192.168.0.181:5000',
             changeOrigin: true,
             ws: true,
             secure: false
         }
-    }
+    },host:true
 }, build: {
   commonjsOptions: {
     include: [/node_modules/],

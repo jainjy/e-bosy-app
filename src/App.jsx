@@ -63,7 +63,6 @@ import LiveSessionsPage from "./pages/LiveSessionsPage";
 import StudentLiveSessionPage from "./pages/student/StudentLiveSessionPage";
 import TeacherPage from "./pages/TeacherPage";
 import StudentPage from "./pages/StudentPage";
-import { RoomPage } from "./pages/RoomPage";
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -131,7 +130,6 @@ function App() {
           <Route path="/subscription" element={<SubscriptionPage />} />
           <Route path="/teacher" element={<TeacherPage />} />
           <Route path="/student" element={<StudentPage />} />
-          <Route path="/room/:roomName" element={<RoomPage />} />
 
           {/* Détail cours, inscription, leçons */}
           <Route path="/course/:courseId" element={<CourseDetailsPage />} />

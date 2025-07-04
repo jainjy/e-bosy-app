@@ -1,10 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-// ReactPlayer is not strictly needed if VideoPlayer component is used
-// import ReactPlayer from 'react-player';
 import {
   PlayCircleIcon,
-  ChatBubbleOvalLeftEllipsisIcon,
   DocumentTextIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -14,43 +11,112 @@ import {
 import { getData, postData } from "../../services/ApiFetch";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-hot-toast";
-import VideoPlayer from "../../components/VideoPlayer"; // Ensure this component is correctly implemented
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 
 const API_BASE_URL = "http://localhost:5000";
+
+// Default Video Player Component
+const DefaultVideoPlayer = ({ 
+  url, 
+  onProgress, 
+  onComplete,
+  poster 
+}) => {
+  const videoRef = useRef(null);
+  const [hasCompleted, setHasCompleted] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleTimeUpdate = () => {
+      const videoProgress = (video.currentTime / video.duration) * 100;
+      onProgress?.({ played: videoProgress / 100 });
+
+      // Trigger onComplete when 90% of the video is watched
+      if (videoProgress >= 90 && !hasCompleted) {
+        onComplete?.();
+        setHasCompleted(true);
+      }
+
+      // Save progress to localStorage
+      if (video.currentTime > 0) {
+        localStorage.setItem(`video-progress-${url}`, video.currentTime);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      // Restore last position
+      const savedTime = localStorage.getItem(`video-progress-${url}`);
+      if (savedTime) {
+        video.currentTime = parseFloat(savedTime);
+      }
+    };
+
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+  }, [url, onProgress, onComplete, hasCompleted]);
+
+  return (
+    <div className="relative aspect-video bg-black rounded-xl overflow-hidden group">
+      <video
+        ref={videoRef}
+        controls
+        poster={poster}
+        className="w-full h-full"
+        preload="metadata"
+      >
+        <source src={url} type="video/mp4" />
+        Votre navigateur ne supporte pas la lecture vidéo.
+      </video>
+    </div>
+  );
+};
 
 const LessonPage = () => {
   const { courseId, lessonId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  // Removed activeTab and related state as it's not used in this simplified view
   const [course, setCourse] = useState(null);
   const [currentLesson, setCurrentLesson] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [progress, setProgress] = useState(0);
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState("");
-  // Set default filter to 'video'
-  const [contentFilter, setContentFilter] = useState("video");
+  const [videoProgress, setVideoProgress] = useState(0); // Progression de la vidéo actuelle
+  const [courseProgress, setCourseProgress] = useState(0); // Progression du cours
+  const [enrollment, setEnrollment] = useState();
+  const [contentFilter] = useState("video");
 
   useEffect(() => {
+    if (!user) return; // Attendre que user soit disponible
+    
     const fetchData = async () => {
       try {
+        console.log(user)
         setLoading(true);
         const [courseData, courseError] = await getData(
           `courses/${courseId}/lessons`
         );
         if (courseError) throw courseError;
 
-        // Filter lessons immediately to only include videos
         const videoLessons = courseData.lessons.filter(
           (lesson) => lesson.contentType?.toLowerCase() === "video"
         );
         setLessons(videoLessons);
         setCourse(courseData.course);
-
+        const [data,error]=await getData(`enrollments/student/${user.userId}/${courseId}`);
+        const [completionData, completionError] = await getData(`progress/enrollment/${data.enrollmentId}/completion-rate`);
+        console.log(data)
+        if (!completionError) {
+          data.completionRate = completionData;
+          setCourseProgress(completionData); // Mettre à jour la progression du cours
+        }
+        setEnrollment(data)
         const [lessonData, lessonError] = await getData(
           `courses/lessons/${lessonId}`
         );
@@ -58,11 +124,10 @@ const LessonPage = () => {
 
         if (lessonData.isSubscriberOnly && !user?.IsSubscribed) {
           toast.error("Cette leçon est réservée aux abonnés Premium.");
-          // Ne redirige pas ! Laisse le rendu gérer l'affichage
         }
-        
 
         setCurrentLesson(lessonData);
+        console.log(user,enrollment)
       } catch (err) {
         setError(err.message);
         toast.error("Erreur lors du chargement de la leçon");
@@ -72,52 +137,31 @@ const LessonPage = () => {
     };
 
     fetchData();
-  }, [courseId, lessonId]); // Depend on courseId and lessonId
+  }, [courseId, lessonId,user]);
 
   const handleLessonComplete = async () => {
     try {
-      const [data, error] = await postData(`enrollments/progress`, {
-        courseId: parseInt(courseId),
-        lessonId: parseInt(lessonId),
-        completionRate: Math.min(progress + 100 / lessons.length, 100), // Ensure this logic is correct for your progress tracking
-      });
+      const [data, error] = await postData(`progress/enrollment/${enrollment.enrollmentId}/complete-lesson`,parseInt(lessonId));
 
       if (error) throw error;
+
+      setLessons((prevLessons) =>
+        prevLessons.map((lesson) =>
+          lesson.lessonId === parseInt(lessonId)
+            ? { ...lesson, completed: true }
+            : lesson
+        )
+      );
+
+      // Mettre à jour la progression du cours après avoir terminé une leçon
+      const [updatedCompletionData, completionError] = await getData(`progress/enrollment/${enrollment.enrollmentId}/completion-rate`);
+      if (!completionError) {
+        setCourseProgress(updatedCompletionData);
+      }
+
       toast.success("Progression enregistrée");
-      // Optionally re-fetch lessons to update completion status in sidebar
-      // const [courseData, courseError] = await getData(`courses/${courseId}/lessons`);
-      // if (!courseError) setLessons(courseData.lessons.filter(lesson => lesson.contentType?.toLowerCase() === 'video'));
     } catch (err) {
       toast.error("Erreur lors de l'enregistrement de la progression");
-    }
-  };
-
-  const handleCommentSubmit = async () => {
-    try {
-      const [data, error] = await postData(`lessons/${lessonId}/comments`, {
-        content: newComment,
-        userId: user.userId, // Ensure user.userId is available
-      });
-
-      if (error) throw error;
-
-      // Assuming data returned includes the full comment object with author and time
-      setComments([
-        ...comments,
-        {
-          author: user.name || user.email, // Use user's name or email if author not in data
-          text: data.content,
-          time: new Date().toLocaleTimeString("fr-FR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }), // Or get from data if provided by API
-        },
-      ]);
-      setNewComment("");
-      toast.success("Commentaire ajouté");
-    } catch (err) {
-      console.error("Error adding comment:", err);
-      toast.error("Erreur lors de l'ajout du commentaire");
     }
   };
 
@@ -136,60 +180,70 @@ const LessonPage = () => {
     }, {});
   };
 
-  // Only consider 'video' content for filtering and grouping in the sidebar
   const filteredAndGroupedLessons = useMemo(() => {
-    // Already filtered `lessons` in useEffect, so just group them
     return groupLessonsBySection(lessons);
-  }, [lessons]); // Only re-calculate when lessons state changes
+  }, [lessons]);
 
-  const getTypeIcon = (type) => {
-    // Only return PlayCircleIcon since we're only displaying videos
+  const getTypeIcon = () => {
     return <PlayCircleIcon className="h-5 w-5" />;
   };
 
-const renderContent = () => {
-  if (!currentLesson) return null;
+  const renderContent = () => {
+    if (!currentLesson) return null;
 
-  const isLocked = currentLesson.isSubscriberOnly && !user?.IsSubscribed;
+    const isLocked = currentLesson.isSubscriberOnly && !user?.IsSubscribed;
 
-  if (isLocked) {
-    return (
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-md shadow-sm flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-yellow-800">Contenu réservé aux abonnés</h3>
-          <p className="text-sm text-yellow-700 mt-1">Cette leçon est disponible uniquement pour les utilisateurs Premium.</p>
+    if (isLocked) {
+      return (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-md shadow-sm flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-yellow-800">
+              Contenu réservé aux abonnés
+            </h3>
+            <p className="text-sm text-yellow-700 mt-1">
+              Cette leçon est disponible uniquement pour les utilisateurs Premium.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/abonnement")}
+            className="bg-e-bosy-purple text-white px-5 py-2 rounded-md hover:bg-purple-700 transition"
+          >
+            Devenir Premium
+          </button>
         </div>
-        <button
-          onClick={() => navigate('/abonnement')} // 🔁 À adapter selon ta route d’abonnement
-          className="bg-e-bosy-purple text-white px-5 py-2 rounded-md hover:bg-purple-700 transition"
-        >
-          Devenir Premium
-        </button>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (currentLesson.contentType?.toLowerCase() === 'video') {
+    if (currentLesson.contentType?.toLowerCase() === "video") {
+      return (
+        <div className="space-y-4">
+          <div className="aspect-video bg-black rounded-lg overflow-hidden">
+            <DefaultVideoPlayer
+              url={`${API_BASE_URL}/${currentLesson.content}`}
+              poster={
+                currentLesson.thumbnail
+                  ? `${API_BASE_URL}/${currentLesson.thumbnail}`
+                  : ""
+              }
+              onProgress={(state) => setVideoProgress(state.played * 100)}
+              onComplete={handleLessonComplete}
+            />
+          </div>
+          
+        </div>
+      );
+    }
+
     return (
-      <div className="aspect-video bg-black rounded-lg overflow-hidden">
-        <VideoPlayer
-          url={`${API_BASE_URL}/${currentLesson.content}`}
-          poster={currentLesson.thumbnail ? `${API_BASE_URL}/${currentLesson.thumbnail}` : ''}
-          onProgress={(state) => setProgress(state.played * 100)}
-          onComplete={handleLessonComplete}
-        />
-      </div>
+      <p className="text-red-500">
+        Ce contenu n'est pas une vidéo et ne peut pas être affiché ici.
+      </p>
     );
-  }
-
-  return <p className="text-red-500">Ce contenu n'est pas une vidéo et ne peut pas être affiché ici.</p>;
-};
-
+  };
 
   const getNavigationLinks = () => {
     if (!currentLesson || !lessons.length) return { prev: null, next: null };
 
-    // Find index only within the filtered video lessons
     const currentIndex = lessons.findIndex(
       (l) => l.lessonId === parseInt(lessonId)
     );
@@ -197,8 +251,7 @@ const renderContent = () => {
 
     return {
       prev: currentIndex > 0 ? lessons[currentIndex - 1] : null,
-      next:
-        currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : null,
+      next: currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : null,
     };
   };
 
@@ -222,36 +275,23 @@ const renderContent = () => {
             {course?.title}
           </h3>
           <div className="bg-gray-100 p-3 rounded-lg">
-            <p className="text-gray-600 text-sm mb-2">Progression</p>
+            <p className="text-gray-600 text-sm mb-2">Progression du cours</p>
             <div className="flex items-center justify-between mb-2">
               <span className="text-e-bosy-purple font-semibold">
-                {Math.round(progress)}%
+                {courseProgress}%
               </span>
               <span className="text-gray-500 text-sm">
-                {lessons.filter((l) => l.completed).length}/{lessons.length}{" "}
-                leçons
+                {enrollment?.completedLessons?.length || 0}/{lessons.length} leçons
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
                 className="bg-e-bosy-purple h-2 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
+                style={{ width: `${courseProgress}%` }}
               />
             </div>
           </div>
         </div>
-
-        {/* Removed content type filter buttons, as only video is shown */}
-        {/* <div className="mb-4">
-          <div className="flex flex-wrap gap-2 mb-4">
-            <button
-              onClick={() => setContentFilter('video')} // Only option left
-              className={`px-3 py-1 rounded-full text-sm bg-e-bosy-purple text-white`}
-            >
-              <PlayCircleIcon className="h-5 w-5 mr-1" /> Vidéos
-            </button>
-          </div>
-        </div> */}
 
         <nav className="space-y-6 flex-1 overflow-y-auto custom-scrollbar">
           {Object.entries(filteredAndGroupedLessons).map(
@@ -299,21 +339,25 @@ const renderContent = () => {
                       key={lesson.lessonId}
                       onClick={() => navigateToLesson(lesson.lessonId)}
                       className={`group flex items-center gap-3 p-3 rounded-lg cursor-pointer
-        transition-all duration-200 hover:bg-gray-50
-        ${
-          lesson.lessonId === parseInt(lessonId)
-            ? "bg-e-bosy-purple/10 border-l-4 border-e-bosy-purple"
-            : ""
-        }`}
+                        transition-all duration-200 hover:bg-gray-50
+                        ${
+                          lesson.lessonId === parseInt(lessonId)
+                            ? "bg-e-bosy-purple/10 border-l-4 border-e-bosy-purple"
+                            : ""
+                        }`}
                     >
                       <div
                         className={`
-        flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
-        ${lesson.completed ? "bg-green-100" : "bg-gray-100"}
-        ${lesson.lessonId === parseInt(lessonId) ? "bg-e-bosy-purple/20" : ""}
-      `}
+                          flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
+                          ${lesson.completed ? "bg-green-100" : "bg-gray-100"}
+                          ${
+                            lesson.lessonId === parseInt(lessonId)
+                              ? "bg-e-bosy-purple/20"
+                              : ""
+                          }
+                        `}
                       >
-                        {getTypeIcon(lesson.contentType)}
+                        {getTypeIcon()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p
@@ -357,7 +401,6 @@ const renderContent = () => {
             {currentLesson?.title}
           </h2>
           <div className="flex gap-3">
-            {/* Bouton précédent */}
             {getNavigationLinks().prev && (
               <button
                 className="bg-gray-100 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-200 flex items-center"
@@ -369,8 +412,6 @@ const renderContent = () => {
                 Leçon précédente
               </button>
             )}
-
-            {/* Bouton suivant */}
             {getNavigationLinks().next && (
               <button
                 className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700 flex items-center"
@@ -385,61 +426,8 @@ const renderContent = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          {renderContent()}
-        </div>
-
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center space-x-2">
-            <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6" />
-            <span>Discussion ({comments.length})</span>
-          </h3>
-
-          <div className="mb-6">
-            <textarea
-              className="w-full p-3 border border-gray-300 rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-e-bosy-purple"
-              rows="4"
-              placeholder="Ajouter un commentaire..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-            ></textarea>
-            <div className="flex justify-end mt-3">
-              <button
-                className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700"
-                onClick={handleCommentSubmit}
-                disabled={!newComment.trim()} // Disable if comment is empty
-              >
-                Publier
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            {comments.map((comment, index) => (
-              <div
-                key={index}
-                className="border-b border-gray-100 pb-4 last:border-b-0"
-              >
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-semibold text-gray-700">
-                    {comment.author?.charAt(0)?.toUpperCase() || "U"}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-800">
-                      {comment.author}
-                    </p>
-                    <p className="text-xs text-gray-500">{comment.time}</p>
-                  </div>
-                </div>
-                <p className="text-gray-700 ml-11">{comment.text}</p>
-              </div>
-            ))}
-            {comments.length === 0 && (
-              <p className="text-gray-500 text-center">
-                Aucun commentaire pour le moment.
-              </p>
-            )}
-          </div>
+          {renderContent()}
         </div>
       </div>
     </div>

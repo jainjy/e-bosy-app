@@ -9,9 +9,6 @@ import {
 } from "@heroicons/react/24/outline";
 import { postData, putData, getData } from "../../services/ApiFetch";
 import { toast } from "react-toastify";
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import '../../styles/editor.css';
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 
 const LessonFormPage = () => {
@@ -31,28 +28,6 @@ const LessonFormPage = () => {
   const [error, setError] = useState(null);
   const [file, setFile] = useState(null); // State to hold the uploaded file object for display
   const [sections, setSections] = useState([]); // State for sections
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-    ],
-    content: lesson.content || '',
-    editable: true,
-    onUpdate: ({ editor }) => {
-      // Only update content if contentType is 'text' (though we removed 'text' option)
-      // For this specific request, we're removing the text editor.
-      // If you re-introduce 'text' type, ensure this logic is re-enabled.
-      // setLesson(prev => ({ ...prev, content: editor.getHTML() }));
-    },
-  });
-
-  useEffect(() => {
-    if (editor) {
-      // Only set content for text-based content types if they were to exist.
-      // For external_video_url, content is a simple string, not HTML.
-      // editor.commands.setContent(lesson.content, false)
-    }
-  }, [lesson.content, editor])
 
   // --- Fetch Lesson Data ---
   useEffect(() => {
