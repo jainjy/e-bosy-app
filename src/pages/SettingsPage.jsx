@@ -2,12 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { UserCircleIcon, KeyIcon, CameraIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { putData } from '../services/ApiFetch';
-import { motion } from 'framer-motion'; // Pour les animations
-
-const API_BASE_URL = "http://localhost:5000";
-
-// Ajoutez cette fonction utilitaire avant le composant
+import { API_BASE_URL, putData } from '../services/ApiFetch';
+import { motion } from 'framer-motion';
 const getInitials = (firstName, lastName, email) => {
   if (firstName && lastName) {
     return `${firstName[0]}${lastName[0]}`.toUpperCase();

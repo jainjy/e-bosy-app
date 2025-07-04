@@ -28,7 +28,6 @@ const NotificationsPage = () => {
       //   setLoading(false);
       // }
 
-      // Dummy data reflecting your Notifications database structure
       const dummyNotifications = [
         {
           notification_id: 1,

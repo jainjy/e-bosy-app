@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { getData, postData } from '../../services/ApiFetch';
+import { API_BASE_URL, getData, postData } from '../../services/ApiFetch';
 import { toast } from 'react-hot-toast';
 import {
   ArrowLeftIcon,
@@ -15,8 +15,6 @@ import {
   UserCircleIcon, // Added for user avatar placeholder
 } from '@heroicons/react/24/outline';
 import CertificationResultsPage from './CertificationResultsPage';
-
-const API_BASE_URL = "http://localhost:5000"; // Ensure this is correctly configured for your backend
 
 const CertificationExamPage = () => {
   const { courseId } = useParams();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getData } from '../../services/ApiFetch';
+import { API_BASE_URL, getData } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   AcademicCapIcon,
@@ -15,7 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Navbar from '../../Components/Navbar';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
-const API_BASE_URL = "http://localhost:5000";
+
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
 const CoursesToCertifyPage = () => {
   const [courses, setCourses] = useState([]);

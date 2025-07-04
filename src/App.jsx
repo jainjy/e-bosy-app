@@ -121,7 +121,6 @@ function App() {
         <Routes>
           {/* Routes publiques */}
           <Route path="/" element={<HomePage />} />
-          <Route path="/test" element={<StudentLiveSessionPage />} />
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
@@ -207,7 +206,7 @@ function App() {
             <Route path="live-sessions" element={<LiveSessionsPage />} />
             <Route
               path="live-session/:sessionId"
-              element={<LiveSessionPage />}
+              element={<TeacherPage />}
             />
             <Route
               path="live-sessions/schedule"
@@ -215,7 +214,7 @@ function App() {
             />
             <Route
               path="student/live-session/:sessionId"
-              element={<StudentLiveSessionPage />}
+              element={<StudentPage />}
             />
 
             <Route

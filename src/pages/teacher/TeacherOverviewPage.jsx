@@ -19,11 +19,6 @@ import { Link } from 'react-router-dom';
 const TeacherOverviewPage = () => {
   // Define e-bosy-purple and its shades for consistency
   const eBosyPurple = '#6B46C1';
-  const eBosyPurpleLight = '#805AD5';
-  const eBosyPurpleLighter = '#9F7AEA';
-  const eBosyPurpleLightest = '#D6BCFA';
-  const eBosyPurpleContrast = '#44337A'; // A darker shade for contrast
-
   // Data for Charts
   const weeklyTeachingActivityData = {
     series: [{

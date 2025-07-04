@@ -1,8 +1,8 @@
-import { postData, getData, putData } from './ApiFetch';
+import { postData, getData, putData,API_BASE_URL } from './ApiFetch';
 
 class LiveSessionService {
   constructor() {
-    this.baseUrl = 'http://localhost:5000/api/livesessions';
+    this.baseUrl = API_BASE_URL+'/api/livesessions';
   }
 
   async getLiveSession(sessionId) {

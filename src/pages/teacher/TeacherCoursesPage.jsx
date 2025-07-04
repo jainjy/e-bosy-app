@@ -18,11 +18,10 @@ import {
 import { Link } from "react-router-dom";
 import CourseFormModal from "../../components/CourseFormModal";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
-import { getData, deleteData, postData, putData, patchData } from "../../services/ApiFetch";
+import { getData, deleteData, postData, putData, patchData, API_BASE_URL } from "../../services/ApiFetch";
 import { useAuth } from '../../contexts/AuthContext';
 import { EllipsisVerticalIcon } from "lucide-react";
 
-const API_BASE_URL = "http://localhost:5000";
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
 
 const COURSE_STATUS = {
@@ -170,7 +169,7 @@ const CourseCard = ({ course, onEdit, onDelete, onPublish }) => {
 };
 
 const TeacherCoursesPage = () => {
-  const { user, logged } = useAuth();
+  const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState(COURSE_STATUS.ALL);
@@ -251,13 +250,14 @@ const TeacherCoursesPage = () => {
   const handlePublish = async (course) => {
     try {
       if(course.lessonsCount>0){
-        const [_, error] = await patchData(`courses/${course.courseId}/status`, { 
+        const id=course.courseId;
+        const [_, error] = await patchData(`courses/${id}/status`, { 
           status: COURSE_STATUS.PUBLISHED 
         });
         if (error) throw new Error(error.message);
       
         setCourses(courses.map((course) =>
-          course.courseId === id ? { 
+          course.courseId ===  id? { 
             ...course, 
             status: COURSE_STATUS.PUBLISHED, 
             studentsEnrolled: 0, 

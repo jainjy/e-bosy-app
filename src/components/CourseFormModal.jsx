@@ -1,9 +1,7 @@
 // CourseFormModal.js
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from 'react-toastify';
-import { getData } from "../services/ApiFetch";
-
-const API_BASE_URL = "http://localhost:5000";
+import { API_BASE_URL, getData } from "../services/ApiFetch";
 
 const CourseFormModal = ({ onClose, onSubmit, course }) => {
   const [courseData, setCourseData] = useState({

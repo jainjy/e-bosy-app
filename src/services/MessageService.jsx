@@ -3,12 +3,12 @@ import {
   LogLevel,
   HttpTransportType 
 } from '@microsoft/signalr';
-import { getData, postData, putData } from './ApiFetch';
+import { API_BASE_URL, getData, postData, putData } from './ApiFetch';
 
 class MessageService {
   constructor() {
     this.connection = null;
-    this.baseUrl = 'http://localhost:5000';
+    this.baseUrl = API_BASE_URL;
     this.hubUrl = `${this.baseUrl}/messageHub`;
   }
 

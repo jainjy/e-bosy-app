@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
 import {
   Squares2X2Icon,
@@ -12,6 +12,7 @@ import {
   CreditCardIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from "../services/ApiFetch";
 
 const Navbar = () => {
   const { user, logged, logout } = useAuth();
@@ -69,7 +70,7 @@ const Navbar = () => {
               >
                 {user?.profilePictureUrl ? (
                   <img
-                    src={"http://localhost:5000/" + user.profilePictureUrl}
+                    src={API_BASE_URL + user.profilePictureUrl}
                     alt="Profile"
                     className="w-8 h-8 rounded-full object-cover"
                   />

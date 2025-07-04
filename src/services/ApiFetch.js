@@ -1,8 +1,8 @@
 import axios from "axios";
-
+export const API_BASE_URL="http://localhost:5000"
 // Configuration de base de l'API
 const API_CONFIG = {
-  baseURL: "http://127.0.0.1:5000/api/",
+  baseURL: API_BASE_URL+"/api/",
   timeout: 10000, // Timeout de 10 secondes
   headers: {
     "Content-Type": "application/json",

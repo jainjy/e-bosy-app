@@ -11,12 +11,12 @@ import {
   VideoCameraIcon
 } from "@heroicons/react/24/outline";
 import { BellIcon } from "lucide-react";
-const API_BASE_URL = "http://localhost:5000";
+import { API_BASE_URL } from "../services/ApiFetch";
+
 const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount }) => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeSubmenu, setActiveSubmenu] = useState(null);
-  const { logout,user } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const navItems = [
@@ -92,9 +92,7 @@ const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount
     },
   ];
 
-  const toggleSubmenu = (name) => {
-    setActiveSubmenu(activeSubmenu === name ? null : name);
-  };
+
 
   const filteredItems = navItems.filter((item) => item.roles.includes(userRole));
 

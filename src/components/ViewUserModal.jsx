@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import moment from 'moment';
-
+import { API_BASE_URL } from "../services/ApiFetch";
 const ViewUserModal = ({ user, onClose }) => {
   const modalRef = useRef(null);
 
@@ -58,7 +58,7 @@ const ViewUserModal = ({ user, onClose }) => {
 
         <div className="flex flex-col items-center mb-6">
           {user.profilePictureUrl ? (
-            <img className="h-24 w-24 rounded-full object-cover shadow-md border-4 border-white" src={"http://localhost:5000/"+user.profilePictureUrl} alt={`${user.firstName} ${user.lastName}`} />
+            <img className="h-24 w-24 rounded-full object-cover shadow-md border-4 border-white" src={API_BASE_URL+user.profilePictureUrl} alt={`${user.firstName} ${user.lastName}`} />
           ) : (
             <div className="h-24 w-24 rounded-full bg-e-bosy-purple flex items-center justify-center text-white font-bold text-4xl shadow-md border-4 border-white">
               {`${user.firstName[0]}${user.lastName[0]}`.toUpperCase()}

@@ -19,9 +19,7 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       'buffer',
-      'process',      '@react-pdf-viewer/core',
-      '@react-pdf-viewer/default-layout',
-      'pdfjs-dist'
+      'process'
     ],
     esbuildOptions: {
       target: 'es2020',
@@ -31,14 +29,7 @@ export default defineConfig({
     }
   },
   server: {
-    proxy: {
-        '/livehub': {
-            target: 'http://192.168.0.181:5000',
-            changeOrigin: true,
-            ws: true,
-            secure: false
-        }
-    },host:true
+    host:true
 }, build: {
   commonjsOptions: {
     include: [/node_modules/],

@@ -5,9 +5,8 @@ import Swal from 'sweetalert2';
 import { MagnifyingGlassIcon, PlusIcon, EllipsisVerticalIcon, PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import UserFormModal from '../../components/UserFormModal';
 import ViewUserModal from '../../components/ViewUserModal';
-import { getData, postData, putData, deleteData } from '../../services/ApiFetch';
+import { getData, postData, putData, deleteData, API_BASE_URL } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
-
 const ROLES = {
   ADMIN: 'administrateur',
   TEACHER: 'enseignant',
@@ -28,7 +27,7 @@ const UserManagementPage = () => {
   const [userToView, setUserToView] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, _] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchAllUsers = async () => {
@@ -103,7 +102,7 @@ const UserManagementPage = () => {
       });
       formData.set('Role', newUserData.role);
 
-      const [data, err] = await postData('users', formData, true);
+      const [_, err] = await postData('users', formData, true);
       if (err) {
         toast.error(err.message || 'Erreur lors de la création de l\'utilisateur');
         return;
@@ -129,7 +128,7 @@ const UserManagementPage = () => {
       });
       formData.set('Role', updatedUserData.role);
 
-      const [data, err] = await putData(`users/${updatedUserData.userId}`, formData, true);
+      const [_, err] = await putData(`users/${updatedUserData.userId}`, formData, true);
       if (err) {
         toast.error(err.message || 'Erreur lors de la mise à jour de l\'utilisateur');
         return;
@@ -294,7 +293,7 @@ const UserManagementPage = () => {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           {user.profilePictureUrl ? (
-                            <img className="h-10 w-10 rounded-full object-cover" src={"http://localhost:5000/" + user.profilePictureUrl} alt={`${user.firstName} ${user.lastName}`} />
+                            <img className="h-10 w-10 rounded-full object-cover" src={API_BASE_URL + user.profilePictureUrl} alt={`${user.firstName} ${user.lastName}`} />
                           ) : (
                             <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-semibold text-sm">
                               {`${user.firstName[0]}${user.lastName[0]}`.toUpperCase()}

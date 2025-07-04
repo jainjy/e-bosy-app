@@ -3,10 +3,8 @@ import {
   UsersIcon, 
   BookOpenIcon, 
   CurrencyDollarIcon, 
-  ComputerDesktopIcon, 
-  DocumentTextIcon, 
-  Cog6ToothIcon, 
-  PlusIcon 
+  ComputerDesktopIcon,  
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 

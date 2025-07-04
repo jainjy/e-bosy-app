@@ -8,12 +8,11 @@ import {
   CheckCircleIcon,
   FolderIcon,
 } from "@heroicons/react/24/outline";
-import { getData, postData } from "../../services/ApiFetch";
+import { API_BASE_URL, getData, postData } from "../../services/ApiFetch";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
-
-const API_BASE_URL = "http://localhost:5000";
+import Navbar from "../../Components/Navbar";
 
 // Default Video Player Component
 const DefaultVideoPlayer = ({ 
@@ -269,7 +268,8 @@ const LessonPage = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <div className="w-80 bg-white p-6 shadow-md flex flex-col">
+      <Navbar/>
+      <div className="w-80 bg-white p-6 shadow-md flex flex-col mt-11">
         <div className="mb-6">
           <h3 className="text-xl font-bold text-gray-800 mb-4">
             {course?.title}
@@ -395,7 +395,7 @@ const LessonPage = () => {
         </nav>
       </div>
 
-      <div className="flex-1 p-8 overflow-y-auto">
+      <div className="flex-1 p-8 overflow-y-auto mt-11">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-gray-800">
             {currentLesson?.title}
