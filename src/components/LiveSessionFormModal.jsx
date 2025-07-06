@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import { toast } from 'react-toastify';
-import { getData } from "../services/ApiFetch";
-import { liveSessionService } from "../services/liveSessionService";
+import { toast } from "react-toastify";
+import { getData, postData, putData } from "../services/ApiFetch";
 import { useAuth } from "../contexts/AuthContext";
+import { API_BASE_URL } from "../services/ApiFetch";
 import {
   CalendarDaysIcon,
   ClockIcon,
   VideoCameraIcon,
-  XMarkIcon
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
@@ -18,12 +18,13 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
     startTime: "",
     endTime: "",
     description: "",
-    hostId: user?.userId || ""
+    hostId: user?.userId || "",
   });
   const [courses, setCourses] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const modalRef = useRef(null);
+  const baseUrl = `${API_BASE_URL}/api/livesessions`;
 
   // Fetch courses for the current user
   useEffect(() => {
@@ -48,7 +49,7 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
     if (session) {
       const startTime = new Date(session.startTime);
       const endTime = new Date(session.endTime);
-      
+
       // Format dates for datetime-local input
       const formatForInput = (date) => {
         const offset = date.getTimezoneOffset() * 60000; // Offset in milliseconds
@@ -62,7 +63,7 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
         startTime: formatForInput(startTime),
         endTime: formatForInput(endTime),
         description: session.description || "",
-        hostId: session.hostId || user?.userId || ""
+        hostId: session.hostId || user?.userId || "",
       });
     }
   }, [session, user]);
@@ -83,36 +84,36 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
 
     // Clear error when field is edited
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: null
+        [name]: null,
       }));
     }
   };
 
   const validate = () => {
     const newErrors = {};
-    
+
     if (!formData.title) newErrors.title = "Le titre est requis";
     if (!formData.courseId) newErrors.courseId = "Le cours est requis";
     if (!formData.startTime) newErrors.startTime = "L'heure de début est requise";
     if (!formData.endTime) newErrors.endTime = "L'heure de fin est requise";
-    
+
     if (formData.startTime && formData.endTime) {
       const start = new Date(formData.startTime);
       const end = new Date(formData.endTime);
-      
+
       if (start >= end) {
         newErrors.endTime = "L'heure de fin doit être après l'heure de début";
       }
-      
+
       // Check if start time is in the future
       const now = new Date();
       if (start <= now) {
@@ -134,20 +135,24 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
         ...formData,
         startTime: new Date(formData.startTime).toISOString(),
         endTime: new Date(formData.endTime).toISOString(),
-        attendeesIds: [] // Initialize with empty array, can be updated later
+        attendeesIds: [], // Initialize with empty array, can be updated later
       };
 
       let result;
       if (session) {
         // Update existing session
-        result = await liveSessionService.updateLiveSession(session.id, sessionData);
+        const [data, error] = await putData(`${baseUrl}/${session.id}`, sessionData);
+        if (error) throw error;
+        result = data;
         toast.success("Session mise à jour avec succès");
       } else {
         // Create new session
-        result = await liveSessionService.createLiveSession(sessionData);
+        const [data, error] = await postData(baseUrl, sessionData);
+        if (error) throw error;
+        result = data;
         toast.success("Session planifiée avec succès");
       }
-      
+
       // Pass the result to parent component
       onSubmit(result);
       onClose();
@@ -160,13 +165,20 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
   };
 
   const modalTitle = session ? "Modifier la session" : "Planifier une nouvelle session";
-  const submitButtonText = submitting 
-    ? (session ? "Mise à jour..." : "Planification...") 
-    : (session ? "Mettre à jour" : "Planifier la session");
+  const submitButtonText = submitting
+    ? session
+      ? "Mise à jour..."
+      : "Planification..."
+    : session
+    ? "Mettre à jour"
+    : "Planifier la session";
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div ref={modalRef} className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div
+        ref={modalRef}
+        className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+      >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">{modalTitle}</h2>
           <button
@@ -177,10 +189,13 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="title" className="block text-gray-700 text-sm font-bold mb-2">
+            <label
+              htmlFor="title"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
               Titre de la session *
             </label>
             <input
@@ -190,7 +205,7 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
               value={formData.title}
               onChange={handleChange}
               className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.title ? 'border-red-500' : 'border-gray-300'
+                errors.title ? "border-red-500" : "border-gray-300"
               }`}
               disabled={submitting}
             />
@@ -198,7 +213,10 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
           </div>
 
           <div>
-            <label htmlFor="courseId" className="block text-gray-700 text-sm font-bold mb-2">
+            <label
+              htmlFor="courseId"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
               Cours *
             </label>
             <select
@@ -207,18 +225,20 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
               value={formData.courseId}
               onChange={handleChange}
               className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.courseId ? 'border-red-500' : 'border-gray-300'
+                errors.courseId ? "border-red-500" : "border-gray-300"
               }`}
               disabled={submitting || courses.length === 0}
             >
               <option value="">Sélectionnez un cours</option>
-              {courses.map(course => (
+              {courses.map((course) => (
                 <option key={course.courseId} value={course.courseId}>
                   {course.title}
                 </option>
               ))}
             </select>
-            {errors.courseId && <p className="text-red-500 text-sm mt-1">{errors.courseId}</p>}
+            {errors.courseId && (
+              <p className="text-red-500 text-sm mt-1">{errors.courseId}</p>
+            )}
             {courses.length === 0 && (
               <p className="text-yellow-600 text-sm mt-1">
                 Aucun cours trouvé. Vous devez d'abord créer un cours avant de planifier une session.
@@ -228,7 +248,10 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="startTime" className="block text-gray-700 text-sm font-bold mb-2 flex items-center">
+              <label
+                htmlFor="startTime"
+                className="block text-gray-700 text-sm font-bold mb-2 flex items-center"
+              >
                 <CalendarDaysIcon className="h-4 w-4 mr-2" />
                 Date et heure de début *
               </label>
@@ -239,15 +262,20 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
                 value={formData.startTime}
                 onChange={handleChange}
                 className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.startTime ? 'border-red-500' : 'border-gray-300'
+                  errors.startTime ? "border-red-500" : "border-gray-300"
                 }`}
                 disabled={submitting}
               />
-              {errors.startTime && <p className="text-red-500 text-sm mt-1">{errors.startTime}</p>}
+              {errors.startTime && (
+                <p className="text-red-500 text-sm mt-1">{errors.startTime}</p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="endTime" className="block text-gray-700 text-sm font-bold mb-2 flex items-center">
+              <label
+                htmlFor="endTime"
+                className="block text-gray-700 text-sm font-bold mb-2 flex items-center"
+              >
                 <ClockIcon className="h-4 w-4 mr-2" />
                 Date et heure de fin *
               </label>
@@ -258,7 +286,7 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
                 value={formData.endTime}
                 onChange={handleChange}
                 className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.endTime ? 'border-red-500' : 'border-gray-300'
+                  errors.endTime ? "border-red-500" : "border-gray-300"
                 }`}
                 disabled={submitting}
               />
@@ -267,7 +295,10 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-gray-700 text-sm font-bold mb-2">
+            <label
+              htmlFor="description"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
               Description (optionnel)
             </label>
             <textarea

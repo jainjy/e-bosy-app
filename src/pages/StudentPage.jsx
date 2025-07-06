@@ -138,5 +138,3 @@ console.log("Pistes audio :", stream.getAudioTracks());
   );
 
 }
-
-

@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { liveSessionService } from "../services/liveSessionService";
+import { useAuth } from "../contexts/AuthContext";
 import {
   CalendarDaysIcon,
   ClockIcon,
   VideoCameraIcon,
 } from "@heroicons/react/24/outline";
-import { getData } from "../services/ApiFetch";
-import { useAuth } from "../contexts/AuthContext";
+import { getData, postData } from "../services/ApiFetch";
+import { API_BASE_URL } from "../services/ApiFetch";
+import { toast } from "react-toastify";
+
 const ScheduleLiveSessionPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -20,41 +22,45 @@ const ScheduleLiveSessionPage = () => {
     startTime: "",
     endTime: "",
     description: "",
-    HostId: user.userId
+    hostId: user.userId,
   });
+  const baseUrl = `${API_BASE_URL}/api/livesessions`;
+
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const [data, error] = await getData("courses/teacher/"+user.userId);
+        const [data, error] = await getData(`courses/teacher/${user.userId}`);
         if (error) throw error;
         setCourses(data);
-        console.log(data);
       } catch (error) {
         console.error("Error fetching courses:", error);
+        toast.error("Failed to load courses");
       }
     };
     fetchCourses();
-  }, []);
+  }, [user.userId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.title) newErrors.title = "Title is required";
-    if (!formData.courseId) newErrors.courseId = "Course is required";
-    if (!formData.startTime) newErrors.startTime = "Start time is required";
-    if (!formData.endTime) newErrors.endTime = "End time is required";
-    
+    if (!formData.title) newErrors.title = "Le titre est requis";
+    if (!formData.courseId) newErrors.courseId = "Le cours est requis";
+    if (!formData.startTime) newErrors.startTime = "L'heure de début est requise";
+    if (!formData.endTime) newErrors.endTime = "L'heure de fin est requise";
+
     if (formData.startTime && formData.endTime) {
       const start = new Date(formData.startTime);
       const end = new Date(formData.endTime);
-      if (start >= end) newErrors.endTime = "End time must be after start time";
+      if (start >= end) newErrors.endTime = "L'heure de fin doit être après l'heure de début";
+      const now = new Date();
+      if (start <= now) newErrors.startTime = "L'heure de début doit être dans le futur";
     }
 
     setErrors(newErrors);
@@ -67,49 +73,58 @@ const ScheduleLiveSessionPage = () => {
 
     setSubmitting(true);
     try {
-      const session = await liveSessionService.createLiveSession({
+      const sessionData = {
         ...formData,
         startTime: new Date(formData.startTime).toISOString(),
-        endTime: new Date(formData.endTime).toISOString()
-      });
-      navigate(`/live-session/${session.id}`);
+        endTime: new Date(formData.endTime).toISOString(),
+        attendeesIds: [],
+      };
+      const [data, error] = await postData(baseUrl, sessionData);
+      if (error) throw error;
+      toast.success("Session planifiée avec succès");
+      navigate(`/live-session/${data.id}`);
     } catch (error) {
       console.error("Error scheduling session:", error);
-      setErrors({ submit: "Failed to schedule session" });
+      toast.error("Échec de la planification de la session");
     } finally {
       setSubmitting(false);
     }
   };
 
-
   return (
     <div className="container mx-auto p-4 max-w-2xl">
-      <h1 className="text-3xl font-bold mb-6">Schedule Live Session</h1>
-      
+      <h1 className="text-3xl font-bold mb-6">Planifier une session en direct</h1>
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-gray-700 mb-2">Title</label>
+          <label className="block text-gray-700 mb-2">Titre</label>
           <input
             type="text"
             name="title"
             value={formData.title}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className={`w-full p-2 border rounded ${
+              errors.title ? "border-red-500" : "border-gray-300"
+            }`}
           />
           {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
         </div>
 
         <div>
-          <label className="block text-gray-700 mb-2">Course</label>
+          <label className="block text-gray-700 mb-2">Cours</label>
           <select
             name="courseId"
             value={formData.courseId}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className={`w-full p-2 border rounded ${
+              errors.courseId ? "border-red-500" : "border-gray-300"
+            }`}
           >
-            <option value="">Select a course</option>
-            {courses.map(course => (
-              <option key={user.userId+course.courseId} value={course.courseId}>{course.title}</option>
+            <option value="">Sélectionnez un cours</option>
+            {courses.map((course) => (
+              <option key={course.courseId} value={course.courseId}>
+                {course.title}
+              </option>
             ))}
           </select>
           {errors.courseId && <p className="text-red-500 text-sm mt-1">{errors.courseId}</p>}
@@ -119,14 +134,16 @@ const ScheduleLiveSessionPage = () => {
           <div>
             <label className="block text-gray-700 mb-2 flex items-center">
               <CalendarDaysIcon className="h-4 w-4 mr-2" />
-              Start Time
+              Date et heure de début
             </label>
             <input
               type="datetime-local"
               name="startTime"
               value={formData.startTime}
               onChange={handleChange}
-              className="w-full p-2 border rounded"
+              className={`w-full p-2 border rounded ${
+                errors.startTime ? "border-red-500" : "border-gray-300"
+              }`}
             />
             {errors.startTime && <p className="text-red-500 text-sm mt-1">{errors.startTime}</p>}
           </div>
@@ -134,21 +151,23 @@ const ScheduleLiveSessionPage = () => {
           <div>
             <label className="block text-gray-700 mb-2 flex items-center">
               <ClockIcon className="h-4 w-4 mr-2" />
-              End Time
+              Date et heure de fin
             </label>
             <input
               type="datetime-local"
               name="endTime"
               value={formData.endTime}
               onChange={handleChange}
-              className="w-full p-2 border rounded"
+              className={`w-full p-2 border rounded ${
+                errors.endTime ? "border-red-500" : "border-gray-300"
+              }`}
             />
             {errors.endTime && <p className="text-red-500 text-sm mt-1">{errors.endTime}</p>}
           </div>
         </div>
 
         <div>
-          <label className="block text-gray-700 mb-2">Description (Optional)</label>
+          <label className="block text-gray-700 mb-2">Description (Optionnel)</label>
           <textarea
             name="description"
             value={formData.description}
@@ -158,9 +177,7 @@ const ScheduleLiveSessionPage = () => {
           />
         </div>
 
-        {errors.submit && (
-          <p className="text-red-500 text-sm">{errors.submit}</p>
-        )}
+        {errors.submit && <p className="text-red-500 text-sm">{errors.submit}</p>}
 
         <div className="flex justify-end space-x-4">
           <button
@@ -168,7 +185,7 @@ const ScheduleLiveSessionPage = () => {
             onClick={() => navigate(-1)}
             className="px-4 py-2 border rounded"
           >
-            Cancel
+            Annuler
           </button>
           <button
             type="submit"
@@ -176,11 +193,11 @@ const ScheduleLiveSessionPage = () => {
             className="px-4 py-2 bg-blue-500 text-white rounded flex items-center disabled:bg-blue-300"
           >
             {submitting ? (
-              "Scheduling..."
+              "Planification..."
             ) : (
               <>
                 <VideoCameraIcon className="h-4 w-4 mr-2" />
-                Schedule Session
+                Planifier la session
               </>
             )}
           </button>

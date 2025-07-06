@@ -50,7 +50,7 @@ import MessagesPage from "./pages/MessagesPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import Analytics from "./pages/teacher/Analytics";
 import ScheduleLiveSessionPage from "./pages/ScheduleLiveSessionPage";
-import LiveSessionPage from "./pages/LiveSessionPage";
+
 import CoursesToCertifyPage from "./pages/student/CoursesToCertifyPage";
 import CertificationExamPage from "./pages/student/CertificationExamPage";
 import CertificationInstructionsPage from "./pages/student/CertificationInstructionsPage";
@@ -60,7 +60,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { MessageProvider } from "./contexts/MessageContext";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import LiveSessionsPage from "./pages/LiveSessionsPage";
-import StudentLiveSessionPage from "./pages/student/StudentLiveSessionPage";
+
 import TeacherPage from "./pages/TeacherPage";
 import StudentPage from "./pages/StudentPage";
 
@@ -120,6 +120,7 @@ function App() {
       <Router>
         <Routes>
           {/* Routes publiques */}
+          
           <Route path="/" element={<HomePage />} />
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/login" element={<LoginPage />} />
