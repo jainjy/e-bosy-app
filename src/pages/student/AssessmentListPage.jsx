@@ -3,10 +3,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getData } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
-import { ArrowLeftIcon, AcademicCapIcon } from '@heroicons/react/24/outline'; // Keep necessary icons
+import { ArrowLeftIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
 import Navbar from '../../Components/Navbar';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
-import AssessmentGrid from '../../components/AssessmentGrid'; // Import the new component
+import AssessmentGrid from '../../components/AssessmentGrid';
 
 const AssessmentListPage = () => {
   const { courseId } = useParams();
@@ -14,6 +14,8 @@ const AssessmentListPage = () => {
   const { user } = useAuth();
   const [assessments, setAssessments] = useState([]);
   const [course, setCourse] = useState(null);
+  const [completionRate, setCompletionRate] = useState(0);
+  const [certificate, setCertificate] = useState(null); // Nouvel état pour le certificat
   const [loading, setLoading] = useState(true);
   const [userProgress, setUserProgress] = useState({});
 
@@ -25,6 +27,24 @@ const AssessmentListPage = () => {
         const [courseData, courseError] = await getData(`courses/${courseId}`);
         if (courseError) throw courseError;
         setCourse(courseData);
+
+        // Fetch enrollment to get completionRate
+        if (user?.userId) {
+          const [enrollmentData, enrollmentError] = await getData(`enrollments/course/${courseId}/${user.userId}`);
+          if (enrollmentError) {
+            console.error('Erreur lors de la récupération de l\'inscription:', enrollmentError);
+          } else {
+            setCompletionRate(enrollmentData?.completionRate || 0);
+          }
+
+          // Fetch certificate data
+          const [certificateData, certificateError] = await getData(`enrollments/certificates/course/${courseId}/${user.userId}`);
+          if (certificateError) {
+            console.error('Erreur lors de la récupération du certificat:', certificateError);
+          } else {
+            setCertificate(certificateData);
+          }
+        }
 
         // Filter for exercises only from the course's assessments
         const exercisesOnly = Array.isArray(courseData.assessments)
@@ -50,7 +70,7 @@ const AssessmentListPage = () => {
           setUserProgress(progress);
         }
       } catch (error) {
-        console.error("Error loading exercises:", error); // Added console.error for debugging
+        console.error("Error loading exercises:", error);
         toast.error("Erreur lors du chargement des exercices.");
       } finally {
         setLoading(false);
@@ -68,7 +88,6 @@ const AssessmentListPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 mt-10 sm:px-6 lg:px-8 py-8">
-        {/* Header with certification button */}
         <div className="mb-8">
           <div className="flex justify-between items-start mb-4">
             <button
@@ -79,25 +98,44 @@ const AssessmentListPage = () => {
               <span>Retour au cours</span>
             </button>
 
-            <Link
-              to={`/course/${courseId}/certification`}
-              className="inline-flex items-center px-6 py-3 bg-e-bosy-purple text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              <AcademicCapIcon className="h-5 w-5 mr-2" />
-              Passer l'examen de certification
-            </Link>
+            {certificate ? (
+              <Link
+                to={`/certificates/${certificate.certificateId}`}
+                className="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+              >
+                <AcademicCapIcon className="h-5 w-5 mr-2" />
+                Voir la certification
+              </Link>
+            ) : (
+              <Link
+                to={`/course/${courseId}/certification`}
+                className={`inline-flex items-center px-6 py-3 rounded-lg text-white font-medium transition-colors
+                  ${completionRate >= 80
+                    ? 'bg-e-bosy-purple hover:bg-purple-700'
+                    : 'bg-gray-300 cursor-not-allowed'
+                  }`}
+                onClick={(e) => {
+                  if (completionRate < 80) {
+                    e.preventDefault();
+                    toast.error("Vous devez compléter au moins 80% du cours pour passer l'examen.");
+                  }
+                }}
+              >
+                <AcademicCapIcon className="h-5 w-5 mr-2" />
+                Passer l'examen de certification
+              </Link>
+            )}
           </div>
 
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{course?.title}</h1>
           <p className="text-gray-600">Exercices disponibles</p>
         </div>
 
-        {/* Grid of exercises - now using the new component */}
         <AssessmentGrid
           assessments={assessments}
           userProgress={userProgress}
           courseId={courseId}
-          type="exercise" // Explicitly pass the type
+          type="exercise"
         />
       </div>
     </div>

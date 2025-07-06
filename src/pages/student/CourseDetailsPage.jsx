@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import CourseComments from "../../components/CourseComments"; // Make sure the path is correct
-
+import CourseComments from "../../components/CourseComments";
 import { useParams, Link } from "react-router-dom";
 import {
   PlayCircleIcon,
@@ -12,7 +11,9 @@ import {
   ClipboardDocumentCheckIcon,
   ChevronRightIcon,
   PhotoIcon,
-  ChatBubbleLeftRightIcon, // Icon for comments button
+  ChatBubbleLeftRightIcon,
+  TicketIcon
+  
 } from "@heroicons/react/24/solid";
 import { ClockIcon, UserIcon } from "@heroicons/react/24/outline";
 import { API_BASE_URL, getData } from "../../services/ApiFetch";
@@ -20,6 +21,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-hot-toast";
 import Navbar from "../../Components/Navbar";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
+
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
 
 const CourseDetailsPage = () => {
@@ -30,28 +32,40 @@ const CourseDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [hasCertificate, setHasCertificate] = useState(false); // New state for certificate
+  const [certificate, setCertificate] = useState(null); // Store certificate details
   const [showCourseContent, setShowCourseContent] = useState(true);
-  const [showCommentsModal, setShowCommentsModal] = useState(false); // New state for modal visibility
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [userEnrollment,setUserEnrollment]=useState({})
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        // Fetch course details
         const [courseData, courseError] = await getData(`courses/${courseId}`);
         if (courseError) throw courseError;
         setCourse(courseData);
         setLessons(courseData.lessons || []);
 
         if (user?.userId) {
-          const [enrollmentsData, enrollmentsError] = await getData(
-            `enrollments`
-          );
+          // Check enrollment
+          const [enrollmentsData, enrollmentsError] = await getData(`enrollments/student/${user.userId}/${courseId}`);
           if (enrollmentsError) throw enrollmentsError;
+          setUserEnrollment(enrollmentsData)
+          
+          setIsEnrolled(!!enrollmentsData);
 
-          const userEnrollment = enrollmentsData.find(
-            (e) => e.courseId === parseInt(courseId) && e.userId === user.userId
+          // Check for certificate
+          const [certificateData, certificateError] = await getData(
+            `enrollments/certificates/course/${courseId}/${user.userId}`
           );
-          setIsEnrolled(!!userEnrollment);
+          if (certificateError) {
+            console.error("Error fetching certificate:", certificateError);
+          } else {
+            setHasCertificate(!!certificateData);
+            setCertificate(certificateData); // Store certificate details if exists
+          }
         }
       } catch (err) {
         console.error("Error fetching course details:", err);
@@ -112,10 +126,9 @@ const CourseDetailsPage = () => {
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-e-bosy-purple to-purple-800 text-white py-12 px-6 md:px-12 mt-6 animate-fade-in">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8">
-          {/* Left Column with information */}
           <div className="md:w-2/3">
             <p className="text-sm opacity-80 mb-2">
-              Formation &gt; {course.category?.name}
+              Formation > {course.category?.name}
             </p>
             <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
             <p className="text-lg opacity-90 mb-6">{course.description}</p>
@@ -137,16 +150,31 @@ const CourseDetailsPage = () => {
                 <PlayCircleIcon className="h-6 w-6 mr-2" /> S'inscrire au cours
               </Link>
             ) : (
-              <Link
-                to={`/course/${course.courseId}/lesson/${lessons[0]?.lessonId}`}
-                className="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-green-600 transition duration-300 inline-flex items-center animate-bounce-once"
-              >
-                <PlayCircleIcon className="h-6 w-6 mr-2" /> Continuer le cours
-              </Link>
+              <div className="flex space-x-4">
+                <Link
+                  to={`/course/${course.courseId}/lesson/${lessons[0]?.lessonId}`}
+                  className="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-green-600 transition duration-300 inline-flex items-center animate-bounce-once"
+                >
+                  <PlayCircleIcon className="h-6 w-6 mr-2" /> Continuer le cours
+                </Link>
+                {hasCertificate ? (
+                  <Link
+                    to={`/certificates/${certificate?.certificateId}`} // Adjust the route as needed
+                    className="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-blue-600 transition duration-300 inline-flex items-center animate-bounce-once"
+                  >
+                    <TicketIcon className="h-6 w-6 mr-2" /> Voir la certification
+                  </Link>
+                ) :userEnrollment?.completionRate>=80 ?(
+                  <Link
+                    to={`/course/${course.courseId}/assessments`} // Route to assessments or certification process
+                    className="bg-yellow-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-yellow-600 transition duration-300 inline-flex items-center animate-bounce-once"
+                  >
+                    <AcademicCapIcon className="h-6 w-6 mr-2" /> Obtenir la certification
+                  </Link>
+                ):""}
+              </div>
             )}
           </div>
-
-          {/* Right Column with image */}
           <div className="md:w-1/3">
             <div className="relative transform transition-transform duration-300 hover:scale-105">
               <img
@@ -177,7 +205,6 @@ const CourseDetailsPage = () => {
 
       {/* Main Content Area */}
       <div className="max-w-7xl mx-auto p-6 md:p-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Course Content */}
         <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6 animate-slide-in-left">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-gray-800">
@@ -339,9 +366,7 @@ const CourseDetailsPage = () => {
           </div>
         </div>
 
-        {/* Right Column */}
         <div className="lg:col-span-1 space-y-8 animate-slide-in-right">
-          {/* Overview Section */}
           <div className="bg-white rounded-lg shadow-md p-6 transform transition-transform duration-300 hover:scale-[1.02]">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               Aperçu du cours
@@ -376,7 +401,6 @@ const CourseDetailsPage = () => {
             </div>
           </div>
 
-          {/* Assessments Section */}
           <div className="bg-white rounded-lg shadow-md p-6 transform transition-transform duration-300 hover:scale-[1.02]">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               Exercices et Évaluations
@@ -421,7 +445,7 @@ const CourseDetailsPage = () => {
               </div>
             </div>
           </div>
-          {/* New Comments Section Button */}
+
           <div className="bg-white rounded-lg shadow-md p-6 transform transition-transform duration-300 hover:scale-[1.02]">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               Discuter du cours
@@ -437,7 +461,6 @@ const CourseDetailsPage = () => {
         </div>
       </div>
 
-      {/* Course Comments Modal */}
       <CourseComments
         courseId={courseId}
         user={user}

@@ -3,10 +3,12 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Swal from 'sweetalert2';
 import { MagnifyingGlassIcon, PlusIcon, EllipsisVerticalIcon, PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
 import UserFormModal from '../../components/UserFormModal';
 import ViewUserModal from '../../components/ViewUserModal';
 import { getData, postData, putData, deleteData, API_BASE_URL } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
+
 const ROLES = {
   ADMIN: 'administrateur',
   TEACHER: 'enseignant',
@@ -27,7 +29,7 @@ const UserManagementPage = () => {
   const [userToView, setUserToView] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [page, setPage] = useState(1);
-  const [pageSize, _] = useState(10);
+  const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchAllUsers = async () => {
@@ -145,13 +147,13 @@ const UserManagementPage = () => {
 
   const handleDeleteUser = async (id) => {
     const result = await Swal.fire({
-      title: 'Êtes-vous sûr?',
-      text: "Vous ne pourrez pas revenir en arrière!",
+      title: 'Êtes-vous sûr ?',
+      text: "Vous ne pourrez pas revenir en arrière !",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
-      confirmButtonText: 'Oui, supprimez-le!',
+      confirmButtonText: 'Oui, supprimez-le !',
       cancelButtonText: 'Annuler'
     });
 
@@ -163,7 +165,7 @@ const UserManagementPage = () => {
           return;
         }
         await Swal.fire(
-          'Supprimé!',
+          'Supprimé !',
           'L\'utilisateur a été supprimé.',
           'success'
         );
@@ -200,9 +202,13 @@ const UserManagementPage = () => {
   };
 
   const openViewModal = (user) => {
-    setUserToView(user);
-    setIsViewModalOpen(true);
-    setOpenDropdownId(null);
+    if (user.role.toLowerCase() === ROLES.TEACHER) {
+      window.location.href = `/dashboard/users/${user.userId}/profile`;
+    } else {
+      setUserToView(user);
+      setIsViewModalOpen(true);
+      setOpenDropdownId(null);
+    }
   };
 
   const closeViewModal = () => {
@@ -318,7 +324,7 @@ const UserManagementPage = () => {
                         {getUserStatus(user)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium relative">
                       <button
                         onClick={() => toggleDropdown(user.userId)}
                         className="text-gray-500 hover:text-gray-900 p-1 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:ring-opacity-50 transition-all duration-150"

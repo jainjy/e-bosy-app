@@ -41,7 +41,7 @@ const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount
     {
       name: "Abonnements",
       icon: CreditCardIcon,
-      path: "/dashboard/abonement",
+      path: "/subscription",
       roles: ["etudiant"],
     },
     {

@@ -1,84 +1,93 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import {
-  ArrowDownTrayIcon, // Download icon
-  ShareIcon,        // Share icon
-  CheckCircleIcon,  // Verified icon
-  InformationCircleIcon // Info icon
-} from '@heroicons/react/24/outline';
-import { QRCode } from 'react-qr-code'; // Import QRCode component as a named export
-import Navbar from '../Components/Navbar'; // Assuming you have a Navbar component
+import { ArrowDownTrayIcon, ShareIcon, CheckCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { QRCode } from 'react-qr-code';
+import { getData } from '../services/ApiFetch';
+import { toast } from 'react-hot-toast';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import Navbar from '../Components/Navbar';
+import generateCertificatePDF from '../utils/generateCertificatePDF';
+import html2canvas from 'html2canvas';
+
+const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
+const BASE_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:5173';
 
 const CertificateViewPage = () => {
-  const { id } = useParams(); // Get certificate ID from URL parameters
+  const { id } = useParams();
   const [certificate, setCertificate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Dummy certificate data (in a real app, this would come from an API call)
-  const dummyCertificates = [
-    {
-      id: '1',
-      courseTitle: 'Maîtrise du Developpement Web Frontend',
-      studentName: 'RAKOTO Malala',
-      issueDate: '25/05/2024',
-      completionDate: '20/05/2024',
-      verificationCode: 'EBSY-WEB-2024-ABC12345',
-      grade: 'A+',
-      instructor: 'Jane Doe',
-      duration: '120 heures',
-      description: 'Ce certificat atteste de la maîtrise des competences fondamentales et avancees en developpement web frontend, incluant HTML5, CSS3, JavaScript (ES6+), React, et les meilleures pratiques de conception reactive.',
-      imageUrl: 'https://via.placeholder.com/800x600?text=Certificat+Web+Dev', // Placeholder image if certificate has a visual
-      verifierUrl: 'https://e-bosy.com/verify?code=EBSY-WEB-2024-ABC12345' // URL for QR code
-    },
-    {
-      id: '2',
-      courseTitle: 'Intelligence Artificielle pour les Debutants',
-      studentName: 'RANDRIA Zo',
-      issueDate: '10/04/2024',
-      completionDate: '05/04/2024',
-      verificationCode: 'EBSY-AI-2024-DEF67890',
-      grade: 'B',
-      instructor: 'John Smith',
-      duration: '80 heures',
-      description: 'Introduction aux concepts fondamentaux de l\'intelligence artificielle, incluant le machine learning, le deep learning et les reseaux neuronaux.',
-      imageUrl: 'https://via.placeholder.com/800x600?text=Certificat+AI',
-      verifierUrl: 'https://e-bosy.com/verify?code=EBSY-AI-2024-DEF67890'
-    },
-    {
-        id: '3',
-        courseTitle: 'Introduction à JavaScript',
-        studentName: 'RAKOTOARIVONY Tiana',
-        issueDate: '15/05/2024',
-        completionDate: '10/05/2024',
-        verificationCode: 'EBSY-JS-2024-GHI10111',
-        grade: 'A',
-        instructor: 'Dr. Expert',
-        duration: '40 heures',
-        description: 'Ce certificat valide les competences en JavaScript de base à intermediaire.',
-        imageUrl: 'https://via.placeholder.com/800x600?text=JS+Cert',
-        verifierUrl: 'https://e-bosy.com/verify?code=EBSY-JS-2024-GHI10111'
-    }
-  ];
+  const qrCodeRef = useRef(null);
 
   useEffect(() => {
-    // Simulate fetching data based on ID
-    setLoading(true);
-    setError(null);
-    const foundCertificate = dummyCertificates.find(cert => cert.id === id);
-    if (foundCertificate) {
-      setCertificate(foundCertificate);
-    } else {
-      setError('Certificate not found.');
-    }
-    setLoading(false);
+    const fetchCertificate = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [data] = await getData(`enrollments/certificates/${id}`);
+        if (data) {
+          setCertificate({
+            certificateId: data.certificateId,
+            courseTitle: data.course?.title || 'Cours inconnu',
+            studentName: `${data.user?.firstName} ${data.user?.lastName}`.toUpperCase(),
+            issueDate: new Date(data.issuedAt).toLocaleDateString(),
+            completionDate: new Date(data.issuedAt).toLocaleDateString(),
+            verificationCode: data.verificationCode,
+            instructor: data.course?.teacher?.firstName ? `${data.course.teacher.firstName} ${data.course.teacher.lastName}` : 'Instructeur inconnu',
+            duration: data.course?.duration || 'Durée inconnue',
+            description: data.course?.description || 'Ce certificat atteste de la réussite du cours.',
+            imageUrl: data.course?.thumbnailUrl || DEFAULT_COURSE_IMAGE,
+            verifierUrl: `${BASE_URL}/verify?code=${data.verificationCode}`,
+            grade: data.course?.grade || null,
+            courseId: data.courseId
+          });
+        } else {
+          setError('Certificat non trouvé.');
+        }
+      } catch (err) {
+        setError('Erreur lors de la récupération du certificat.');
+        toast.error('Erreur lors de la récupération du certificat.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCertificate();
   }, [id]);
 
+  const handleDownload = async () => {
+    try {
+      let qrCodeDataUrl = null;
+      if (qrCodeRef.current) {
+        const canvas = await html2canvas(qrCodeRef.current);
+        qrCodeDataUrl = canvas.toDataURL('image/png');
+      }
+      generateCertificatePDF(certificate, certificate.courseId, qrCodeDataUrl);
+      toast.success(`Téléchargement du certificat pour ${certificate.courseTitle}`);
+    } catch (err) {
+      console.error('Erreur lors du téléchargement du certificat:', err);
+      toast.error('Erreur lors du téléchargement du certificat.');
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: certificate.courseTitle,
+        text: `Découvrez mon certificat de ${certificate.courseTitle} obtenu sur e-BoSy !`,
+        url: certificate.verifierUrl,
+      }).catch((shareError) => {
+        console.error('Erreur lors du partage du certificat:', shareError);
+        toast.error('Erreur lors du partage du certificat.');
+      });
+    } else {
+      navigator.clipboard.writeText(certificate.verifierUrl);
+      toast.success('Lien du certificat copié dans le presse-papiers !');
+    }
+  };
+
   if (loading) {
-    return (
-      <LoadingSpinner/>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {
@@ -92,57 +101,29 @@ const CertificateViewPage = () => {
   if (!certificate) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-20">
-        <p className="text-gray-600">Certificate data is not available.</p>
+        <p className="text-gray-600">Données du certificat non disponibles.</p>
       </div>
     );
   }
 
-  // Function to simulate download (in a real app, this would generate a PDF/image)
-  const handleDownload = () => {
-    alert(`Downloading certificate for ${certificate.courseTitle} by ${certificate.studentName}`);
-    // Here you would typically generate a PDF or an image of the certificate
-    // using libraries like html2canvas + jspdf, or a backend API.
-  };
-
-  // Function to simulate sharing
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: certificate.courseTitle,
-        text: `Check out my certificate from e-BoSy for ${certificate.courseTitle}!`,
-        url: window.location.href, // Current URL
-      }).then(() => {
-
-      }).catch((shareError) => {
-        console.error('Error sharing certificate:', shareError);
-      });
-    } else {
-      // Fallback for browsers that do not support navigator.share
-      alert(`Share this link: ${window.location.href}`);
-    }
-  };
-
-
   return (
-    <div className="min-h-screen bg-gray-50 pt-20"> {/* Added pt-20 for fixed navbar */}
+    <div className="min-h-screen bg-gray-50 pt-20">
       <Navbar />
       <main className="container mx-auto py-8 px-4">
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden transform transition-all duration-300 hover:scale-[1.005]">
           <div className="p-8 md:p-12 text-center relative">
-            {/* Background elements, if any */}
-            {/* <div className="absolute inset-0 bg-e-bosy-purple opacity-10 blur-sm rounded-lg"></div> */}
             <div className="relative z-10">
               <h1 className="text-3xl md:text-4xl font-extrabold text-e-bosy-purple mb-4">
-                CERTIFICAT DE REUSSITE
+                CERTIFICAT DE RÉUSSITE
               </h1>
               <p className="text-lg md:text-xl text-gray-700 mb-6 font-medium">
-                EST DECERNE À
+                EST DÉCERNÉ À
               </p>
               <h2 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 font-serif">
-                {certificate.studentName.toUpperCase()}
+                {certificate.studentName}
               </h2>
               <p className="text-lg md:text-xl text-gray-700 mb-6 font-medium">
-                POUR AVOIR TERMINE AVEC SUCCÈS LE COURS
+                POUR AVOIR TERMINÉ AVEC SUCCÈS LE COURS
               </p>
               <h3 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-6">
                 "{certificate.courseTitle}"
@@ -151,7 +132,7 @@ const CertificateViewPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-left max-w-2xl mx-auto mb-8">
                 <div className="flex items-center text-gray-700">
                   <InformationCircleIcon className="h-5 w-5 text-e-bosy-purple mr-2" />
-                  <span className="font-medium">Date de Delivrance:</span> {certificate.issueDate}
+                  <span className="font-medium">Date de Délivrance:</span> {certificate.issueDate}
                 </div>
                 <div className="flex items-center text-gray-700">
                   <CheckCircleIcon className="h-5 w-5 text-e-bosy-purple mr-2" />
@@ -159,17 +140,13 @@ const CertificateViewPage = () => {
                 </div>
                 <div className="flex items-center text-gray-700 col-span-full">
                   <InformationCircleIcon className="h-5 w-5 text-e-bosy-purple mr-2" />
-                  <span className="font-medium">Duree du Cours:</span> {certificate.duration}
-                </div>
-                <div className="flex items-center text-gray-700 col-span-full">
-                  <InformationCircleIcon className="h-5 w-5 text-e-bosy-purple mr-2" />
                   <span className="font-medium">Instructeur:</span> {certificate.instructor}
                 </div>
                 {certificate.grade && (
-                    <div className="flex items-center text-gray-700 col-span-full">
-                        <InformationCircleIcon className="h-5 w-5 text-e-bosy-purple mr-2" />
-                        <span className="font-medium">Note Obtenue:</span> <span className="font-bold text-e-bosy-purple">{certificate.grade}</span>
-                    </div>
+                  <div className="flex items-center text-gray-700 col-span-full">
+                    <InformationCircleIcon className="h-5 w-5 text-e-bosy-purple mr-2" />
+                    <span className="font-medium">Niveau:</span> <span className="font-bold text-e-bosy-purple">{certificate.grade}</span>
+                  </div>
                 )}
               </div>
 
@@ -177,34 +154,34 @@ const CertificateViewPage = () => {
                 {certificate.description}
               </p>
 
-              {/* Verification Section */}
               <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="text-center">
                   <h4 className="text-md font-semibold text-gray-800 mb-2 flex items-center justify-center">
-                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" /> Verifiez l'authenticite
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" /> Vérifiez l'authenticité
                   </h4>
-                  <QRCode value={certificate.verifierUrl} size={128} level="H"  />
-                  <p className="text-sm text-gray-500 mt-2">Scannez pour verifier</p>
+                  <div ref={qrCodeRef}>
+                    <QRCode value={certificate.verifierUrl} size={128} level="H" />
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">Scannez pour vérifier</p>
                 </div>
                 <div className="text-center md:text-left md:border-l md:border-gray-300 md:pl-8">
-                  <h4 className="text-md font-semibold text-gray-800 mb-2">Code de Verification:</h4>
+                  <h4 className="text-md font-semibold text-gray-800 mb-2">Code de Vérification:</h4>
                   <p className="text-2xl font-bold text-e-bosy-purple tracking-wider">
                     {certificate.verificationCode}
                   </p>
                   <p className="text-sm text-gray-500 mt-2">
-                    Visitez <a href="https://e-bosy.com/verify" target="_blank" rel="noopener noreferrer" className="text-e-bosy-purple hover:underline">e-bosy.com/verify</a> et entrez ce code.
+                    Visitez <a href={`${BASE_URL}/verify`} target="_blank" rel="noopener noreferrer" className="text-e-bosy-purple hover:underline">e-bosy.com/verify</a> et entrez ce code.
                   </p>
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
                 <button
                   onClick={handleDownload}
                   className="bg-e-bosy-purple text-white px-6 py-3 rounded-lg shadow-md flex items-center justify-center space-x-2 hover:bg-purple-700 transition-colors duration-200 text-lg"
                 >
                   <ArrowDownTrayIcon className="h-6 w-6" />
-                  <span>Telecharger le Certificat</span>
+                  <span>Télécharger le Certificat</span>
                 </button>
                 <button
                   onClick={handleShare}
@@ -217,10 +194,9 @@ const CertificateViewPage = () => {
             </div>
           </div>
         </div>
-        {/* Optional: Back to Certificates link */}
         <div className="text-center mt-8">
           <Link to="/dashboard/certificates" className="text-e-bosy-purple hover:underline text-lg flex items-center justify-center">
-            &larr; Retour à Mes Certificats
+            ← Retour à Mes Certificats
           </Link>
         </div>
       </main>

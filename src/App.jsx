@@ -63,6 +63,11 @@ import LiveSessionsPage from "./pages/LiveSessionsPage";
 
 import TeacherPage from "./pages/TeacherPage";
 import StudentPage from "./pages/StudentPage";
+import CertificationResultsPage from "./pages/student/CertificationResultsPage";
+import CertificateVerificationPage from "./pages/CertificateVerificationPage";
+import AdminCoursesPage from "./pages/admin/AdminCoursesPage";
+import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage";
+import TeacherProfilePage from "./pages/TeacherProfilePage";
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -106,11 +111,14 @@ function RoleBasedDashboard() {
 // Page de cours selon le rôle
 function RoleBasedCoursesPage() {
   const { user } = useAuth();
-
-  if (user?.role === "etudiant") {
-    return <MyCoursesPage />;
+  switch (user?.role) {
+    case "administrateur":
+      return <AdminCoursesPage />;
+    case "enseignant":
+      return <TeacherCoursesPage />;
+    default:
+      return <MyCoursesPage />;
   }
-  return <TeacherCoursesPage />;
 }
 
 // Composant principal
@@ -130,6 +138,7 @@ function App() {
           <Route path="/subscription" element={<SubscriptionPage />} />
           <Route path="/teacher" element={<TeacherPage />} />
           <Route path="/student" element={<StudentPage />} />
+          <Route path="/verify" element={<CertificateVerificationPage />} />
 
           {/* Détail cours, inscription, leçons */}
           <Route path="/course/:courseId" element={<CourseDetailsPage />} />
@@ -141,6 +150,7 @@ function App() {
             path="/course/:courseId/lesson/:lessonId"
             element={<LessonPage />}
           />
+          <Route path="/course/:courseId/results" element={<CertificationResultsPage />} />
           <Route
             path="/course/:courseId/certification"
             element={
@@ -186,10 +196,12 @@ function App() {
           >
             <Route index element={<RoleBasedDashboard />} />
             <Route path="courses" element={<RoleBasedCoursesPage />} />
+            <Route path="users/:id/profile" element={<TeacherProfilePage />} />
             <Route
               path="courses/:courseId/lessons"
               element={<TeacherLessonsPage />}
             />
+            <Route path="categories" element={<AdminCategoriesPage />} />
             <Route
               path="courses/:courseId/assessments"
               element={<AssessmentsPage />}

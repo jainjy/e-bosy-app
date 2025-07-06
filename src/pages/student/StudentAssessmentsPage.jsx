@@ -3,10 +3,11 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { getData } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
-import { AcademicCapIcon, BookOpenIcon } from '@heroicons/react/24/outline'; // Add BookOpenIcon for courses
+import { AcademicCapIcon, BookOpenIcon } from '@heroicons/react/24/outline';
 import Navbar from '../../Components/Navbar';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import AssessmentGrid from '../../components/AssessmentGrid';
+import { toast } from 'react-hot-toast';
 
 const StudentAssessmentsPage = () => {
   const [courses, setCourses] = useState([]);
@@ -14,6 +15,8 @@ const StudentAssessmentsPage = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [assessments, setAssessments] = useState([]);
   const [userProgress, setUserProgress] = useState({});
+  const [enrollments, setEnrollments] = useState({});
+  const [certificates, setCertificates] = useState({}); // Nouvel état pour les certificats
   const [error, setError] = useState(null);
   const { user } = useAuth();
 
@@ -32,10 +35,36 @@ const StudentAssessmentsPage = () => {
           return;
         }
         if (submissionsError) {
-          console.error('Erreur lors de la récupération des soumission:', submissionsError);
+          console.error('Erreur lors de la récupération des soumissions:', submissionsError);
           setError("Impossible de charger vos soumissions.");
           return;
         }
+
+        // Stocker les inscriptions dans un objet pour accéder au completionRate
+        const enrollmentsMap = enrollmentsData.reduce((acc, enrollment) => {
+          acc[enrollment.courseId] = enrollment;
+          return acc;
+        }, {});
+        setEnrollments(enrollmentsMap);
+
+        // Fetch certificates for each enrolled course
+        const certificatePromises = enrollmentsData.map(async (enrollment) => {
+          const [certificateData, certificateError] = await getData(
+            `enrollments/certificates/course/${enrollment.courseId}/${user.userId}`
+          );
+          if (certificateError) {
+            console.error(`Erreur lors de la récupération du certificat pour le cours ${enrollment.courseId}:`, certificateError);
+            return { courseId: enrollment.courseId, certificate: null };
+          }
+          return { courseId: enrollment.courseId, certificate: certificateData };
+        });
+
+        const certificateResults = await Promise.all(certificatePromises);
+        const certificatesMap = certificateResults.reduce((acc, { courseId, certificate }) => {
+          acc[courseId] = certificate;
+          return acc;
+        }, {});
+        setCertificates(certificatesMap);
 
         const progressMap = {};
         if (Array.isArray(submissionsData)) {
@@ -69,7 +98,6 @@ const StudentAssessmentsPage = () => {
           setSelectedCourse(null);
           setAssessments([]);
         }
-
       } catch (err) {
         console.error('Erreur:', err);
         setError("Une erreur est survenue lors du chargement des données.");
@@ -108,14 +136,12 @@ const StudentAssessmentsPage = () => {
             <p className="mt-2 text-gray-500">
               Vous n'êtes pas encore inscrit(e) à des cours contenant des exercices, ou les exercices ne sont pas encore disponibles.
             </p>
-            {/* Optional: Link to courses page */}
             <Link to="/courses" className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-e-bosy-purple hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-e-bosy-purple">
-                Découvrir les cours
+              Découvrir les cours
             </Link>
           </div>
         ) : (
           <>
-            {/* Course Selection Tabs/Buttons */}
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Sélectionner un cours</h2>
               <div className="flex flex-nowrap overflow-x-auto gap-3 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
@@ -135,16 +161,35 @@ const StudentAssessmentsPage = () => {
               </div>
             </div>
 
-            {/* Certification Button and Exercises Grid */}
             <div className="flex justify-end mb-8">
               {selectedCourse && (
-                <Link
-                  to={`/course/${selectedCourse.courseId}/certification`}
-                  className="inline-flex items-center px-6 py-3 bg-e-bosy-purple text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
-                >
-                  <AcademicCapIcon className="h-5 w-5 mr-2" />
-                  Passer l'examen de certification
-                </Link>
+                certificates[selectedCourse.courseId] ? (
+                  <Link
+                    to={`/certificates/${certificates[selectedCourse.courseId].certificateId}`}
+                    className="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors shadow-sm"
+                  >
+                    <AcademicCapIcon className="h-5 w-5 mr-2" />
+                    Voir la certification
+                  </Link>
+                ) : (
+                  <Link
+                    to={`/course/${selectedCourse.courseId}/certification`}
+                    className={`inline-flex items-center px-6 py-3 rounded-lg text-white font-medium transition-colors shadow-sm
+                      ${enrollments[selectedCourse.courseId]?.completionRate >= 80
+                        ? 'bg-e-bosy-purple hover:bg-purple-700'
+                        : 'bg-gray-300 cursor-not-allowed'
+                      }`}
+                    onClick={(e) => {
+                      if (enrollments[selectedCourse.courseId]?.completionRate < 80) {
+                        e.preventDefault();
+                        toast.error("Vous devez compléter au moins 80% du cours pour passer l'examen.");
+                      }
+                    }}
+                  >
+                    <AcademicCapIcon className="h-5 w-5 mr-2" />
+                    Passer l'examen de certification
+                  </Link>
+                )
               )}
             </div>
 

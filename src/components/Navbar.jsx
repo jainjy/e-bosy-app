@@ -43,7 +43,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-white p-4 shadow-sm flex items-center justify-between">
+    <nav className="fixed top-0 left-0 w-full z-50 bg-white p-4 shadow-sm flex items-center justify-between mb-11">
       <div className="flex items-center">
         <Link to="/" className="text-2xl font-bold text-e-bosy-purple">e-BoSy</Link>
       </div>

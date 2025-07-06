@@ -1,44 +1,75 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   MagnifyingGlassIcon,
   DocumentArrowDownIcon,
   AcademicCapIcon,
   CheckCircleIcon,
-  ArrowPathIcon,
   PlusCircleIcon,
 } from '@heroicons/react/24/outline';
-import { getData } from '../services/ApiFetch';
+import { QRCode } from 'react-qr-code';
+import { API_BASE_URL, getData } from '../services/ApiFetch';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-
+import generateCertificatePDF from '../utils/generateCertificatePDF';
+import html2canvas from 'html2canvas';
+const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
 const CertificatesPage = () => {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const qrCodeRefs = useRef({});
 
-  // Récupération des certificats de l'utilisateur connecté
   useEffect(() => {
     const fetchCertificates = async () => {
       setLoading(true);
       if (!user?.userId) return;
       const [data, error] = await getData(`enrollments/certificates/user/${user.userId}`);
-      if (!error) setCertificates(data || []);
+      if (!error) {
+        setCertificates(data.map(certificate => ({
+          certificateId: certificate.certificateId,
+          courseTitle: certificate.course?.title || 'Cours inconnu',
+          studentName: `${certificate.user?.firstName} ${certificate.user?.lastName}`.toUpperCase(),
+          issueDate: new Date(certificate.issuedAt).toLocaleDateString(),
+          completionDate: new Date(certificate.issuedAt).toLocaleDateString(),
+          verificationCode: certificate.verificationCode,
+          instructor: certificate.course?.teacher?.firstName ? `${certificate.course.teacher.firstName} ${certificate.course.teacher.lastName}` : 'Instructeur inconnu',
+          duration: certificate.course?.duration || 'Durée inconnue',
+          description: certificate.course?.description || 'Ce certificat atteste de la réussite du cours.',
+          imageUrl: certificate.course?.thumbnailUrl || DEFAULT_COURSE_IMAGE,
+          verifierUrl: `http://loclhost:5173/verify?code=${certificate.verificationCode}`,
+          grade: certificate.course?.level || null,
+          courseId: certificate.courseId
+        })) || []);
+      } else {
+        toast.error('Erreur lors de la récupération des certificats.');
+      }
       setLoading(false);
     };
     fetchCertificates();
   }, [user?.userId]);
 
-  // Filtrage
   const filteredCertificates = certificates.filter(certificate =>
-    certificate.course?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    certificate.courseTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     certificate.verificationCode?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Téléchargement simulé
-  const handleDownload = (certificate) => {
-    window.open(certificate.certificateUrl, '_blank');
+  const handleDownload = async (certificate) => {
+    try {
+      let qrCodeDataUrl = null;
+      const qrCodeElement = qrCodeRefs.current[certificate.certificateId];
+      if (qrCodeElement) {
+        const canvas = await html2canvas(qrCodeElement);
+        qrCodeDataUrl = canvas.toDataURL('image/png');
+      }
+      generateCertificatePDF(certificate, certificate.courseId, qrCodeDataUrl);
+      toast.success(`Téléchargement du certificat pour ${certificate.courseTitle}`);
+    } catch (err) {
+      console.error('Erreur lors du téléchargement du certificat:', err);
+      toast.error('Erreur lors du téléchargement du certificat.');
+    }
   };
 
   return (
@@ -75,12 +106,8 @@ const CertificatesPage = () => {
         </div>
       </div>
 
-      {/* Loading spinner */}
-      {loading && 
-      <LoadingSpinner/>
-      }
+      {loading && <LoadingSpinner />}
 
-      {/* Certificates Grid */}
       {!loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredCertificates.length > 0 ? (
@@ -91,7 +118,7 @@ const CertificatesPage = () => {
               >
                 <div className="relative h-44 bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
                   <img
-                    src={certificate.course?.thumbnailUrl || 'https://via.placeholder.com/300x180?text=Certificat'}
+                    src={API_BASE_URL+certificate.imageUrl}
                     alt="Certificate"
                     className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
                   />
@@ -106,10 +133,10 @@ const CertificatesPage = () => {
                 </div>
                 <div className="p-5">
                   <h3 className="text-lg font-semibold text-gray-800 mb-1 truncate">
-                    {certificate.course?.title}
+                    {certificate.courseTitle}
                   </h3>
                   <p className="text-sm text-gray-600 mb-1">
-                    Délivré le : {new Date(certificate.issuedAt).toLocaleDateString()}
+                    Délivré le : {certificate.issueDate}
                   </p>
                   <p className="text-xs text-gray-500 mb-3">
                     Code : <span className="font-medium text-gray-800">{certificate.verificationCode}</span>
@@ -128,6 +155,12 @@ const CertificatesPage = () => {
                     >
                       <DocumentArrowDownIcon className="h-6 w-6" />
                     </button>
+                  </div>
+                </div>
+                {/* Hidden QR Code for PDF generation */}
+                <div style={{ position: 'absolute', left: '-9999px' }}>
+                  <div ref={el => (qrCodeRefs.current[certificate.certificateId] = el)}>
+                    <QRCode value={certificate.verifierUrl} size={128} level="H" />
                   </div>
                 </div>
               </div>
