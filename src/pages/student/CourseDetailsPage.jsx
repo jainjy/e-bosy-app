@@ -12,11 +12,11 @@ import {
   ChevronRightIcon,
   PhotoIcon,
   ChatBubbleLeftRightIcon,
-  TicketIcon
-  
+  TicketIcon,
+  StarIcon,
 } from "@heroicons/react/24/solid";
 import { ClockIcon, UserIcon } from "@heroicons/react/24/outline";
-import { API_BASE_URL, getData } from "../../services/ApiFetch";
+import { API_BASE_URL, getData, putData } from "../../services/ApiFetch";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-hot-toast";
 import Navbar from "../../Components/Navbar";
@@ -36,7 +36,11 @@ const CourseDetailsPage = () => {
   const [certificate, setCertificate] = useState(null); // Store certificate details
   const [showCourseContent, setShowCourseContent] = useState(true);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
-  const [userEnrollment,setUserEnrollment]=useState({})
+  const [userEnrollment, setUserEnrollment] = useState({});
+  const [userRating, setUserRating] = useState(null);
+  const [isRatingSubmitting, setIsRatingSubmitting] = useState(false);
+  const [totalRatings, setTotalRatings] = useState(0);
+  const [averageRating, setAverageRating] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,13 +52,26 @@ const CourseDetailsPage = () => {
         setCourse(courseData);
         setLessons(courseData.lessons || []);
 
+        // Ajout: récupération des stats de notes
+        setAverageRating(courseData.courseRate ?? null);
+        setTotalRatings(courseData.totalReviews ?? 0);
+
         if (user?.userId) {
           // Check enrollment
-          const [enrollmentsData, enrollmentsError] = await getData(`enrollments/student/${user.userId}/${courseId}`);
+          const [enrollmentsData, enrollmentsError] = await getData(
+            `enrollments/student/${user.userId}/${courseId}`
+          );
           if (enrollmentsError) throw enrollmentsError;
-          setUserEnrollment(enrollmentsData)
-          
+          setUserEnrollment(enrollmentsData);
+
           setIsEnrolled(!!enrollmentsData);
+
+          // Ajout: récupérer la note de l'utilisateur si elle existe
+          if (enrollmentsData && enrollmentsData.rate) {
+            setUserRating(enrollmentsData.rate);
+          } else {
+            setUserRating(null);
+          }
 
           // Check for certificate
           const [certificateData, certificateError] = await getData(
@@ -120,6 +137,55 @@ const CourseDetailsPage = () => {
       lessons.some((lesson) => lesson.sectionTitle === section.title)
     ) || [];
 
+  // Fonction pour envoyer la note
+  const handleRateCourse = async (rating) => {
+    if (!userEnrollment?.enrollmentId) return;
+    setIsRatingSubmitting(true);
+    try {
+      const response = await putData(
+        `enrollments/${userEnrollment.enrollmentId}`,
+        {
+          rate: rating,
+        }
+      );
+      if (!response.ok) throw new Error("Erreur lors de l'envoi de la note");
+      setUserRating(rating);
+      toast.success("Merci pour votre note !");
+      // Rafraîchir les stats de notes après vote
+      const [courseData] = await getData(`courses/${courseId}`);
+      setAverageRating(courseData.averageRating ?? null);
+      setTotalRatings(courseData.totalReviews ?? 0);
+    } catch (err) {
+      toast.error("Impossible d'enregistrer la note.");
+    } finally {
+      setIsRatingSubmitting(false);
+    }
+  };
+
+  // Composant d'étoiles
+  const StarRating = ({ value, onChange, disabled }) => (
+    <div className="flex items-center space-x-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(star)}
+          className={`focus:outline-none ${
+            disabled ? "cursor-not-allowed" : "hover:scale-110"
+          }`}
+          aria-label={`Donner ${star} étoile${star > 1 ? "s" : ""}`}
+        >
+          <StarIcon
+            className={`h-7 w-7 ${
+              value >= star ? "text-yellow-400" : "text-gray-300"
+            } transition-colors`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <Navbar />
@@ -128,7 +194,7 @@ const CourseDetailsPage = () => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8">
           <div className="md:w-2/3">
             <p className="text-sm opacity-80 mb-2">
-              Formation > {course.category?.name}
+              Formation {">"} {course.category?.name}
             </p>
             <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
             <p className="text-lg opacity-90 mb-6">{course.description}</p>
@@ -162,18 +228,65 @@ const CourseDetailsPage = () => {
                     to={`/certificates/${certificate?.certificateId}`} // Adjust the route as needed
                     className="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-blue-600 transition duration-300 inline-flex items-center animate-bounce-once"
                   >
-                    <TicketIcon className="h-6 w-6 mr-2" /> Voir la certification
+                    <TicketIcon className="h-6 w-6 mr-2" /> Voir la
+                    certification
                   </Link>
-                ) :userEnrollment?.completionRate>=80 ?(
+                ) : userEnrollment?.completionRate >= 80 ? (
                   <Link
                     to={`/course/${course.courseId}/assessments`} // Route to assessments or certification process
                     className="bg-yellow-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-yellow-600 transition duration-300 inline-flex items-center animate-bounce-once"
                   >
-                    <AcademicCapIcon className="h-6 w-6 mr-2" /> Obtenir la certification
+                    <AcademicCapIcon className="h-6 w-6 mr-2" /> Obtenir la
+                    certification
                   </Link>
-                ):""}
+                ) : (
+                  ""
+                )}
               </div>
             )}
+            {/* Bloc d'évaluation par étoiles */}
+            <div className="my-4">
+              <div className="flex items-center space-x-3">
+                <span className="font-semibold">Note moyenne :</span>
+                <StarRating value={averageRating || 0} disabled={true} />
+                <span className="text-yellow-200 font-bold">
+                  {averageRating ? averageRating.toFixed(1) : "-"}
+                  /5
+                </span>
+                <span className="text-gray-200 text-sm">
+                  ({totalRatings} avis)
+                </span>
+              </div>
+              {isEnrolled && (
+                <div className="mt-2">
+                  <h3 className="font-semibold mb-2">
+                    Votre note pour ce cours :
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <StarRating
+                      value={userRating || 0}
+                      onChange={handleRateCourse}
+                      disabled={isRatingSubmitting}
+                    />
+                    {userRating && (
+                      <span className="text-yellow-400 font-bold">
+                        {userRating}/5
+                      </span>
+                    )}
+                    {isRatingSubmitting && (
+                      <span className="text-gray-200 text-sm ml-2">
+                        Envoi...
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-200 mt-1">
+                    {userRating
+                      ? "Vous pouvez modifier votre note à tout moment."
+                      : "Cliquez sur une étoile pour noter ce cours."}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <div className="md:w-1/3">
             <div className="relative transform transition-transform duration-300 hover:scale-105">
@@ -266,7 +379,8 @@ const CourseDetailsPage = () => {
                       const canDownload =
                         isLessonAccessible &&
                         lesson.content &&
-                        (lesson.contentType.toLowerCase() === "video" ||
+                        ((lesson.contentType.toLowerCase() === "video" &&
+                          user?.IsSubscribed) ||
                           lesson.contentType.toLowerCase() === "pdfs");
 
                       const isPdf = lesson.contentType.toLowerCase() === "pdfs";

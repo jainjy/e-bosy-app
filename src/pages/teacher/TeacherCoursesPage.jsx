@@ -17,6 +17,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import CourseFormModal from "../../components/CourseFormModal";
+import LiveSessionFormModal from "../../components/LiveSessionFormModal";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import { getData, deleteData, postData, putData, patchData, API_BASE_URL } from "../../services/ApiFetch";
 import { useAuth } from '../../contexts/AuthContext';
@@ -174,6 +175,7 @@ const TeacherCoursesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState(COURSE_STATUS.ALL);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isLiveSessionModalOpen, setIsLiveSessionModalOpen] = useState(false);
   const [courseToEdit, setCourseToEdit] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('updated');
@@ -292,6 +294,14 @@ const TeacherCoursesPage = () => {
     setCourseToEdit(null);
   };
 
+  const openLiveSessionModal = () => {
+    setIsLiveSessionModalOpen(true);
+  };
+
+  const closeLiveSessionModal = () => {
+    setIsLiveSessionModalOpen(false);
+  };
+
   const handleFormSubmit = async (submittedCourseData) => {
     try {
       let response;
@@ -318,6 +328,16 @@ const TeacherCoursesPage = () => {
       toast.error(error.message);
     } finally {
       closeFormModal();
+    }
+  };
+
+  const handleLiveSessionSubmit = async (sessionData) => {
+    try {
+      toast.success("Session en direct planifiée/mise à jour avec succès!");
+    } catch (error) {
+      toast.error("Erreur lors de la planification/mise à jour de la session en direct.");
+    } finally {
+      closeLiveSessionModal();
     }
   };
 
@@ -370,13 +390,13 @@ const TeacherCoursesPage = () => {
               <PlusIcon className="h-5 w-5 mr-2" />
               Créer Nouveau Cours
             </button>
-            <Link
-              to="/dashboard/live-sessions/schedule"
+            <button
+              onClick={openLiveSessionModal}
               className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
             >
               <VideoCameraIcon className="h-5 w-5 mr-2" />
-              Session Live Générale
-            </Link>
+              PlanifieSession Liver 
+            </button>
           </div>
         </div>
       </div>
@@ -437,6 +457,13 @@ const TeacherCoursesPage = () => {
           onClose={closeFormModal}
           onSubmit={handleFormSubmit}
           course={courseToEdit}
+        />
+      )}
+
+      {isLiveSessionModalOpen && (
+        <LiveSessionFormModal
+          onClose={closeLiveSessionModal}
+          onSubmit={handleLiveSessionSubmit}
         />
       )}
     </div>

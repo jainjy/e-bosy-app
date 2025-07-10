@@ -139,29 +139,30 @@ class MessageService {
     }
   }
 
-  async getUsers() {
+  async getUsers(currentUser) {
     try {
-      // Utiliser l'endpoint all qui récupère tous les utilisateurs sauf l'utilisateur courant
-      const [data] = await getData('users/all');
-      
-      if (!data) return [];
+      const [data,error] = await getData(`users/toConversation/${currentUser.userId}`);
+      if (!data || !Array.isArray(data)) return [];
 
-      // Transformer les données pour correspondre au format attendu
-      return data.map(user => ({
+      // Construction de la liste enrichie des utilisateurs
+      const users = data.map(user => ({
         userId: user.userId,
         name: `${user.firstName} ${user.lastName}`,
         role: user.role,
-        status: 'offline', // État par défaut
+        status: 'offline',
         lastMessage: '',
         lastMessageDate: null,
         unreadCount: 0,
-        profilePictureUrl :user.profilePictureUrl,
+        profilePictureUrl: user.profilePictureUrl,
       }));
+      return users;
+
     } catch (error) {
       console.error('Error fetching users:', error);
       return [];
     }
   }
+
 }
 
 export const messageService = new MessageService();

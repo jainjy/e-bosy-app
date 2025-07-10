@@ -197,6 +197,7 @@ const StudentAssessmentsPage = () => {
               assessments={assessments}
               userProgress={userProgress}
               courseId={selectedCourse?.courseId}
+              courseTitle={selectedCourse?.title} // Ajoutez cette ligne
               type="exercise"
             />
           </>

@@ -1,3 +1,4 @@
+// CertificationExamPage.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -13,25 +14,102 @@ import {
   FlagIcon,
   Bars3Icon,
   UserCircleIcon,
+  LockClosedIcon
 } from '@heroicons/react/24/outline';
 
 const CertificationExamPage = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-
   const [exams, setExams] = useState([]);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [questionsBySection, setQuestionsBySection] = useState({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [allSelectedAnswers, setAllSelectedAnswers] = useState({});
-  const [totalTimeLeft, setTotalTimeLeft] = useState(null);
+  const [allSelectedAnswers, setAllSelectedAnswers] = useState(() => {
+    const savedAnswers = localStorage.getItem(`examAnswers_${courseId}_${user?.userId}`);
+    return savedAnswers ? JSON.parse(savedAnswers) : {};
+  });
+  const [totalTimeLeft, setTotalTimeLeft] = useState(() => {
+    const savedTime = localStorage.getItem(`examTimeLeft_${courseId}_${user?.userId}`);
+    return savedTime ? parseInt(savedTime) : null;
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasLoadedExams, setHasLoadedExams] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isConfirmSubmitOpen, setIsConfirmSubmitOpen] = useState(false);
-
+  const [canRetakeExam, setCanRetakeExam] = useState(true);
+  const [nextRetakeTime, setNextRetakeTime] = useState(null);
   const globalTimerRef = useRef(null);
+
+  useEffect(() => {
+    const checkExamRetake = async () => {
+      try {
+        const examIds = exams.map(exam => exam.assessmentId);
+        const checks = await Promise.all(examIds.map(async (examId) => {
+          const [canRetake] = await getData(`assessments/can-retake/${examId}/${user.userId}`);
+          return { examId, canRetake };
+        }));
+
+        const cannotRetake = checks.some(check => !check.canRetake);
+        if (cannotRetake) {
+          const submissions = await Promise.all(examIds.map(async (examId) => {
+            const [submissionData] = await getData(`assessments/users/${user.userId}/submissions`);
+            return submissionData
+              .filter(s => s.assessmentId === examId)
+              .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
+          }));
+
+          const latestSubmission = submissions.reduce((latest, current) => {
+            return (!latest || new Date(current.submittedAt) > new Date(latest.submittedAt)) ? current : latest;
+          }, null);
+
+          if (latestSubmission) {
+            const lastAttemptTime = new Date(latestSubmission.submittedAt);
+            const nextAvailableTime = new Date(lastAttemptTime.getTime() + 24 * 60 * 60 * 1000);
+            setNextRetakeTime(nextAvailableTime);
+          }
+          setCanRetakeExam(false);
+          return;
+        }
+        setCanRetakeExam(true);
+      } catch (error) {
+        console.error("Error checking exam retake:", error);
+        toast.error("Erreur lors de la vérification des tentatives d'examen");
+      }
+    };
+
+    if (exams.length > 0 && user?.userId) {
+      checkExamRetake();
+    }
+  }, [exams, user?.userId]);
+
+  useEffect(() => {
+    const handleCopy = (e) => {
+      e.preventDefault();
+      toast.error('La copie des questions est désactivée pendant l\'examen');
+    };
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+    };
+    document.addEventListener('copy', handleCopy);
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => {
+      document.removeEventListener('copy', handleCopy);
+      document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (Object.keys(allSelectedAnswers).length > 0) {
+      localStorage.setItem(`examAnswers_${courseId}_${user?.userId}`, JSON.stringify(allSelectedAnswers));
+    }
+  }, [allSelectedAnswers, courseId, user?.userId]);
+
+  useEffect(() => {
+    if (totalTimeLeft !== null) {
+      localStorage.setItem(`examTimeLeft_${courseId}_${user?.userId}`, totalTimeLeft.toString());
+    }
+  }, [totalTimeLeft, courseId, user?.userId]);
 
   const totalQuestionsAnswered = useCallback(() => {
     let count = 0;
@@ -55,37 +133,43 @@ const CertificationExamPage = () => {
 
   const fetchExamsAndQuestions = useCallback(async () => {
     try {
+      if (!localStorage.getItem(`examInProgress_${courseId}_${user?.userId}`)) {
+        localStorage.removeItem(`examAnswers_${courseId}_${user?.userId}`);
+        localStorage.removeItem(`examTimeLeft_${courseId}_${user?.userId}`);
+        setAllSelectedAnswers({});
+      }
       const [examsData] = await getData(`assessments/course/${courseId}/exams`);
       if (!examsData || examsData.length < 2) {
         toast.error("Ce cours ne contient pas assez d'examens pour la certification.");
         navigate(-1);
         return;
       }
-
       const selectedExams = examsData.slice(0, 2);
       setExams(selectedExams);
-
       let initialTotalTime = 0;
       const initialQuestionsBySection = {};
-      const initialAllSelectedAnswers = {};
-
+      const initialAllSelectedAnswers = allSelectedAnswers;
       for (let i = 0; i < selectedExams.length; i++) {
         const exam = selectedExams[i];
         initialTotalTime += exam.timeLimit ? exam.timeLimit * 60 : 0;
         const [questionsData] = await getData(`assessments/${exam.assessmentId}/questions`);
-
         initialQuestionsBySection[i] = questionsData || [];
-        initialAllSelectedAnswers[i] = {};
+        if (!initialAllSelectedAnswers[i]) {
+          initialAllSelectedAnswers[i] = {};
+        }
       }
-
       if (initialTotalTime === 0) {
         initialTotalTime = 90 * 60;
       }
-
+      const savedTime = localStorage.getItem(`examTimeLeft_${courseId}_${user?.userId}`);
+      const finalTime = savedTime ? parseInt(savedTime) : initialTotalTime;
       setQuestionsBySection(initialQuestionsBySection);
       setAllSelectedAnswers(initialAllSelectedAnswers);
-      setTotalTimeLeft(initialTotalTime);
+      setTotalTimeLeft(finalTime);
       setHasLoadedExams(true);
+
+      localStorage.setItem(`examInProgress_${courseId}_${user?.userId}`, 'true');
+
       startGlobalTimer();
       toast.success("Examens chargés !");
     } catch (error) {
@@ -93,7 +177,7 @@ const CertificationExamPage = () => {
       toast.error("Erreur lors du chargement des examens et des questions.");
       navigate(-1);
     }
-  }, [courseId, navigate]);
+  }, [courseId, navigate, user?.userId, allSelectedAnswers]);
 
   useEffect(() => {
     fetchExamsAndQuestions();
@@ -101,7 +185,6 @@ const CertificationExamPage = () => {
 
   const startGlobalTimer = () => {
     if (globalTimerRef.current) return;
-
     globalTimerRef.current = setInterval(() => {
       setTotalTimeLeft(prev => {
         if (prev <= 1) {
@@ -128,10 +211,8 @@ const CertificationExamPage = () => {
     setAllSelectedAnswers(prev => {
       const currentExamAnswers = { ...prev[currentSectionIndex] };
       const currentQuestionAnswers = currentExamAnswers[questionId] || [];
-
       const currentQuestion = questionsBySection[currentSectionIndex]?.find(q => q.questionId === questionId);
       let newAnswers;
-
       if (currentQuestion?.questionType === "multiple_choice") {
         newAnswers = currentQuestionAnswers.includes(answerId)
           ? currentQuestionAnswers.filter(id => id !== answerId)
@@ -139,9 +220,7 @@ const CertificationExamPage = () => {
       } else {
         newAnswers = [answerId];
       }
-
       currentExamAnswers[questionId] = newAnswers;
-
       return {
         ...prev,
         [currentSectionIndex]: currentExamAnswers
@@ -153,7 +232,6 @@ const CertificationExamPage = () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     clearInterval(globalTimerRef.current);
-
     try {
       const submissions = await Promise.all(
         exams.map(async (exam, index) => {
@@ -167,6 +245,11 @@ const CertificationExamPage = () => {
           return { ...response, totalScore: exam.totalScore };
         })
       );
+
+      localStorage.removeItem(`examAnswers_${courseId}_${user?.userId}`);
+      localStorage.removeItem(`examTimeLeft_${courseId}_${user?.userId}`);
+      localStorage.removeItem(`examInProgress_${courseId}_${user?.userId}`);
+
       navigate(`/course/${courseId}/results`, { state: { overallResults: submissions, exams, courseId } });
       toast.success("Examens soumis avec succès !");
     } catch (error) {
@@ -199,6 +282,33 @@ const CertificationExamPage = () => {
   const currentQuestion = currentQuestions[currentQuestionIndex];
   const currentExamSelectedAnswers = allSelectedAnswers[currentSectionIndex] || {};
 
+  if (!canRetakeExam) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
+        <div className="max-w-2xl bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="flex justify-center mb-6">
+            <LockClosedIcon className="h-16 w-16 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Tentative d'examen non autorisée</h2>
+          <p className="text-gray-600 mb-6">
+            Vous avez échoué à un examen récemment. Vous devez attendre 24 heures avant de pouvoir repasser l'examen.
+          </p>
+          {nextRetakeTime && (
+            <p className="text-lg font-medium text-gray-700 mb-6">
+              Prochaine tentative possible: {nextRetakeTime.toLocaleString()}
+            </p>
+          )}
+          <button
+            onClick={() => navigate(-1)}
+            className="px-6 py-3 bg-e-bosy-purple text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+          >
+            Retour
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!hasLoadedExams) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -209,7 +319,7 @@ const CertificationExamPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 flex flex-col font-sans">
+    <div className="min-h-screen bg-gray-50 text-gray-800 flex flex-col font-sans select-none">
       <header className="flex items-center justify-between bg-white p-4 shadow-md z-10 border-b border-gray-100">
         <div className="flex items-center">
           <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="mr-4 text-gray-600 hover:text-e-bosy-purple">
@@ -242,7 +352,6 @@ const CertificationExamPage = () => {
           </div>
         </div>
       </header>
-
       <div className="flex flex-1 overflow-hidden">
         <aside
           className={`bg-white border-r border-gray-100 p-6 flex flex-col transition-all duration-300 shadow-md ${isSidebarOpen ? 'w-80' : 'w-0 overflow-hidden p-0'}`}
@@ -310,7 +419,6 @@ const CertificationExamPage = () => {
             </>
           )}
         </aside>
-
         <main className="flex-1 flex flex-col bg-gray-50 p-8">
           <div className="bg-white rounded-xl shadow-lg p-6 flex-1 overflow-y-auto custom-scrollbar border border-gray-100">
             {currentQuestion ? (
@@ -318,11 +426,12 @@ const CertificationExamPage = () => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-start">
                   <QuestionMarkCircleIcon className="h-7 w-7 text-e-bosy-purple mr-3 flex-shrink-0" />
                   <div className="leading-tight">
-                    Question {currentQuestionIndex + 1}: <br className="sm:hidden" /> {currentQuestion.questionText}
+                    Question {currentQuestionIndex + 1}: <br className="sm:hidden" />
+                    <span onCopy={(e) => e.preventDefault()}>{currentQuestion.questionText}</span>
                   </div>
                 </h2>
                 <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 mb-6">
-                  <p className="text-gray-600 text-sm italic">
+                  <p className="text-gray-600 text-sm italic" onCopy={(e) => e.preventDefault()}>
                     {currentQuestion.questionType === "multiple_choice"
                       ? "Sélectionnez la ou les bonnes réponses."
                       : "Sélectionnez la bonne réponse."}
@@ -346,7 +455,7 @@ const CertificationExamPage = () => {
                         onChange={() => handleAnswerSelect(currentQuestion.questionId, answer.answerId)}
                         className="form-checkbox h-5 w-5 text-e-bosy-purple rounded border-gray-300 bg-white focus:ring-e-bosy-purple focus:ring-offset-1"
                       />
-                      <span className="ml-3 font-medium">{answer.answerText}</span>
+                      <span className="ml-3 font-medium" onCopy={(e) => e.preventDefault()}>{answer.answerText}</span>
                     </label>
                   ))}
                 </div>
@@ -359,7 +468,6 @@ const CertificationExamPage = () => {
               </div>
             )}
           </div>
-
           <div className="flex justify-between mt-6 p-4 bg-white rounded-xl shadow-lg border border-gray-100">
             <button
               onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
@@ -388,7 +496,6 @@ const CertificationExamPage = () => {
           </div>
         </main>
       </div>
-
       {isConfirmSubmitOpen && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-8 max-w-lg w-full mx-auto shadow-2xl border border-gray-100">

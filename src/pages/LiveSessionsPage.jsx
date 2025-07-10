@@ -12,6 +12,7 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import LiveSessionFormModal from "../components/LiveSessionFormModal";
+import LiveSessionAttendeesModal from "../components/LiveSessionAttendeesModal";
 import { toast } from "react-toastify";
 import { getData, postData, putData } from "../services/ApiFetch";
 import { API_BASE_URL } from "../services/ApiFetch";
@@ -23,6 +24,9 @@ const LiveSessionsPage = () => {
   const [filter, setFilter] = useState("upcoming");
   const [showModal, setShowModal] = useState(false);
   const [editingSession, setEditingSession] = useState(null);
+  const [showAttendeesModal, setShowAttendeesModal] = useState(false);
+  const [attendees, setAttendees] = useState([]);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
   const navigate = useNavigate();
   const baseUrl = `${API_BASE_URL}/api/livesessions`;
 
@@ -30,14 +34,24 @@ const LiveSessionsPage = () => {
     try {
       setLoading(true);
       let endpoint;
-      if (user.role === "enseignant") {
+
+      // Différents endpoints selon le rôle
+      if (user.role === "administrateur") {
         endpoint = filter === "upcoming" ? `${baseUrl}/upcoming` : `${baseUrl}/past`;
-      } else {
-        // Étudiant : récupérer les sessions où il est inscrit
+      } 
+      else if (user.role === "enseignant") {
+        // Les enseignants ne voient que leurs sessions
         endpoint = filter === "upcoming" 
-          ? `${baseUrl}/upcoming?attendeeId=${user.userId}`
-          : `${baseUrl}/past?attendeeId=${user.userId}`;
+          ? `${baseUrl}/host/${user.userId}`
+          : `${baseUrl}/host/${user.userId}?past=true`;
       }
+      else {
+        // Les étudiants ne voient que les sessions des cours où ils sont inscrits
+        endpoint = filter === "upcoming" 
+          ? `${baseUrl}/upcoming?attendeeId=${user.userId}&enrolled=true` 
+          : `${baseUrl}/past?attendeeId=${user.userId}&enrolled=true`;
+      }
+
       const [data, error] = await getData(endpoint);
       if (error) throw error;
       setSessions(data);
@@ -80,11 +94,22 @@ const LiveSessionsPage = () => {
     return isSessionOngoing(session);
   };
 
-  const isHost = (session) => {
-    return user?.userId === session.hostId || user?.role === "administrateur";
+  const canManageSession = (session) => {
+    return user.role === "administrateur" || 
+           (user.role === "enseignant" && user.userId === session.hostId);
+  };
+
+  const canEditSession = (session) => {
+    const now = new Date();
+    const start = new Date(session.startTime);
+    return start > now; // Only allow editing if the session hasn't started yet
   };
 
   const handleOpenModal = (session = null) => {
+    if (session && !canEditSession(session)) {
+      toast.warn("Vous ne pouvez pas modifier une session passée.");
+      return;
+    }
     setEditingSession(session);
     setShowModal(true);
   };
@@ -124,8 +149,25 @@ const LiveSessionsPage = () => {
     }
   };
 
-  const handleViewAttendees = (sessionId) => {
-    navigate(`/live-session/${sessionId}/attendees`);
+  const handleViewAttendees = async (sessionId) => {
+    setSelectedSessionId(sessionId);
+    try {
+      const [data, error] = await getData(`${API_BASE_URL}/api/livesessions/${sessionId}/attendees`);
+      if (error) {
+        throw error;
+      }
+      setAttendees(data);
+      setShowAttendeesModal(true);
+    } catch (error) {
+      console.error("Error fetching attendees:", error);
+      toast.error("Erreur lors du chargement des participants");
+    }
+  };
+
+  const handleCloseAttendeesModal = () => {
+    setShowAttendeesModal(false);
+    setAttendees([]);
+    setSelectedSessionId(null);
   };
 
   const handleStartSession = async (sessionId) => {
@@ -154,7 +196,17 @@ const LiveSessionsPage = () => {
 
   // Séparer les sessions en cours des autres
   const ongoingSessions = sessions.filter(isSessionOngoing);
-  const otherSessions = sessions.filter((session) => !isSessionOngoing(session));
+
+  // Filtrer les sessions à venir et passées en fonction de la date et de l'heure actuelles
+  const upcomingSessions = sessions.filter(
+    (session) => !isSessionOngoing(session) && new Date(session.startTime) > new Date()
+  );
+  const pastSessions = sessions.filter(
+    (session) => !isSessionOngoing(session) && new Date(session.startTime) <= new Date()
+  );
+
+  // Déterminer quelles sessions afficher en fonction du filtre sélectionné
+  const sessionsToDisplay = filter === "upcoming" ? upcomingSessions : pastSessions;
 
   return (
     <div className="container mx-auto p-4">
@@ -178,7 +230,7 @@ const LiveSessionsPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {ongoingSessions.map((session) => (
               <div
-                key={session.id}
+                key={session.sessionId}
                 className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white"
               >
                 <div className="p-5">
@@ -186,22 +238,25 @@ const LiveSessionsPage = () => {
                     <h3 className="text-xl font-semibold text-gray-800">
                       {session.title}
                     </h3>
-                    {user.role === "enseignant" && isHost(session) && (
+                    {canManageSession(session) && !isSessionOngoing(session) && !pastSessions.some(pastSession => pastSession.sessionId === session.sessionId) && (
                       <div className="flex space-x-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleOpenModal(session);
                           }}
-                          className="text-blue-500 hover:text-blue-700 transition-colors"
+                          className={`text-blue-500 hover:text-blue-700 transition-colors ${
+                            canEditSession(session) ? "" : "cursor-not-allowed opacity-50"
+                          }`}
                           title="Modifier"
+                          disabled={!canEditSession(session)}
                         >
                           <PencilIcon className="h-5 w-5" />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteSession(session.id);
+                            handleDeleteSession(session.sessionId);
                           }}
                           className="text-red-500 hover:text-red-700 transition-colors"
                           title="Supprimer"
@@ -239,17 +294,17 @@ const LiveSessionsPage = () => {
                   </div>
 
                   <div className="flex space-x-2">
-                    {user.role === "enseignant" && isHost(session) ? (
+                    {user.role === "enseignant" && canManageSession(session) ? (
                       <>
                         <button
-                          onClick={() => handleStartSession(session.id)}
+                          onClick={() => handleStartSession(session.sessionId)}
                           className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded flex items-center justify-center text-sm font-medium"
                         >
                           <PlayIcon className="h-4 w-4 mr-1" />
                           Démarrer
                         </button>
                         <button
-                          onClick={() => handleViewAttendees(session.id)}
+                          onClick={() => handleViewAttendees(session.sessionId)}
                           className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium flex items-center"
                           title="Voir les participants"
                         >
@@ -258,7 +313,7 @@ const LiveSessionsPage = () => {
                       </>
                     ) : (
                       <button
-                        onClick={() => handleJoinSession(session.id)}
+                        onClick={() => handleJoinSession(session.sessionId)}
                         disabled={!canJoin(session) || !session.attendeesIds.includes(user.userId)}
                         className={`flex-1 py-2 rounded flex items-center justify-center text-sm font-medium ${
                           canJoin(session) && session.attendeesIds.includes(user.userId)
@@ -306,28 +361,19 @@ const LiveSessionsPage = () => {
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
-      ) : otherSessions.length === 0 ? (
+      ) : sessionsToDisplay.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <VideoCameraIcon className="h-16 w-16 mx-auto text-gray-300" />
           <h3 className="mt-4 text-lg font-medium text-gray-700">
             Aucune session {filter === "upcoming" ? "à venir" : "passée"} pour
             le moment
           </h3>
-          {filter === "upcoming" && user?.role === "enseignant" && (
-            <button
-              onClick={() => handleOpenModal()}
-              className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg inline-flex items-center transition-colors"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Planifier votre première session
-            </button>
-          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {otherSessions.map((session) => (
+          {sessionsToDisplay.map((session) => (
             <div
-              key={session.id}
+              key={session.sessionId}
               className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white"
             >
               <div className="p-5">
@@ -335,22 +381,25 @@ const LiveSessionsPage = () => {
                   <h3 className="text-xl font-semibold text-gray-800">
                     {session.title}
                   </h3>
-                  {user.role === "enseignant" && isHost(session) && (
+                  {canManageSession(session) && !isSessionOngoing(session) && !pastSessions.some(pastSession => pastSession.sessionId === session.sessionId) && (
                     <div className="flex space-x-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleOpenModal(session);
                         }}
-                        className="text-blue-500 hover:text-blue-700 transition-colors"
+                        className={`text-blue-500 hover:text-blue-700 transition-colors ${
+                          canEditSession(session) ? "" : "cursor-not-allowed opacity-50"
+                        }`}
                         title="Modifier"
+                        disabled={!canEditSession(session)}
                       >
                         <PencilIcon className="h-5 w-5" />
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteSession(session.id);
+                          handleDeleteSession(session.sessionId);
                         }}
                         className="text-red-500 hover:text-red-700 transition-colors"
                         title="Supprimer"
@@ -390,7 +439,7 @@ const LiveSessionsPage = () => {
                 <div className="flex space-x-2">
                   {filter === "upcoming" && user.role === "etudiant" ? (
                     <button
-                      onClick={() => handleJoinSession(session.id)}
+                      onClick={() => handleJoinSession(session.sessionId)}
                       disabled={!canJoin(session) || !session.attendeesIds.includes(user.userId)}
                       className={`flex-1 py-2 rounded flex items-center justify-center text-sm font-medium ${
                         canJoin(session) && session.attendeesIds.includes(user.userId)
@@ -403,16 +452,16 @@ const LiveSessionsPage = () => {
                     </button>
                   ) : filter === "past" ? (
                     <button
-                      onClick={() => navigate(`/recordings/${session.id}`)}
+                      onClick={() => navigate(`/recordings/${session.sessionId}`)}
                       className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded flex items-center justify-center text-sm font-medium"
                     >
                       <VideoCameraIcon className="h-4 w-4 mr-1" />
                       Voir l'enregistrement
                     </button>
                   ) : null}
-                  {user.role === "enseignant" && isHost(session) && (
+                  {user.role === "enseignant" && canManageSession(session) && (
                     <button
-                      onClick={() => handleViewAttendees(session.id)}
+                      onClick={() => handleViewAttendees(session.sessionId)}
                       className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium flex items-center"
                       title="Voir les participants"
                     >
@@ -433,6 +482,12 @@ const LiveSessionsPage = () => {
           session={editingSession}
         />
       )}
+
+      <LiveSessionAttendeesModal
+        isOpen={showAttendeesModal}
+        onClose={handleCloseAttendeesModal}
+        attendees={attendees}
+      />
     </div>
   );
 };

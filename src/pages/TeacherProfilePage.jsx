@@ -62,8 +62,8 @@ const TeacherProfilePage = () => {
     totalStudents: courses.reduce((acc, course) => acc + (course.studentsEnrolled || 0), 0),
     averageRating: courses.length
       ? Math.round(
-          courses.reduce((acc, course) => acc + (course.LastReviewScore || 0), 0) / courses.length
-        ) / 10
+          courses.reduce((acc, course) => acc + (course.courseRate || 0), 0) / courses.filter(c=>c.courseRate>0).length
+        )
       : 0,
     totalLessons: courses.reduce((acc, course) => acc + (course.lessons.length || 0), 0),
   };
@@ -190,7 +190,7 @@ const TeacherProfilePage = () => {
                    onError={(e) => { e.target.src = DEFAULT_COURSE_IMAGE; }}
                  />
                  <div className="p-4">
-                   <h3 className="text-lg font-semibold text-gray-800 truncate">{course.Title}</h3>
+                   <h3 className="text-lg font-semibold text-gray-800 truncate">{course.title}</h3>
                    <p className="text-sm text-gray-600">{course.category?.name || 'Sans catégorie'}</p>
                    <div className="flex items-center justify-between mt-2">
                      <span className="text-sm text-gray-600">

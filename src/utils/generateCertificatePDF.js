@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 
-const BASE_URL = process.env.REACT_APP_BASE_URL || 'http://localhost:5173';
+const BASE_URL =  'http://localhost:5173';
 
 const generateCertificatePDF = (certificate, courseId, qrCodeDataUrl) => {
   const doc = new jsPDF({

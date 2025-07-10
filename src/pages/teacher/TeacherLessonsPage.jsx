@@ -34,6 +34,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import SectionFormModal from "../../components/SectionFormModal";
+import LiveSessionFormModal from "../../components/LiveSessionFormModal";
 import { getData, postData, putData, deleteData, API_BASE_URL } from "../../services/ApiFetch";
 import { toast } from "react-toastify";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
@@ -220,6 +221,7 @@ const TeacherLessonsPage = () => {
   const [sectionToEdit, setSectionToEdit] = useState(null);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
+  const [isLiveSessionModalOpen, setIsLiveSessionModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -301,6 +303,14 @@ const TeacherLessonsPage = () => {
   const handleCloseVideoModal = () => {
     setIsVideoModalOpen(false);
     setVideoUrl("");
+  };
+
+  const openLiveSessionModal = () => {
+    setIsLiveSessionModalOpen(true);
+  };
+
+  const closeLiveSessionModal = () => {
+    setIsLiveSessionModalOpen(false);
   };
 
   const handleSaveSection = async (newTitle) => {
@@ -463,6 +473,16 @@ const TeacherLessonsPage = () => {
     }
   };
 
+  const handleLiveSessionSubmit = async (sessionData) => {
+    try {
+      toast.success("Session en direct planifiée/mise à jour avec succès!");
+    } catch (error) {
+      toast.error("Erreur lors de la planification/mise à jour de la session en direct.");
+    } finally {
+      closeLiveSessionModal();
+    }
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -520,13 +540,13 @@ const TeacherLessonsPage = () => {
             <PlusIcon className="h-5 w-5 mr-2" />
             Ajouter une Leçon
           </Link>
-          <Link
-            to={`/dashboard/live-sessions/schedule?courseId=${course.id}`}
+          <button
+            onClick={openLiveSessionModal}
             className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
           >
             <VideoCameraIcon className="h-5 w-5 mr-2" />
-            Session Live Générale
-          </Link>
+            Planifie Session Live 
+          </button>
         </div>
       </div>
 
@@ -596,6 +616,13 @@ const TeacherLessonsPage = () => {
         onClose={handleCloseVideoModal}
         videoUrl={videoUrl}
       />
+
+      {isLiveSessionModalOpen && (
+        <LiveSessionFormModal
+          onClose={closeLiveSessionModal}
+          onSubmit={handleLiveSessionSubmit}
+        />
+      )}
     </div>
   );
 };

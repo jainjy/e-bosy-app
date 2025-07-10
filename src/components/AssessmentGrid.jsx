@@ -10,10 +10,14 @@ import {
   ChevronRightIcon,
   CheckCircleIcon,
   ChartBarIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
+import generateExercisePDF from '../utils/generateExercisePdf';
 
-const AssessmentGrid = ({ assessments, userProgress, courseId, type = 'exercise' }) => {
+
+const AssessmentGrid = ({ assessments, userProgress, courseId, courseTitle, type = 'exercise' }) => {
   if (!assessments || assessments.length === 0) {
+    console.log(assessments, 'Aucun exercice ou examen trouvé');
     return (
       <div className="col-span-full text-center py-12">
         <ClipboardDocumentCheckIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -27,19 +31,24 @@ const AssessmentGrid = ({ assessments, userProgress, courseId, type = 'exercise'
     );
   }
 
+  const handleDownloadPDF = (assessment) => {
+    console.log('Téléchargement du PDF pour l\'évaluation:', assessment);
+    const doc = generateExercisePDF(assessment, userProgress, courseTitle);
+    doc.save(`exercice-${assessment.assessmentId}-${assessment.title}.pdf`);
+  };
+
   // Couleurs unifiées pour les exercices et les examens
   const primaryColorClass = 'border-l-e-bosy-purple';
-  const hoverPrimaryColorClass = 'hover:border-l-purple-700'; // Utilisation d'un violet légèrement plus foncé pour le hover
+  const hoverPrimaryColorClass = 'hover:border-l-purple-700';
   const bgColorClass = 'bg-purple-100';
-  const textColorClass = 'text-e-bosy-purple'; // Utilisez 'e-bosy-purple' directement si vous l'avez définie dans Tailwind
-  const buttonBgClass = 'bg-e-bosy-purple hover:bg-purple-700'; // Bouton violet
+  const textColorClass = 'text-e-bosy-purple';
+  const buttonBgClass = 'bg-e-bosy-purple hover:bg-purple-700';
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {assessments.map((assessment) => {
         const submission = userProgress[assessment.assessmentId];
         const isCompleted = !!submission;
-
         return (
           <motion.div
             key={assessment.assessmentId}
@@ -49,7 +58,6 @@ const AssessmentGrid = ({ assessments, userProgress, courseId, type = 'exercise'
             className={`bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 border-l-4 ${primaryColorClass} ${hoverPrimaryColorClass}`}
           >
             <div className="p-6">
-              {/* Badge Type + Status */}
               <div className="flex items-center justify-between mb-4">
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${bgColorClass} ${textColorClass}`}>
                   <ClipboardDocumentCheckIcon className="h-4 w-4 mr-1.5" />
@@ -66,13 +74,9 @@ const AssessmentGrid = ({ assessments, userProgress, courseId, type = 'exercise'
                   </span>
                 )}
               </div>
-
-              {/* Title */}
               <h3 className="text-xl font-semibold text-gray-800 mb-4">
                 {assessment.title}
               </h3>
-
-              {/* Information */}
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <div className="flex items-center text-gray-600">
                   <StarIcon className="h-5 w-5 mr-2 text-yellow-500" />
@@ -93,19 +97,25 @@ const AssessmentGrid = ({ assessments, userProgress, courseId, type = 'exercise'
                   </div>
                 )}
               </div>
-
-              {/* Action Button */}
-              <Link
-                to={`/course/${courseId}/${type === 'exam' ? 'exam' : 'exercise'}/${assessment.assessmentId}`}
-                className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-white ${buttonBgClass} transition-colors`}
-              >
-                <span className="font-medium">
-                  {isCompleted ? 'Réessayer' : 'Commencer'}
-                </span>
-                <ChevronRightIcon className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              <div className="flex flex-col gap-3">
+                <Link
+                  to={`/course/${courseId}/${type === 'exam' ? 'exam' : 'exercise'}/${assessment.assessmentId}`}
+                  className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-white ${buttonBgClass} transition-colors`}
+                >
+                  <span className="font-medium">
+                    {isCompleted ? 'Réessayer' : 'Commencer'}
+                  </span>
+                  <ChevronRightIcon className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <button
+                  onClick={() => handleDownloadPDF(assessment)}
+                  className="flex items-center justify-center w-full px-4 py-3 rounded-lg border border-e-bosy-purple text-e-bosy-purple hover:bg-purple-50 transition-colors"
+                >
+                  <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                  <span className="font-medium">Télécharger PDF</span>
+                </button>
+              </div>
             </div>
-
             {isCompleted && (
               <div className="px-6 py-4 bg-gray-50 rounded-b-xl border-t text-sm text-gray-500">
                 Dernière tentative le {new Date(submission.submittedAt).toLocaleDateString()}

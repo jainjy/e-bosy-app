@@ -1,9 +1,10 @@
+// CertificationResultsPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { postData, getData } from '../../services/ApiFetch';
 import { toast } from 'react-hot-toast';
-import { CheckCircleIcon, ExclamationCircleIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, ExclamationCircleIcon, AcademicCapIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { v4 as uuidv4 } from 'uuid';
 
 const CertificationResultsPage = () => {
@@ -13,11 +14,20 @@ const CertificationResultsPage = () => {
   const { overallResults, exams, courseId } = state || {};
   const [certificate, setCertificate] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [nextRetryTime, setNextRetryTime] = useState(null);
 
   const allExamsPassed = overallResults?.every((result, idx) => {
     const exam = exams[idx];
     return result && exam && result.score >= exam.totalScore * 0.7;
   });
+
+  useEffect(() => {
+    if (!allExamsPassed) {
+      const nextTime = new Date();
+      nextTime.setDate(nextTime.getDate() + 1);
+      setNextRetryTime(nextTime);
+    }
+  }, [allExamsPassed]);
 
   useEffect(() => {
     const checkCertificate = async () => {
@@ -28,11 +38,10 @@ const CertificationResultsPage = () => {
         if (existingCertificate) {
           setCertificate(existingCertificate);
         } else if (allExamsPassed) {
-          // Create certificate if all exams passed and no certificate exists
           const certificateData = {
             userId: user.userId,
             courseId: parseInt(courseId),
-            certificateUrl: `https://e-bosy.com/certificates/${uuidv4()}.pdf`, // Placeholder URL
+            certificateUrl: `https://e-bosy.com/certificates/${uuidv4()}.pdf`,
             verificationCode: `EBSY-CERT-${uuidv4().slice(0, 8).toUpperCase()}`
           };
           const [newCertificate] = await postData('enrollments/certificates', certificateData);
@@ -69,14 +78,12 @@ const CertificationResultsPage = () => {
           <AcademicCapIcon className="h-10 w-10 text-e-bosy-purple mr-4" />
           Résultats de la Certification
         </h2>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
           {overallResults.map((result, idx) => {
             const exam = exams[idx];
             const passed = result && exam && result.score >= exam.totalScore * 0.7;
             const percentage = result && exam ? Math.round((result.score / exam.totalScore) * 100) : 0;
             const examTitle = exam?.title || `Examen ${idx + 1}`;
-
             return (
               <div key={idx} className={`bg-gray-700 rounded-lg p-6 border-2 ${passed ? 'border-green-500' : 'border-red-500'}`}>
                 <h3 className="text-xl font-semibold text-white mb-3">{examTitle}</h3>
@@ -96,7 +103,6 @@ const CertificationResultsPage = () => {
             );
           })}
         </div>
-
         <div className="mt-8 flex flex-col items-center space-y-4">
           {isLoading ? (
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-e-bosy-purple"></div>
@@ -118,6 +124,12 @@ const CertificationResultsPage = () => {
               <p className="text-xl text-red-300 font-semibold mb-4">
                 Vous n'avez pas réussi tous les examens. Veuillez réviser et réessayer.
               </p>
+              <div className="flex items-center justify-center mb-6">
+                <ClockIcon className="h-6 w-6 text-gray-400 mr-2" />
+                <span className="text-gray-300">
+                  Prochaine tentative possible: {nextRetryTime?.toLocaleDateString()} à {nextRetryTime?.toLocaleTimeString()}
+                </span>
+              </div>
               <button
                 onClick={() => navigate(`/course/${courseId}`)}
                 className="bg-gray-600 text-white py-3 px-8 rounded-lg hover:bg-gray-700 transition-colors font-semibold text-lg"

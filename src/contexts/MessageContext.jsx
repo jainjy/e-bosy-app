@@ -31,10 +31,9 @@ export const MessageProvider = ({ children }) => {
 
   const loadUsers = async () => {
     try {
-      const users = await messageService.getUsers();
-      const filteredUsers = users.filter(u => u.userId !== user?.userId);
+      // On passe l'utilisateur courant pour le filtrage côté service
+      const filteredUsers = await messageService.getUsers(user);
       setUsers(filteredUsers);
-      setConversations(filteredUsers);
     } catch (error) {
       console.error('Error loading users:', error);
       // toast.error('Erreur lors du chargement des utilisateurs');
@@ -46,12 +45,12 @@ export const MessageProvider = ({ children }) => {
       await messageService.startConnection(user.userId);
       messageService.setMessageHandler(handleNewMessage);
       messageService.setUserStatusHandler(handleUserStatusChange);
-      messageService.setConnectedUsersHandler(handleConnectedUsers); // Ajouté
+      messageService.setConnectedUsersHandler(handleConnectedUsers);
       await loadConversations();
       await loadUsers();
     } catch (error) {
       console.log('Error initializing message service:', error);
-      // toast.error('Erreur de connexion au service de messagerie');
+
     }
   };
 
@@ -199,16 +198,6 @@ export const MessageProvider = ({ children }) => {
     }));
   };
 
-  // const updateMessageReadStatus = (conversationId) => {
-  //   setMessages(prev => prev.map(message => 
-  //     message.senderId === conversationId ? { ...message, isRead: true } : message
-  //   ));
-
-  //   setConversations(prev => prev.map(conv => 
-  //     conv.userId === conversationId ? { ...conv, unreadCount: 0 } : conv
-  //   ));
-  // };
-
   const updateMessages = (newMessages) => {
     setMessages(newMessages);
   };
@@ -223,7 +212,8 @@ export const MessageProvider = ({ children }) => {
     markAsRead: messageService.markAsRead,
     messagesEndRef,
     setConversations,
-    unreadCount
+    unreadCount,
+    users, 
   };
 
   return (

@@ -1,9 +1,10 @@
+// AssessmentListPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getData } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
+import { getData } from '../../services/ApiFetch';
 import { toast } from 'react-hot-toast';
-import { ArrowLeftIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, AcademicCapIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import Navbar from '../../Components/Navbar';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import AssessmentGrid from '../../components/AssessmentGrid';
@@ -15,35 +16,70 @@ const AssessmentListPage = () => {
   const [assessments, setAssessments] = useState([]);
   const [course, setCourse] = useState(null);
   const [completionRate, setCompletionRate] = useState(0);
-  const [certificate, setCertificate] = useState(null); // Nouvel état pour le certificat
+  const [certificate, setCertificate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userProgress, setUserProgress] = useState({});
+  const [canTakeExam, setCanTakeExam] = useState(true);
+  const [nextExamTime, setNextExamTime] = useState(null);
+
+  useEffect(() => {
+    const checkExamAvailability = async () => {
+      try {
+        const [examsData] = await getData(`assessments/course/${courseId}/exams`);
+        if (!examsData || examsData.length === 0) return;
+
+        const examIds = examsData.map(exam => exam.assessmentId);
+        const checks = await Promise.all(examIds.map(async (examId) => {
+          const [canRetake] = await getData(`assessments/can-retake/${examId}/${user.userId}`);
+          return canRetake;
+        }));
+
+        if (checks.some(canRetake => !canRetake)) {
+          setCanTakeExam(false);
+
+          const [submissions] = await getData(`assessments/users/${user.userId}/submissions`);
+          const examSubmissions = submissions.filter(s => examIds.includes(s.assessmentId));
+
+          if (examSubmissions.length > 0) {
+            const lastSubmission = examSubmissions.reduce((latest, current) => {
+              return new Date(current.submittedAt) > new Date(latest.submittedAt) ? current : latest;
+            });
+
+            const lastAttemptTime = new Date(lastSubmission.submittedAt);
+            const nextAvailableTime = new Date(lastAttemptTime.getTime() + 24 * 60 * 60 * 1000);
+            setNextExamTime(nextAvailableTime);
+          }
+        } else {
+          setCanTakeExam(true);
+        }
+      } catch (error) {
+        console.error("Error checking exam availability:", error);
+        toast.error("Erreur lors de la vérification de l'accès à l'examen");
+      }
+    };
+
+    if (user?.userId && courseId) {
+      checkExamAvailability();
+    }
+  }, [user?.userId, courseId]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+
         // Fetch course details
-        const [courseData, courseError] = await getData(`courses/${courseId}`);
-        if (courseError) throw courseError;
+        const [courseData] = await getData(`courses/${courseId}`);
         setCourse(courseData);
 
         // Fetch enrollment to get completionRate
         if (user?.userId) {
-          const [enrollmentData, enrollmentError] = await getData(`enrollments/course/${courseId}/${user.userId}`);
-          if (enrollmentError) {
-            console.error('Erreur lors de la récupération de l\'inscription:', enrollmentError);
-          } else {
-            setCompletionRate(enrollmentData?.completionRate || 0);
-          }
+          const [enrollmentData] = await getData(`enrollments/course/${courseId}/${user.userId}`);
+          setCompletionRate(enrollmentData?.completionRate || 0);
 
           // Fetch certificate data
-          const [certificateData, certificateError] = await getData(`enrollments/certificates/course/${courseId}/${user.userId}`);
-          if (certificateError) {
-            console.error('Erreur lors de la récupération du certificat:', certificateError);
-          } else {
-            setCertificate(certificateData);
-          }
+          const [certificateData] = await getData(`enrollments/certificates/course/${courseId}/${user.userId}`);
+          setCertificate(certificateData);
         }
 
         // Filter for exercises only from the course's assessments
@@ -54,19 +90,15 @@ const AssessmentListPage = () => {
 
         // Fetch user submissions if logged in
         if (user?.userId) {
-          const [submissionsData, submissionsError] = await getData(`assessments/users/${user.userId}/submissions`);
-          if (submissionsError) throw submissionsError;
-
+          const [submissionsData] = await getData(`assessments/users/${user.userId}/submissions`);
           const progress = {};
-          if (Array.isArray(submissionsData)) {
-            submissionsData.forEach(submission => {
-              progress[submission.assessmentId] = {
-                score: submission.score,
-                totalScore: submission.assessment.totalScore,
-                submittedAt: new Date(submission.submittedAt)
-              };
-            });
-          }
+          submissionsData.forEach(submission => {
+            progress[submission.assessmentId] = {
+              score: submission.score,
+              totalScore: submission.assessment.totalScore,
+              submittedAt: new Date(submission.submittedAt)
+            };
+          });
           setUserProgress(progress);
         }
       } catch (error) {
@@ -97,44 +129,54 @@ const AssessmentListPage = () => {
               <ArrowLeftIcon className="h-5 w-5 mr-2" />
               <span>Retour au cours</span>
             </button>
-
             {certificate ? (
               <Link
                 to={`/certificates/${certificate.certificateId}`}
-                className="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                className="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors shadow-sm"
               >
                 <AcademicCapIcon className="h-5 w-5 mr-2" />
                 Voir la certification
               </Link>
             ) : (
-              <Link
-                to={`/course/${courseId}/certification`}
-                className={`inline-flex items-center px-6 py-3 rounded-lg text-white font-medium transition-colors
-                  ${completionRate >= 80
-                    ? 'bg-e-bosy-purple hover:bg-purple-700'
-                    : 'bg-gray-300 cursor-not-allowed'
-                  }`}
-                onClick={(e) => {
-                  if (completionRate < 80) {
-                    e.preventDefault();
-                    toast.error("Vous devez compléter au moins 80% du cours pour passer l'examen.");
-                  }
-                }}
-              >
-                <AcademicCapIcon className="h-5 w-5 mr-2" />
-                Passer l'examen de certification
-              </Link>
+              <div className="relative">
+                <Link
+                  to={canTakeExam ? `/course/${courseId}/certification` : '#'}
+                  className={`inline-flex items-center px-6 py-3 rounded-lg text-white font-medium transition-colors shadow-sm
+                    ${completionRate >= 80 && canTakeExam
+                      ? 'bg-e-bosy-purple hover:bg-purple-700'
+                      : 'bg-gray-300 cursor-not-allowed'
+                    }`}
+                  onClick={(e) => {
+                    if (completionRate < 80) {
+                      e.preventDefault();
+                      toast.error("Vous devez compléter au moins 80% du cours pour passer l'examen.");
+                    } else if (!canTakeExam) {
+                      e.preventDefault();
+                      toast.error(
+                        `Vous devez attendre jusqu'à ${nextExamTime?.toLocaleString()} pour repasser l'examen.`
+                      );
+                    }
+                  }}
+                >
+                  <AcademicCapIcon className="h-5 w-5 mr-2" />
+                  Passer l'examen de certification
+                </Link>
+                {!canTakeExam && (
+                  <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                    <LockClosedIcon className="h-4 w-4" />
+                  </div>
+                )}
+              </div>
             )}
           </div>
-
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{course?.title}</h1>
           <p className="text-gray-600">Exercices disponibles</p>
         </div>
-
         <AssessmentGrid
           assessments={assessments}
           userProgress={userProgress}
           courseId={courseId}
+          courseTitle={course?.title}
           type="exercise"
         />
       </div>

@@ -16,7 +16,7 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
     title: "",
     courseId: "",
     startTime: "",
-    endTime: "",
+    duration: "60", // Durée en minutes par défaut
     description: "",
     hostId: user?.userId || "",
   });
@@ -48,7 +48,7 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
   useEffect(() => {
     if (session) {
       const startTime = new Date(session.startTime);
-      const endTime = new Date(session.endTime);
+      const duration = (new Date(session.endTime) - startTime) / 60000; // Calculate duration in minutes
 
       // Format dates for datetime-local input
       const formatForInput = (date) => {
@@ -61,7 +61,7 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
         title: session.title || "",
         courseId: session.courseId || "",
         startTime: formatForInput(startTime),
-        endTime: formatForInput(endTime),
+        duration: duration.toString(),
         description: session.description || "",
         hostId: session.hostId || user?.userId || "",
       });
@@ -104,14 +104,15 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
     if (!formData.title) newErrors.title = "Le titre est requis";
     if (!formData.courseId) newErrors.courseId = "Le cours est requis";
     if (!formData.startTime) newErrors.startTime = "L'heure de début est requise";
-    if (!formData.endTime) newErrors.endTime = "L'heure de fin est requise";
+    if (!formData.duration) newErrors.duration = "La durée est requise";
 
-    if (formData.startTime && formData.endTime) {
+    if (formData.startTime && formData.duration) {
       const start = new Date(formData.startTime);
-      const end = new Date(formData.endTime);
+      const duration = parseInt(formData.duration);
+      const end = new Date(start.getTime() + duration * 60000);
 
       if (start >= end) {
-        newErrors.endTime = "L'heure de fin doit être après l'heure de début";
+        newErrors.duration = "La durée doit être positive";
       }
 
       // Check if start time is in the future
@@ -131,10 +132,13 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
 
     setSubmitting(true);
     try {
+      const startDate = new Date(formData.startTime);
+      const endDate = new Date(startDate.getTime() + parseInt(formData.duration) * 60000);
+
       const sessionData = {
         ...formData,
-        startTime: new Date(formData.startTime).toISOString(),
-        endTime: new Date(formData.endTime).toISOString(),
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString(),
         attendeesIds: [], // Initialize with empty array, can be updated later
       };
 
@@ -273,24 +277,26 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
 
             <div>
               <label
-                htmlFor="endTime"
+                htmlFor="duration"
                 className="block text-gray-700 text-sm font-bold mb-2 flex items-center"
               >
                 <ClockIcon className="h-4 w-4 mr-2" />
-                Date et heure de fin *
+                Durée (minutes) *
               </label>
               <input
-                type="datetime-local"
-                id="endTime"
-                name="endTime"
-                value={formData.endTime}
+                type="number"
+                id="duration"
+                name="duration"
+                min="15"
+                max="480"
+                value={formData.duration}
                 onChange={handleChange}
                 className={`w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.endTime ? "border-red-500" : "border-gray-300"
+                  errors.duration ? "border-red-500" : "border-gray-300"
                 }`}
                 disabled={submitting}
               />
-              {errors.endTime && <p className="text-red-500 text-sm mt-1">{errors.endTime}</p>}
+              {errors.duration && <p className="text-red-500 text-sm mt-1">{errors.duration}</p>}
             </div>
           </div>
 
