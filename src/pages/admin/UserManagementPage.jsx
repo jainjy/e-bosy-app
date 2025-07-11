@@ -201,15 +201,7 @@ const UserManagementPage = () => {
     setUserToEdit(null);
   };
 
-  const openViewModal = (user) => {
-    if (user.role.toLowerCase() === ROLES.TEACHER) {
-      window.location.href = `/dashboard/users/${user.userId}/profile`;
-    } else {
-      setUserToView(user);
-      setIsViewModalOpen(true);
-      setOpenDropdownId(null);
-    }
-  };
+
 
   const closeViewModal = () => {
     setUserToView(null);
@@ -334,14 +326,15 @@ const UserManagementPage = () => {
                       {openDropdownId === user.userId && (
                         <div className="origin-top-right absolute -top-12 right-full mr-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10 animate-fade-in-down">
                           <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                            <button
-                              onClick={() => openViewModal(user)}
+                            <Link
+                            to={`${user.userId}/profile`}
+                              
                               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 w-full text-left transition-colors duration-150"
                               role="menuitem"
                             >
                               <EyeIcon className="h-4 w-4 mr-2" />
                               Voir
-                            </button>
+                            </Link>
                             <button
                               onClick={() => openEditFormModal(user)}
                               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 w-full text-left transition-colors duration-150"

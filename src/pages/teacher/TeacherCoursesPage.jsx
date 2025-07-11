@@ -42,7 +42,7 @@ const CourseStats = ({ courses }) => {
   }), [courses]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Cours</h3>
         <p className="text-3xl font-bold text-e-bosy-purple">{stats.total}</p>
@@ -54,10 +54,6 @@ const CourseStats = ({ courses }) => {
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Leçons</h3>
         <p className="text-3xl font-bold text-blue-600">{stats.totalLessons}</p>
-      </div>
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">Progression Moyenne</h3>
-        <p className="text-3xl font-bold text-yellow-600">{stats.averageProgress}%</p>
       </div>
     </div>
   );
@@ -115,7 +111,7 @@ const CourseCard = ({ course, onEdit, onDelete, onPublish }) => {
             className="flex-1 flex items-center justify-center py-2 bg-e-bosy-purple text-white rounded-md hover:bg-purple-700 transition-colors duration-200"
           >
             <Bars3BottomLeftIcon className="h-4 w-4 mr-1" />
-            Gérer les leçons
+            Les leçons
           </Link>
 
           <Link
@@ -123,7 +119,7 @@ const CourseCard = ({ course, onEdit, onDelete, onPublish }) => {
             className="flex-1 flex items-center justify-center py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors duration-200"
           >
             <AcademicCapIcon className="h-4 w-4 mr-1" />
-            Exercices & Examens
+            Les évaluations
           </Link>
 
           <div className="relative">
@@ -434,7 +430,7 @@ const TeacherCoursesPage = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {filteredCourses.map((course) => (
           <CourseCard
             key={course.courseId}

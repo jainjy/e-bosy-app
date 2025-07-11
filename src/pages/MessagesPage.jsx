@@ -267,12 +267,13 @@ const MessagesPage = () => {
           Démarrer une nouvelle discussion
         </button>
         {showUserSelection && (
-          <div className="absolute inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gray-800 bg-opacity-70 flex items-center justify-center">
             <div className="bg-white p-6 rounded-lg shadow-lg w-96">
               <h3 className="text-lg font-bold mb-4">
                 Sélectionnez un utilisateur
               </h3>
               <div className="space-y-2 overflow-y-auto max-h-64">
+                {users.length > 0 ? (<>
                 {users.map((user) => (
                   <div
                     key={user.userId}
@@ -298,6 +299,7 @@ const MessagesPage = () => {
                     </div>
                   </div>
                 ))}
+                </>):<h1 className=" text-center">aucun autres utilisateurs </h1>}
               </div>
               <button
                 onClick={() => setShowUserSelection(false)}

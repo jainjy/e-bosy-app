@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { formatDistanceToNow } from 'date-fns';
@@ -12,7 +12,9 @@ const NotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filter, setFilter] = useState('all'); // 'all' ou 'unread'
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -59,10 +61,21 @@ const NotificationsPage = () => {
     }
   };
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+  const handleLinkClick = async (notification) => {
+    if (!notification.isRead) {
+      await markAsRead(notification.notificationId);
+    }
+    navigate(notification.linkUrl);
+  };
 
+  const filteredNotifications = notifications.filter(notification => {
+    if (filter === 'unread') {
+      return !notification.isRead;
+    }
+    return true;
+  });
+
+  if (loading) return <LoadingSpinner />;
   if (error) {
     return (
       <div className="p-6 bg-gray-50 min-h-screen">
@@ -75,7 +88,31 @@ const NotificationsPage = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Notifications</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold text-gray-800">Notifications</h1>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-4 py-2 rounded-md text-sm ${
+                filter === 'all'
+                  ? 'bg-e-bosy-purple text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Toutes
+            </button>
+            <button
+              onClick={() => setFilter('unread')}
+              className={`px-4 py-2 rounded-md text-sm ${
+                filter === 'unread'
+                  ? 'bg-e-bosy-purple text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Non lues
+            </button>
+          </div>
+        </div>
         {notifications.some(n => !n.isRead) && (
           <button
             onClick={markAllAsRead}
@@ -87,11 +124,13 @@ const NotificationsPage = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        {notifications.length === 0 ? (
-          <div className="p-6 text-gray-600 text-center">Aucune nouvelle notification.</div>
+        {filteredNotifications.length === 0 ? (
+          <div className="p-6 text-gray-600 text-center">
+            {filter === 'unread' ? 'Aucune notification non lue.' : 'Aucune notification.'}
+          </div>
         ) : (
           <ul>
-            {notifications.map(notification => (
+            {filteredNotifications.map(notification => (
               <li
                 key={notification.notificationId}
                 className={`px-4 py-3 border-b last:border-b-0 flex items-start ${
@@ -111,12 +150,12 @@ const NotificationsPage = () => {
                   <p className="text-gray-700">{notification.message}</p>
                   <div className="mt-2 flex items-center justify-end">
                     {notification.linkUrl && (
-                      <Link
-                        to={notification.linkUrl}
+                      <button
+                        onClick={() => handleLinkClick(notification)}
                         className="text-e-bosy-purple hover:underline text-sm font-medium mr-4"
                       >
                         Voir plus
-                      </Link>
+                      </button>
                     )}
                     {!notification.isRead && (
                       <button

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -67,7 +66,10 @@ import CertificationResultsPage from "./pages/student/CertificationResultsPage";
 import CertificateVerificationPage from "./pages/CertificateVerificationPage";
 import AdminCoursesPage from "./pages/admin/AdminCoursesPage";
 import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage";
-import TeacherProfilePage from "./pages/TeacherProfilePage";
+import ProfilePage from "./pages/ProfilePage";
+import PaymentPage from "./pages/PaymentPage";
+import InvoicesPage from "./pages/InvoicesPage";
+import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -140,6 +142,7 @@ function App() {
           <Route path="/student" element={<StudentPage />} />
           <Route path="/verify" element={<CertificateVerificationPage />} />
 
+
           {/* Détail cours, inscription, leçons */}
           <Route path="/course/:courseId" element={<CourseDetailsPage />} />
           <Route
@@ -164,6 +167,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CertificationExamPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payment"
+            element={
+              <ProtectedRoute>
+                <PaymentPage />
               </ProtectedRoute>
             }
           />
@@ -196,7 +207,7 @@ function App() {
           >
             <Route index element={<RoleBasedDashboard />} />
             <Route path="courses" element={<RoleBasedCoursesPage />} />
-            <Route path="users/:id/profile" element={<TeacherProfilePage />} />
+            <Route path="users/:id/profile" element={<ProfilePage />} />
             <Route
               path="courses/:courseId/lessons"
               element={<TeacherLessonsPage />}
@@ -229,7 +240,6 @@ function App() {
               path="student/live-session/:sessionId"
               element={<StudentPage />}
             />
-
             <Route
               path="courses/:courseId/lessons/:lessonId/edit"
               element={<LessonFormPage />}
@@ -255,6 +265,15 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="invoices"
+              element={
+                <ProtectedRoute>
+                  <InvoicesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="payments" element={<AdminPaymentsPage />} />
           </Route>
         </Routes>
       </Router>

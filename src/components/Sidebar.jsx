@@ -8,7 +8,8 @@ import {
   ArrowRightOnRectangleIcon, UserGroupIcon, CalendarDaysIcon, 
   ChartBarIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, 
   ClipboardDocumentCheckIcon,
-  VideoCameraIcon
+  VideoCameraIcon,
+  DocumentTextIcon
 } from "@heroicons/react/24/outline";
 import { BellIcon } from "lucide-react";
 import { API_BASE_URL } from "../services/ApiFetch";
@@ -69,15 +70,18 @@ const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount
       path: "/dashboard/users",
       roles: ["administrateur"],
     },
-    // Dans la const navItems du Sidebar.jsx, ajoutez :
-
-  {
-    name: "Évaluations",
-    icon: ClipboardDocumentCheckIcon,
-    path: "/dashboard/assessments",
-    roles: ["etudiant"],
-  },
-
+    {
+      name: "Évaluations",
+      icon: ClipboardDocumentCheckIcon,
+      path: "/dashboard/assessments",
+      roles: ["etudiant"],
+    },
+    {
+      name: "Factures",
+      icon: DocumentTextIcon,
+      path: "/dashboard/invoices",
+      roles: ["etudiant"],
+    },
     {
       name: "Analytics",
       icon: ChartBarIcon,
@@ -90,9 +94,13 @@ const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount
       path: "/dashboard/live-sessions",
       roles: ["etudiant", "enseignant"], // Visible pour étudiants et enseignants
     },
+    {
+      name: "Paiements",
+      icon: CreditCardIcon,
+      path: "/dashboard/payments",
+      roles: ["administrateur"],
+    },
   ];
-
-
 
   const filteredItems = navItems.filter((item) => item.roles.includes(userRole));
 
