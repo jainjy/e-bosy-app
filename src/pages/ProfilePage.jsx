@@ -119,7 +119,7 @@ const ProfilePage = () => {
             <div className="flex-1">
               <h1 className="text-4xl font-bold">{`${profileData.firstName} ${profileData.lastName}`}</h1>
               <p className="text-lg opacity-90">
-                {isTeacher ? 'Enseignant' : 'Membre'} depuis {new Date(profileData.CreatedAt).toLocaleDateString('fr-FR')}
+                {isTeacher ? 'Enseignant' : 'Membre'} depuis {new Date(profileData.createdAt).toLocaleDateString('fr-FR')}
               </p>
               {profileData.Bio && <p className="mt-2 text-lg">{profileData.Bio}</p>}
             </div>

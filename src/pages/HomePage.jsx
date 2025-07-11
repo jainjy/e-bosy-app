@@ -197,7 +197,7 @@ const HomePage = () => {
             {teachers.map((teacher) => (
               <motion.div
                 key={teacher.userId}
-                className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300"
+                className="bg-white p-6 rounded-2xl shadow-2xl hover:shadow-2xl transition-all duration-300"
                 data-aos="fade-up"
                 whileHover={{ y: -10 }}
               >
@@ -227,7 +227,7 @@ const HomePage = () => {
                 >
                   <Link
                     to={`/teacher/${teacher.userId}`}
-                    className="block w-full text-center bg-purple-100 text-purple-600 py-2 rounded-xl hover:bg-purple-200 transition-all duration-300"
+                    className="block w-full text-center bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl hover:shadow-lg transition-all duration-300"
                   >
                     Voir le profil
                   </Link>

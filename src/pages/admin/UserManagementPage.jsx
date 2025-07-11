@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import { MagnifyingGlassIcon, PlusIcon, EllipsisVerticalIcon, PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import UserFormModal from '../../components/UserFormModal';
-import ViewUserModal from '../../components/ViewUserModal';
+
 import { getData, postData, putData, deleteData, API_BASE_URL } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -394,12 +394,6 @@ const UserManagementPage = () => {
         />
       )}
 
-      {isViewModalOpen && userToView && (
-        <ViewUserModal
-          user={userToView}
-          onClose={closeViewModal}
-        />
-      )}
     </div>
   );
 };
