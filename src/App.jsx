@@ -71,6 +71,7 @@ import PaymentPage from "./pages/PaymentPage";
 import InvoicesPage from "./pages/InvoicesPage";
 import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
 import Conference from "./pages/ConferencePage";
+import RecordingViewPage from "./pages/RecordingViewPage";
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -131,7 +132,7 @@ function App() {
       <Router>
         <Routes>
           {/* Routes publiques */}
-          
+
           <Route path="/" element={<HomePage />} />
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -144,7 +145,6 @@ function App() {
           <Route path="/verify" element={<CertificateVerificationPage />} />
           <Route path="/conf" element={<Conference />} />
 
-
           {/* Détail cours, inscription, leçons */}
           <Route path="/course/:courseId" element={<CourseDetailsPage />} />
           <Route
@@ -155,7 +155,10 @@ function App() {
             path="/course/:courseId/lesson/:lessonId"
             element={<LessonPage />}
           />
-          <Route path="/course/:courseId/results" element={<CertificationResultsPage />} />
+          <Route
+            path="/course/:courseId/results"
+            element={<CertificationResultsPage />}
+          />
           <Route
             path="/course/:courseId/certification"
             element={
@@ -230,9 +233,23 @@ function App() {
             <Route path="users" element={<UserManagementPage />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="live-sessions" element={<LiveSessionsPage />} />
+            <Route path="live-session/:sessionId" element={<TeacherPage />} />
+            // Modifiez les routes existantes pour les sessions live :
             <Route
               path="live-session/:sessionId"
-              element={<TeacherPage />}
+              element={
+                <ProtectedRoute>
+                  <TeacherPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="student/live-session/:sessionId"
+              element={
+                <ProtectedRoute>
+                  <StudentPage />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="live-sessions/schedule"
@@ -276,7 +293,9 @@ function App() {
               }
             />
             <Route path="payments" element={<AdminPaymentsPage />} />
+           
           </Route>
+          <Route path="recordings/:id" element={<RecordingViewPage />} />
         </Routes>
       </Router>
       <ToastContainer
@@ -292,9 +311,9 @@ function App() {
 export default function AppWrapper() {
   return (
     <AuthProvider>
-        <MessageProvider>
-          <App />
-        </MessageProvider>
+      <MessageProvider>
+        <App />
+      </MessageProvider>
     </AuthProvider>
   );
 }

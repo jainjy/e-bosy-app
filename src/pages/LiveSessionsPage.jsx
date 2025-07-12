@@ -26,7 +26,7 @@ const LiveSessionsPage = () => {
   const [editingSession, setEditingSession] = useState(null);
   const [showAttendeesModal, setShowAttendeesModal] = useState(false);
   const [attendees, setAttendees] = useState([]);
-  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [selectedLiveSessionId, setSelectedLiveSessionId] = useState(null);
   const navigate = useNavigate();
   const baseUrl = `${API_BASE_URL}/api/livesessions`;
 
@@ -34,24 +34,17 @@ const LiveSessionsPage = () => {
     try {
       setLoading(true);
       let endpoint;
-
-      // Différents endpoints selon le rôle
       if (user.role === "administrateur") {
         endpoint = filter === "upcoming" ? `${baseUrl}/upcoming` : `${baseUrl}/past`;
-      } 
-      else if (user.role === "enseignant") {
-        // Les enseignants ne voient que leurs sessions
-        endpoint = filter === "upcoming" 
+      } else if (user.role === "enseignant") {
+        endpoint = filter === "upcoming"
           ? `${baseUrl}/host/${user.userId}`
           : `${baseUrl}/host/${user.userId}?past=true`;
-      }
-      else {
-        // Les étudiants ne voient que les sessions des cours où ils sont inscrits
-        endpoint = filter === "upcoming" 
-          ? `${baseUrl}/upcoming?attendeeId=${user.userId}&enrolled=true` 
+      } else {
+        endpoint = filter === "upcoming"
+          ? `${baseUrl}/upcoming?attendeeId=${user.userId}&enrolled=true`
           : `${baseUrl}/past?attendeeId=${user.userId}&enrolled=true`;
       }
-
       const [data, error] = await getData(endpoint);
       if (error) throw error;
       setSessions(data);
@@ -87,22 +80,25 @@ const LiveSessionsPage = () => {
     const now = new Date();
     const start = new Date(session.startTime);
     const end = new Date(session.endTime);
-    return now >= start && now <= end;
+    return session.status === "ongoing" && now >= start && now <= end;
   };
 
   const canJoin = (session) => {
-    return isSessionOngoing(session);
+    const now = new Date();
+    const start = new Date(session.startTime);
+    const end = new Date(session.endTime);
+    return now >= start && now <= end && session.status === "ongoing";
   };
 
   const canManageSession = (session) => {
-    return user.role === "administrateur" || 
+    return user.role === "administrateur" ||
            (user.role === "enseignant" && user.userId === session.hostId);
   };
 
   const canEditSession = (session) => {
     const now = new Date();
     const start = new Date(session.startTime);
-    return start > now; // Only allow editing if the session hasn't started yet
+    return start > now;
   };
 
   const handleOpenModal = (session = null) => {
@@ -121,7 +117,18 @@ const LiveSessionsPage = () => {
 
   const handleSaveSession = async (sessionData) => {
     try {
-      await fetchSessions(); // Refresh the sessions list
+      const endpoint = editingSession 
+        ? `${baseUrl}/${editingSession.liveSessionId}`
+        : baseUrl;
+      
+      const [data, error] = editingSession
+        ? await putData(endpoint, sessionData)
+        : await postData(endpoint, sessionData);
+
+      if (error) throw error;
+      
+      handleCloseModal();
+      await fetchSessions();
       toast.success(
         `Session ${editingSession ? "mise à jour" : "créée"} avec succès`
       );
@@ -135,10 +142,10 @@ const LiveSessionsPage = () => {
     }
   };
 
-  const handleDeleteSession = async (sessionId) => {
+  const handleDeleteSession = async (liveSessionId) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette session ?")) {
       try {
-        const [data, error] = await postData(`${baseUrl}/${sessionId}/delete`);
+        const [data, error] = await postData(`${baseUrl}/${liveSessionId}/delete`);
         if (error) throw error;
         await fetchSessions();
         toast.success("Session supprimée avec succès");
@@ -149,10 +156,10 @@ const LiveSessionsPage = () => {
     }
   };
 
-  const handleViewAttendees = async (sessionId) => {
-    setSelectedSessionId(sessionId);
+  const handleViewAttendees = async (liveSessionId) => {
+    setSelectedLiveSessionId(liveSessionId);
     try {
-      const [data, error] = await getData(`${API_BASE_URL}/api/livesessions/${sessionId}/attendees`);
+      const [data, error] = await getData(`${API_BASE_URL}/api/livesessions/${liveSessionId}/attendees`);
       if (error) {
         throw error;
       }
@@ -167,45 +174,49 @@ const LiveSessionsPage = () => {
   const handleCloseAttendeesModal = () => {
     setShowAttendeesModal(false);
     setAttendees([]);
-    setSelectedSessionId(null);
+    setSelectedLiveSessionId(null);
   };
 
-  const handleStartSession = async (sessionId) => {
+  const handleStartSession = async (liveSessionId) => {
     try {
-      const [data, error] = await postData(`${baseUrl}/${sessionId}/start`);
+      const [data, error] = await postData(`${baseUrl}/${liveSessionId}/start`);
       if (error) throw error;
-      toast.success("Session démarrée avec succès");
-      navigate(`/live-session/${sessionId}`);
+      
+      // Mettre à jour le statut dans la liste locale
+      setSessions(sessions.map(session => 
+        session.liveSessionId === liveSessionId 
+          ? { ...session, status: 'ongoing' }
+          : session
+      ));
+      
+      navigate(`/dashboard/live-session/${liveSessionId}`);
     } catch (error) {
       console.error("Error starting session:", error);
       toast.error("Erreur lors du démarrage de la session");
     }
   };
 
-  const handleJoinSession = async (sessionId) => {
+  const handleJoinSession = async (liveSessionId) => {
     try {
-      const [data, error] = await postData(`${baseUrl}/${sessionId}/attendees/${user.userId}`);
+      // S'inscrire comme participant
+      const [result, error] = await postData(`${baseUrl}/${liveSessionId}/attendees`);
       if (error) throw error;
-      toast.success("Vous avez rejoint la session");
-      navigate(`/live-session/${sessionId}`);
+      
+      // Rediriger vers la page de session en direct
+      navigate(`/dashboard/student/live-session/${liveSessionId}`);
     } catch (error) {
       console.error("Error joining session:", error);
       toast.error("Erreur lors de la tentative de rejoindre la session");
     }
   };
 
-  // Séparer les sessions en cours des autres
   const ongoingSessions = sessions.filter(isSessionOngoing);
-
-  // Filtrer les sessions à venir et passées en fonction de la date et de l'heure actuelles
   const upcomingSessions = sessions.filter(
     (session) => !isSessionOngoing(session) && new Date(session.startTime) > new Date()
   );
   const pastSessions = sessions.filter(
     (session) => !isSessionOngoing(session) && new Date(session.startTime) <= new Date()
   );
-
-  // Déterminer quelles sessions afficher en fonction du filtre sélectionné
   const sessionsToDisplay = filter === "upcoming" ? upcomingSessions : pastSessions;
 
   return (
@@ -222,15 +233,13 @@ const LiveSessionsPage = () => {
           </button>
         )}
       </div>
-
-      {/* Section pour les sessions en cours */}
       {ongoingSessions.length > 0 && (
         <div className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">Sessions en cours</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {ongoingSessions.map((session) => (
               <div
-                key={session.sessionId}
+                key={session.liveSessionId}
                 className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white"
               >
                 <div className="p-5">
@@ -238,7 +247,7 @@ const LiveSessionsPage = () => {
                     <h3 className="text-xl font-semibold text-gray-800">
                       {session.title}
                     </h3>
-                    {canManageSession(session) && !isSessionOngoing(session) && !pastSessions.some(pastSession => pastSession.sessionId === session.sessionId) && (
+                    {canManageSession(session) && !isSessionOngoing(session) && !pastSessions.some(pastSession => pastSession.liveSessionId === session.liveSessionId) && (
                       <div className="flex space-x-2">
                         <button
                           onClick={(e) => {
@@ -256,7 +265,7 @@ const LiveSessionsPage = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteSession(session.sessionId);
+                            handleDeleteSession(session.liveSessionId);
                           }}
                           className="text-red-500 hover:text-red-700 transition-colors"
                           title="Supprimer"
@@ -266,13 +275,11 @@ const LiveSessionsPage = () => {
                       </div>
                     )}
                   </div>
-
                   {session.course?.title && (
                     <p className="text-gray-600 mb-4 text-sm">
                       Cours: {session.course.title}
                     </p>
                   )}
-
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center text-gray-600 text-sm">
                       <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
@@ -292,37 +299,36 @@ const LiveSessionsPage = () => {
                       </div>
                     )}
                   </div>
-
                   <div className="flex space-x-2">
                     {user.role === "enseignant" && canManageSession(session) ? (
                       <>
                         <button
-                          onClick={() => handleStartSession(session.sessionId)}
+                          onClick={() => handleStartSession(session.liveSessionId)}
                           className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded flex items-center justify-center text-sm font-medium"
                         >
                           <PlayIcon className="h-4 w-4 mr-1" />
                           Démarrer
                         </button>
                         <button
-                          onClick={() => handleViewAttendees(session.sessionId)}
+                          onClick={() => handleViewAttendees(session.liveSessionId)}
                           className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium flex items-center"
                           title="Voir les participants"
                         >
                           <UserGroupIcon className="h-4 w-4" />
                         </button>
                       </>
-                    ) : (
+                    ) : user.role === "etudiant" && (
                       <button
-                        onClick={() => handleJoinSession(session.sessionId)}
-                        disabled={!canJoin(session) || !session.attendeesIds.includes(user.userId)}
+                        onClick={() => handleJoinSession(session.liveSessionId)}
+                        disabled={!canJoin(session)}
                         className={`flex-1 py-2 rounded flex items-center justify-center text-sm font-medium ${
-                          canJoin(session) && session.attendeesIds.includes(user.userId)
+                          canJoin(session)
                             ? "bg-green-500 hover:bg-green-600 text-white"
                             : "bg-gray-100 text-gray-500 cursor-not-allowed"
                         }`}
                       >
                         <PlayIcon className="h-4 w-4 mr-1" />
-                        Rejoindre
+                        {session.status === "ongoing" ? "Rejoindre" : "En attente"}
                       </button>
                     )}
                   </div>
@@ -332,8 +338,6 @@ const LiveSessionsPage = () => {
           </div>
         </div>
       )}
-
-      {/* Tabs pour À venir et Passées */}
       <div className="flex border-b mb-6">
         <button
           className={`py-2 px-4 ${
@@ -356,7 +360,6 @@ const LiveSessionsPage = () => {
           Passées
         </button>
       </div>
-
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -373,7 +376,7 @@ const LiveSessionsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sessionsToDisplay.map((session) => (
             <div
-              key={session.sessionId}
+              key={session.liveSessionId}
               className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white"
             >
               <div className="p-5">
@@ -381,7 +384,7 @@ const LiveSessionsPage = () => {
                   <h3 className="text-xl font-semibold text-gray-800">
                     {session.title}
                   </h3>
-                  {canManageSession(session) && !isSessionOngoing(session) && !pastSessions.some(pastSession => pastSession.sessionId === session.sessionId) && (
+                  {canManageSession(session) && !isSessionOngoing(session) && !pastSessions.some(pastSession => pastSession.liveSessionId === session.liveSessionId) && (
                     <div className="flex space-x-2">
                       <button
                         onClick={(e) => {
@@ -399,7 +402,7 @@ const LiveSessionsPage = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteSession(session.sessionId);
+                          handleDeleteSession(session.liveSessionId);
                         }}
                         className="text-red-500 hover:text-red-700 transition-colors"
                         title="Supprimer"
@@ -409,13 +412,11 @@ const LiveSessionsPage = () => {
                     </div>
                   )}
                 </div>
-
                 {session.course?.title && (
                   <p className="text-gray-600 mb-4 text-sm">
                     Cours: {session.course.title}
                   </p>
                 )}
-
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center text-gray-600 text-sm">
                     <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
@@ -435,24 +436,23 @@ const LiveSessionsPage = () => {
                     </div>
                   )}
                 </div>
-
                 <div className="flex space-x-2">
                   {filter === "upcoming" && user.role === "etudiant" ? (
                     <button
-                      onClick={() => handleJoinSession(session.sessionId)}
-                      disabled={!canJoin(session) || !session.attendeesIds.includes(user.userId)}
+                      onClick={() => handleJoinSession(session.liveSessionId)}
+                      disabled={!canJoin(session)}
                       className={`flex-1 py-2 rounded flex items-center justify-center text-sm font-medium ${
-                        canJoin(session) && session.attendeesIds.includes(user.userId)
+                        canJoin(session)
                           ? "bg-green-500 hover:bg-green-600 text-white"
                           : "bg-gray-100 text-gray-500 cursor-not-allowed"
                       }`}
                     >
                       <PlayIcon className="h-4 w-4 mr-1" />
-                      {canJoin(session) ? "Rejoindre" : "Bientôt"}
+                      {session.status === "ongoing" ? "Rejoindre" : "En attente"}
                     </button>
                   ) : filter === "past" ? (
                     <button
-                      onClick={() => navigate(`/recordings/${session.sessionId}`)}
+                      onClick={() => navigate(`/recordings/${session.liveSessionId}`)}
                       className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded flex items-center justify-center text-sm font-medium"
                     >
                       <VideoCameraIcon className="h-4 w-4 mr-1" />
@@ -461,7 +461,7 @@ const LiveSessionsPage = () => {
                   ) : null}
                   {user.role === "enseignant" && canManageSession(session) && (
                     <button
-                      onClick={() => handleViewAttendees(session.sessionId)}
+                      onClick={() => handleViewAttendees(session.liveSessionId)}
                       className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium flex items-center"
                       title="Voir les participants"
                     >
@@ -474,7 +474,6 @@ const LiveSessionsPage = () => {
           ))}
         </div>
       )}
-
       {showModal && (
         <LiveSessionFormModal
           onClose={handleCloseModal}
@@ -482,7 +481,6 @@ const LiveSessionsPage = () => {
           session={editingSession}
         />
       )}
-
       <LiveSessionAttendeesModal
         isOpen={showAttendeesModal}
         onClose={handleCloseAttendeesModal}

@@ -2,44 +2,55 @@ import React, { useEffect, useRef, useState } from "react";
 import { HubConnectionBuilder } from "@microsoft/signalr";
 import SimplePeer from "simple-peer";
 import { Video, VideoOff, Volume2, VolumeX, Users, LogOut } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { postData } from "../services/ApiFetch";
 
 export default function StudentPage() {
+  const { sessionId } = useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [isConnected, setIsConnected] = useState(false);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [connectedStudents, setConnectedStudents] = useState(0);
+  const [session, setSession] = useState(null);
+  const [sessionEnded, setSessionEnded] = useState(false);
 
   const connRef = useRef(null);
   const peerRef = useRef(null);
-  const videoRef = useRef();
+  const videoRef = useRef(null);
   const retryCountRef = useRef(0);
 
   useEffect(() => {
+    const joinSession = async () => {
+      try {
+        // Rejoindre la session et s'ajouter comme participant
+        const [sessionData] = await postData(`/livesessions/${sessionId}/attendees/${user.userId}`);
+        if (sessionData) setSession(sessionData);
+      } catch (error) {
+        console.error("Error joining session:", error);
+        navigate("/live-sessions");
+      }
+    };
+
+    joinSession();
+  }, [sessionId, user.userId, navigate]);
+
+  useEffect(() => {
+    if (!sessionId || !user?.userId) return;
+
+    const conn = new HubConnectionBuilder()
+      .withUrl("http://localhost:5000/hub/conference")
+      .withAutomaticReconnect()
+      .build();
+
+    connRef.current = conn;
+
     const setupConnection = async () => {
-      const conn = new HubConnectionBuilder()
-        .withUrl("http://localhost:5000/hub/conference")
-        .withAutomaticReconnect()
-        .build();
-      
-      connRef.current = conn;
-
-      conn.on("UserJoined", () => setConnectedStudents(c => c + 1));
-      conn.on("UserLeft", () => setConnectedStudents(c => Math.max(0, c - 1)));
-
-      conn.on("ReceiveSignal", (_, signal) => {
-        const peer = peerRef.current;
-        if (!peer || peer.destroyed || peer.connected) return;
-        
-        try {
-          peer.signal(signal);
-        } catch (err) {
-          console.error("Erreur signal étudiant:", err.message);
-        }
-      });
-
       try {
         await conn.start();
-        await conn.invoke("RegisterAsStudent");
+        await conn.invoke("JoinSession", parseInt(sessionId), user.userId);
         setIsConnected(true);
 
         const peer = new SimplePeer({ 
@@ -47,33 +58,31 @@ export default function StudentPage() {
           trickle: false,
           reconnectTimer: 5000
         });
-        
+
         peerRef.current = peer;
 
-        peer.on("signal", data => {
-          conn.invoke("SendSignal", conn.connectionId, data);
+        peer.on("signal", (data) => {
+          if (connRef.current?.state === "Connected") {
+            connRef.current.invoke("SendSignal", user.userId.toString(), data)
+              .catch(console.error);
+          }
         });
 
-        peer.on("stream", stream => {
-          if (!videoRef.current) return;
-          
-          // Vérifier si le stream est déjà attaché
-          if (videoRef.current.srcObject !== stream) {
+        peer.on("stream", (stream) => {
+          if (videoRef.current && !videoRef.current.srcObject) {
             videoRef.current.srcObject = stream;
             videoRef.current.muted = isMuted;
-            
             videoRef.current.onloadedmetadata = () => {
-              videoRef.current.play().catch(e => {
-                console.warn("Play refusé:", e.message);
+              videoRef.current?.play().catch(e => {
+                console.warn("Play error:", e);
               });
             };
-            
             setIsVideoLoaded(true);
             retryCountRef.current = 0;
           }
         });
 
-        peer.on("error", err => {
+        peer.on("error", (err) => {
           console.error("Peer error:", err);
           if (retryCountRef.current < 3) {
             retryCountRef.current += 1;
@@ -91,39 +100,74 @@ export default function StudentPage() {
           setIsVideoLoaded(false);
         });
 
+        conn.on("UserJoined", (userId, isTeacher) => {
+          if (!isTeacher) {
+            setConnectedStudents(prev => prev + 1);
+          }
+        });
+
+        conn.on("UserLeft", (userId, isTeacher) => {
+          if (!isTeacher) {
+            setConnectedStudents(prev => Math.max(0, prev - 1));
+          }
+        });
+
+        conn.on("ReceiveSignal", (senderId, signal) => {
+          if (signal.type === "sessionEnded") {
+            setSessionEnded(true);
+            setTimeout(() => {
+              navigate("/live-sessions");
+            }, 3000);
+            return;
+          }
+
+          if (peerRef.current && !peerRef.current.destroyed && !peerRef.current.connected) {
+            try {
+              peerRef.current.signal(signal);
+            } catch (err) {
+              console.error("Error processing signal:", err);
+            }
+          }
+        });
+
       } catch (err) {
-        console.error("Erreur de connexion:", err);
+        console.error("Connection error:", err);
       }
     };
 
     setupConnection();
 
     return () => {
-      const peer = peerRef.current;
-      if (peer && !peer.destroyed) {
-        peer.destroy();
+      if (peerRef.current && !peerRef.current.destroyed) {
+        peerRef.current.destroy();
       }
-      connRef.current?.stop();
+      if (connRef.current) {
+        connRef.current.stop().catch(console.error);
+      }
     };
-  }, []);
+  }, [sessionId, user?.userId]);
 
   const toggleMute = () => {
-    setIsMuted(m => {
-      const next = !m;
-      if (videoRef.current) {
-        videoRef.current.muted = next;
-      }
-      return next;
-    });
+    if (videoRef.current) {
+      const newMuted = !isMuted;
+      videoRef.current.muted = newMuted;
+      setIsMuted(newMuted);
+    }
+  };
+
+  const leaveSession = () => {
+    navigate("/live-sessions");
   };
 
   return (
     <div className="p-4 bg-purple-50 min-h-screen">
       <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Étudiant – Conférence</h1>
+        <h1 className="text-2xl font-bold">
+          {session?.title || "Session en direct"}
+        </h1>
         <div className="flex gap-4">
           <span>{isConnected ? "🟢 Connecté" : "🔴 Déconnecté"}</span>
-          <span>👥 {connectedStudents}</span>
+          <span>👥 {connectedStudents} participant(s)</span>
         </div>
       </header>
 
@@ -154,10 +198,19 @@ export default function StudentPage() {
 
       <button 
         className="mt-6 bg-red-500 text-white px-4 py-2 rounded" 
-        onClick={() => connRef.current?.stop()}
+        onClick={leaveSession}
       >
-        Quitter
+        Quitter la session
       </button>
+
+      {sessionEnded && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg text-center">
+            <h2 className="text-xl font-bold mb-4">La session est terminée</h2>
+            <p>Vous allez être redirigé vers la liste des sessions...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
