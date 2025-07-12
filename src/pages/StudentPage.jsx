@@ -1,15 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { HubConnectionBuilder } from "@microsoft/signalr";
 import SimplePeer from "simple-peer";
-import {
-  Video,
-  VideoOff,
-  Volume2,
-  VolumeX,
-  Users,
-  LogOut,
-} from "lucide-react";
-// … import identiques
+import { Video, VideoOff, Volume2, VolumeX, Users, LogOut } from "lucide-react";
 
 export default function StudentPage() {
   const [isConnected, setIsConnected] = useState(false);
@@ -20,88 +12,117 @@ export default function StudentPage() {
   const connRef = useRef(null);
   const peerRef = useRef(null);
   const videoRef = useRef();
+  const retryCountRef = useRef(0);
 
   useEffect(() => {
-    const conn = new HubConnectionBuilder()
-      .withUrl("http://localhost:5000/hub/conference")
-      .withAutomaticReconnect()
-      .build();
-    connRef.current = conn;
+    const setupConnection = async () => {
+      const conn = new HubConnectionBuilder()
+        .withUrl("http://localhost:5000/hub/conference")
+        .withAutomaticReconnect()
+        .build();
+      
+      connRef.current = conn;
 
-    conn.on("UserJoined", () => setConnectedStudents((c) => c + 1));
-    conn.on("UserLeft", () => setConnectedStudents((c) => Math.max(0, c - 1)));
+      conn.on("UserJoined", () => setConnectedStudents(c => c + 1));
+      conn.on("UserLeft", () => setConnectedStudents(c => Math.max(0, c - 1)));
 
-    conn.on("ReceiveSignal", (_, signal) => {
-      const peer = peerRef.current;
-      if (!peer || peer.destroyed || peer.connected) return;
-      peer.signal(signal);
-    });
+      conn.on("ReceiveSignal", (_, signal) => {
+        const peer = peerRef.current;
+        if (!peer || peer.destroyed || peer.connected) return;
+        
+        try {
+          peer.signal(signal);
+        } catch (err) {
+          console.error("Erreur signal étudiant:", err.message);
+        }
+      });
 
-    conn.start()
-      .then(() => {
+      try {
+        await conn.start();
+        await conn.invoke("RegisterAsStudent");
         setIsConnected(true);
 
-        const peer = new SimplePeer({ initiator: false, trickle: false });
+        const peer = new SimplePeer({ 
+          initiator: false, 
+          trickle: false,
+          reconnectTimer: 5000
+        });
+        
         peerRef.current = peer;
 
-        peer.on("signal", (data) =>
-          conn.invoke("SendSignal", conn.connectionId, data)
-        );
-
-        peer.on("stream", (stream) => {
-          console.log("Stream reçu :", stream);
-console.log("Pistes audio :", stream.getAudioTracks());
-
-          const vid = videoRef.current;
-          // Assignation unique
-          if (!vid.srcObject) {
-            vid.srcObject = stream;
-            vid.muted = isMuted;
-            vid.playsInline = true;
-            vid.play().catch(e =>
-              console.warn("Play refusé :", e.message)
-            );
-          }
-          setIsVideoLoaded(true);
+        peer.on("signal", data => {
+          conn.invoke("SendSignal", conn.connectionId, data);
         });
-      })
-      .catch(err => {
-        console.warn("SignalR start aborted (normal lors d'un reload):", err);
-      });
+
+        peer.on("stream", stream => {
+          if (!videoRef.current) return;
+          
+          // Vérifier si le stream est déjà attaché
+          if (videoRef.current.srcObject !== stream) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.muted = isMuted;
+            
+            videoRef.current.onloadedmetadata = () => {
+              videoRef.current.play().catch(e => {
+                console.warn("Play refusé:", e.message);
+              });
+            };
+            
+            setIsVideoLoaded(true);
+            retryCountRef.current = 0;
+          }
+        });
+
+        peer.on("error", err => {
+          console.error("Peer error:", err);
+          if (retryCountRef.current < 3) {
+            retryCountRef.current += 1;
+            setTimeout(() => {
+              if (peerRef.current && !peerRef.current.destroyed) {
+                peerRef.current.destroy();
+              }
+              peerRef.current = new SimplePeer({ initiator: false, trickle: false });
+            }, 1000 * retryCountRef.current);
+          }
+        });
+
+        peer.on("close", () => {
+          console.log("Peer connection closed");
+          setIsVideoLoaded(false);
+        });
+
+      } catch (err) {
+        console.error("Erreur de connexion:", err);
+      }
+    };
+
+    setupConnection();
 
     return () => {
       const peer = peerRef.current;
-      if (peer && !peer.destroyed) peer.destroy();
-      conn.stop();
+      if (peer && !peer.destroyed) {
+        peer.destroy();
+      }
+      connRef.current?.stop();
     };
-  }, []); // <- vide
+  }, []);
 
   const toggleMute = () => {
-    setIsMuted((m) => {
+    setIsMuted(m => {
       const next = !m;
-      const vid = videoRef.current;
-      if (vid) {
-        vid.muted = next;
-        // relancer play() seulement si nécessaire
-        if (!vid.paused) {
-          vid.play().catch(e =>
-            console.warn("Play refusé après unmute :", e.message)
-          );
-        }
+      if (videoRef.current) {
+        videoRef.current.muted = next;
       }
       return next;
     });
   };
 
-  
   return (
     <div className="p-4 bg-purple-50 min-h-screen">
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Étudiant – Conférence</h1>
         <div className="flex gap-4">
-          <span>
-            {isConnected ? "🟢 Connecté" : "🔴 Déconnecté"}
-          </span>
+          <span>{isConnected ? "🟢 Connecté" : "🔴 Déconnecté"}</span>
           <span>👥 {connectedStudents}</span>
         </div>
       </header>
@@ -131,10 +152,12 @@ console.log("Pistes audio :", stream.getAudioTracks());
         </div>
       </div>
 
-      <button className="mt-6 bg-red-500 text-white px-4 py-2 rounded" onClick={() => connRef.current?.stop()}>
+      <button 
+        className="mt-6 bg-red-500 text-white px-4 py-2 rounded" 
+        onClick={() => connRef.current?.stop()}
+      >
         Quitter
       </button>
     </div>
   );
-
 }

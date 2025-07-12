@@ -34,7 +34,9 @@ const CertificationResultsPage = () => {
       if (!user?.userId || !courseId) return;
       setIsLoading(true);
       try {
-        const [existingCertificate] = await getData(`enrollments/certificates/course/${courseId}/${user.userId}`);
+        // Un seul appel API unifié
+        const [existingCertificate] = await getData(`enrollments/certificates/course/${courseId}/user/${user.userId}`);
+        
         if (existingCertificate) {
           setCertificate(existingCertificate);
         } else if (allExamsPassed) {

@@ -16,6 +16,7 @@ import {
   UserCircleIcon,
   LockClosedIcon
 } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const CertificationExamPage = () => {
   const { courseId } = useParams();
@@ -40,6 +41,18 @@ const CertificationExamPage = () => {
   const [canRetakeExam, setCanRetakeExam] = useState(true);
   const [nextRetakeTime, setNextRetakeTime] = useState(null);
   const globalTimerRef = useRef(null);
+
+  const fadeIn = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 }
+  };
+
+  const slideIn = {
+    initial: { x: 20, opacity: 0 },
+    animate: { x: 0, opacity: 1 },
+    exit: { x: -20, opacity: 0 }
+  };
 
   useEffect(() => {
     const checkExamRetake = async () => {
@@ -284,8 +297,16 @@ const CertificationExamPage = () => {
 
   if (!canRetakeExam) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-        <div className="max-w-2xl bg-white rounded-xl shadow-lg p-8 text-center">
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        className="min-h-screen bg-gray-50 flex items-center justify-center p-8"
+      >
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="max-w-2xl bg-white rounded-xl shadow-lg p-8 text-center"
+        >
           <div className="flex justify-center mb-6">
             <LockClosedIcon className="h-16 w-16 text-red-500" />
           </div>
@@ -304,23 +325,35 @@ const CertificationExamPage = () => {
           >
             Retour
           </button>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   }
 
   if (!hasLoadedExams) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        className="min-h-screen flex items-center justify-center bg-gray-50"
+      >
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-e-bosy-purple"></div>
         <p className="text-gray-700 ml-4">Chargement des examens...</p>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 flex flex-col font-sans select-none">
-      <header className="flex items-center justify-between bg-white p-4 shadow-md z-10 border-b border-gray-100">
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50 text-gray-800 flex flex-col font-sans select-none"
+    >
+      <motion.header 
+        initial={{ y: -20 }}
+        animate={{ y: 0 }}
+        className="flex items-center justify-between bg-white/90 backdrop-blur-sm p-4 shadow-lg z-10 border-b border-gray-100"
+      >
         <div className="flex items-center">
           <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="mr-4 text-gray-600 hover:text-e-bosy-purple">
             <Bars3Icon className="h-6 w-6" />
@@ -351,27 +384,42 @@ const CertificationExamPage = () => {
             )}
           </div>
         </div>
-      </header>
+      </motion.header>
       <div className="flex flex-1 overflow-hidden">
-        <aside
-          className={`bg-white border-r border-gray-100 p-6 flex flex-col transition-all duration-300 shadow-md ${isSidebarOpen ? 'w-80' : 'w-0 overflow-hidden p-0'}`}
-        >
+        <AnimatePresence mode="wait">
           {isSidebarOpen && (
-            <>
+            <motion.aside
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="bg-white/90 backdrop-blur-sm border-r border-gray-100 p-6 flex flex-col w-80 shadow-lg"
+            >
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Questions</h2>
-              <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              <motion.div 
+                variants={fadeIn}
+                initial="initial"
+                animate="animate"
+                className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar"
+              >
                 {exams.map((exam, examIdx) => (
-                  <div key={exam.assessmentId} className="mb-6">
-                    <button
+                  <motion.div
+                    key={exam.assessmentId}
+                    variants={slideIn}
+                    className="mb-6"
+                  >
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`w-full text-left p-4 rounded-xl flex items-center justify-between text-lg font-medium transition-all ${
+                        currentSectionIndex === examIdx
+                          ? 'bg-gradient-to-r from-e-bosy-purple to-purple-600 text-white shadow-lg'
+                          : 'text-gray-700 hover:bg-gray-50 border border-gray-200'
+                      }`}
                       onClick={() => {
                         setCurrentSectionIndex(examIdx);
                         setCurrentQuestionIndex(0);
                       }}
-                      className={`w-full text-left p-3 rounded-md flex items-center justify-between text-lg font-medium transition-colors ${
-                        currentSectionIndex === examIdx
-                          ? 'bg-e-bosy-purple text-white shadow-sm'
-                          : 'text-gray-700 hover:bg-gray-50 border border-gray-200'
-                      }`}
                     >
                       <span>Section {examIdx + 1}: {exam.title}</span>
                       <span className="text-sm font-normal">
@@ -379,7 +427,7 @@ const CertificationExamPage = () => {
                         /
                         {questionsBySection[examIdx]?.length || 0}
                       </span>
-                    </button>
+                    </motion.button>
                     {currentSectionIndex === examIdx && (
                       <div className="grid grid-cols-5 gap-2 mt-4">
                         {questionsBySection[examIdx]?.map((q, qIdx) => (
@@ -399,9 +447,9 @@ const CertificationExamPage = () => {
                         ))}
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
               <div className="mt-6 pt-6 border-t border-gray-100">
                 <button
                   onClick={() => setIsConfirmSubmitOpen(true)}
@@ -416,59 +464,77 @@ const CertificationExamPage = () => {
                   Soumettre le Test
                 </button>
               </div>
-            </>
+            </motion.aside>
           )}
-        </aside>
-        <main className="flex-1 flex flex-col bg-gray-50 p-8">
-          <div className="bg-white rounded-xl shadow-lg p-6 flex-1 overflow-y-auto custom-scrollbar border border-gray-100">
-            {currentQuestion ? (
-              <>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-start">
-                  <QuestionMarkCircleIcon className="h-7 w-7 text-e-bosy-purple mr-3 flex-shrink-0" />
-                  <div className="leading-tight">
-                    Question {currentQuestionIndex + 1}: <br className="sm:hidden" />
-                    <span onCopy={(e) => e.preventDefault()}>{currentQuestion.questionText}</span>
-                  </div>
-                </h2>
-                <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 mb-6">
-                  <p className="text-gray-600 text-sm italic" onCopy={(e) => e.preventDefault()}>
-                    {currentQuestion.questionType === "multiple_choice"
-                      ? "Sélectionnez la ou les bonnes réponses."
-                      : "Sélectionnez la bonne réponse."}
-                  </p>
-                </div>
-                <div className="space-y-4">
-                  {currentQuestion.answers?.map((answer) => (
-                    <label
-                      key={answer.answerId}
-                      className={`flex items-center p-4 rounded-lg cursor-pointer transition-colors border shadow-sm ${
-                        currentExamSelectedAnswers[currentQuestion.questionId]?.includes(answer.answerId)
-                          ? 'border-e-bosy-purple bg-purple-50 text-e-bosy-purple'
-                          : 'border-gray-200 hover:border-gray-300 bg-white text-gray-800'
-                      }`}
+        </AnimatePresence>
+        <motion.main 
+          layout
+          className="flex-1 flex flex-col bg-transparent p-8"
+        >
+          <motion.div 
+            layout
+            className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 flex-1 overflow-y-auto custom-scrollbar border border-gray-100"
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentQuestionIndex}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                {currentQuestion && (
+                  <>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-8 flex items-start">
+                      <QuestionMarkCircleIcon className="h-7 w-7 text-e-bosy-purple mr-3 flex-shrink-0" />
+                      <div className="leading-tight">
+                        Question {currentQuestionIndex + 1}: <br className="sm:hidden" />
+                        <span onCopy={(e) => e.preventDefault()}>{currentQuestion.questionText}</span>
+                      </div>
+                    </h2>
+                    <motion.div 
+                      className="bg-purple-50 border border-purple-100 rounded-xl p-6 mb-8"
+                      whileHover={{ scale: 1.01 }}
                     >
-                      <input
-                        type={currentQuestion.questionType === "multiple_choice" ? "checkbox" : "radio"}
-                        name={`question-${currentQuestion.questionId}`}
-                        value={answer.answerId}
-                        checked={currentExamSelectedAnswers[currentQuestion.questionId]?.includes(answer.answerId) || false}
-                        onChange={() => handleAnswerSelect(currentQuestion.questionId, answer.answerId)}
-                        className="form-checkbox h-5 w-5 text-e-bosy-purple rounded border-gray-300 bg-white focus:ring-e-bosy-purple focus:ring-offset-1"
-                      />
-                      <span className="ml-3 font-medium" onCopy={(e) => e.preventDefault()}>{answer.answerText}</span>
-                    </label>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
-                <QuestionMarkCircleIcon className="h-16 w-16 mb-4 text-gray-300" />
-                <p className="text-lg font-medium">Sélectionnez une section et une question depuis la barre latérale pour commencer l'examen.</p>
-                <p className="mt-2 text-sm">Utilisez les numéros de questions pour naviguer rapidement.</p>
-              </div>
-            )}
-          </div>
-          <div className="flex justify-between mt-6 p-4 bg-white rounded-xl shadow-lg border border-gray-100">
+                      <p className="text-gray-600 text-sm italic" onCopy={(e) => e.preventDefault()}>
+                        {currentQuestion.questionType === "multiple_choice"
+                          ? "Sélectionnez la ou les bonnes réponses."
+                          : "Sélectionnez la bonne réponse."}
+                      </p>
+                    </motion.div>
+                    <motion.div className="space-y-4">
+                      {currentQuestion.answers?.map((answer) => (
+                        <motion.label
+                          key={answer.answerId}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          className={`flex items-center p-5 rounded-xl cursor-pointer transition-all border-2 ${
+                            currentExamSelectedAnswers[currentQuestion.questionId]?.includes(answer.answerId)
+                              ? 'border-e-bosy-purple bg-purple-50/50 text-e-bosy-purple shadow-purple-100'
+                              : 'border-gray-200 hover:border-purple-200 bg-white/50 text-gray-800'
+                          }`}
+                        >
+                          <input
+                            type={currentQuestion.questionType === "multiple_choice" ? "checkbox" : "radio"}
+                            name={`question-${currentQuestion.questionId}`}
+                            value={answer.answerId}
+                            checked={currentExamSelectedAnswers[currentQuestion.questionId]?.includes(answer.answerId) || false}
+                            onChange={() => handleAnswerSelect(currentQuestion.questionId, answer.answerId)}
+                            className="form-checkbox h-5 w-5 text-e-bosy-purple rounded border-gray-300 bg-white focus:ring-e-bosy-purple focus:ring-offset-1"
+                          />
+                          <span className="ml-3 font-medium" onCopy={(e) => e.preventDefault()}>{answer.answerText}</span>
+                        </motion.label>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
+          <motion.div 
+            layout
+            className="flex justify-between mt-6 p-4 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100"
+          >
             <button
               onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
               disabled={currentQuestionIndex === 0}
@@ -493,55 +559,67 @@ const CertificationExamPage = () => {
               Suivant
               <ChevronRightIcon className="h-5 w-5 ml-2" />
             </button>
-          </div>
-        </main>
+          </motion.div>
+        </motion.main>
       </div>
-      {isConfirmSubmitOpen && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-8 max-w-lg w-full mx-auto shadow-2xl border border-gray-100">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Confirmer la Soumission</h3>
-            <p className="text-gray-700 mb-6 text-center">
-              Êtes-vous sûr de vouloir soumettre <span className="font-semibold text-gray-900">tous</span> les examens maintenant ?
-              Vous ne pourrez plus modifier vos réponses après cette action.
-              <br /><br />
-              **Temps restant : {formatTime(totalTimeLeft)}**
-            </p>
-            <div className="flex justify-center space-x-6">
-              <button
-                onClick={() => setIsConfirmSubmitOpen(false)}
-                className="px-6 py-3 rounded-lg text-gray-600 border border-gray-300 hover:bg-gray-100 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-300"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleOverallSubmission}
-                disabled={isSubmitting}
-                className={`px-8 py-3 rounded-lg font-bold text-lg transition-all duration-300 flex items-center justify-center ${
-                  isSubmitting
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700 transform hover:scale-105 shadow-md focus:outline-none focus:ring-4 focus:ring-green-300'
-                }`}
-              >
-                {isSubmitting ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Soumission...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircleIcon className="h-5 w-5 mr-2" />
-                    Confirmer & Soumettre
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <AnimatePresence>
+        {isConfirmSubmitOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl p-8 max-w-lg w-full mx-auto shadow-2xl border border-gray-100"
+            >
+              <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Confirmer la Soumission</h3>
+              <p className="text-gray-700 mb-6 text-center">
+                Êtes-vous sûr de vouloir soumettre <span className="font-semibold text-gray-900">tous</span> les examens maintenant ?
+                Vous ne pourrez plus modifier vos réponses après cette action.
+                <br /><br />
+                **Temps restant : {formatTime(totalTimeLeft)}**
+              </p>
+              <div className="flex justify-center space-x-6">
+                <button
+                  onClick={() => setIsConfirmSubmitOpen(false)}
+                  className="px-6 py-3 rounded-lg text-gray-600 border border-gray-300 hover:bg-gray-100 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleOverallSubmission}
+                  disabled={isSubmitting}
+                  className={`px-8 py-3 rounded-lg font-bold text-lg transition-all duration-300 flex items-center justify-center ${
+                    isSubmitting
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700 transform hover:scale-105 shadow-md focus:outline-none focus:ring-4 focus:ring-green-300'
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Soumission...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircleIcon className="h-5 w-5 mr-2" />
+                      Confirmer & Soumettre
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 

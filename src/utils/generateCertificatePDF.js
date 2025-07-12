@@ -39,7 +39,6 @@ const generateCertificatePDF = (certificate, courseId, qrCodeDataUrl) => {
   doc.setTextColor('#4B5563'); // Gray-600
   doc.text(`Date de Délivrance: ${certificate.issueDate}`, 40, 140);
   doc.text(`Date d'Achèvement: ${certificate.completionDate}`, 40, 150);
-  doc.text(`Durée du Cours: ${certificate.duration}`, 40, 160);
   doc.text(`Instructeur: ${certificate.instructor}`, 40, 170);
   if (certificate.grade) {
     doc.text(`Note Obtenue: ${certificate.grade}`, 40, 180);

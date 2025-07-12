@@ -70,6 +70,7 @@ import ProfilePage from "./pages/ProfilePage";
 import PaymentPage from "./pages/PaymentPage";
 import InvoicesPage from "./pages/InvoicesPage";
 import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
+import Conference from "./pages/ConferencePage";
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -141,6 +142,7 @@ function App() {
           <Route path="/teacher" element={<TeacherPage />} />
           <Route path="/student" element={<StudentPage />} />
           <Route path="/verify" element={<CertificateVerificationPage />} />
+          <Route path="/conf" element={<Conference />} />
 
 
           {/* Détail cours, inscription, leçons */}
