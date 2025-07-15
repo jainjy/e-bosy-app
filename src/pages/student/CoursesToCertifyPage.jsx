@@ -63,7 +63,7 @@ const CoursesToCertifyPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
+
 <LoadingSpinner/>
       </div>
     );
@@ -71,12 +71,12 @@ const CoursesToCertifyPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* En-tête avec navigation */}
         <div className="mb-8">
           <Link
-            to="/dashboard/certificates"
+            to="/certificates"
             className="inline-flex items-center text-gray-600 hover:text-e-bosy-purple mb-4 transition-colors"
           >
             <ArrowLeftIcon className="h-5 w-5 mr-2" />
@@ -192,7 +192,7 @@ const CoursesToCertifyPage = () => {
                   : "Terminez d'abord les exercices et leçons de vos cours inscrits."}
               </p>
               <Link
-                to="/dashboard/courses"
+                to="/courses"
                 className="inline-flex items-center mt-4 text-e-bosy-purple hover:text-purple-700 transition-colors"
               >
                 <BookOpenIcon className="h-5 w-5 mr-2" />

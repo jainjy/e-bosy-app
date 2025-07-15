@@ -268,7 +268,7 @@ const LessonPage = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Navbar/>
+
       <div className="w-80 bg-white p-6 shadow-md flex flex-col mt-11">
         <div className="mb-6">
           <h3 className="text-xl font-bold text-gray-800 mb-4">

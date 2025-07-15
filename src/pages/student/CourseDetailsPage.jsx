@@ -75,7 +75,7 @@ const CourseDetailsPage = () => {
 
           // Check for certificate
           const [certificateData, certificateError] = await getData(
-            `enrollments/certificates/course/${courseId}/${user.userId}`
+            `enrollments/certificates/course/${courseId}/user/${user.userId}`
           );
           if (certificateError) {
             console.error("Error fetching certificate:", certificateError);
@@ -188,7 +188,6 @@ const CourseDetailsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <Navbar />
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-e-bosy-purple to-purple-800 text-white py-12 px-6 md:px-12 mt-6 animate-fade-in">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8">

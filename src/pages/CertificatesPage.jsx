@@ -96,7 +96,7 @@ const CertificatesPage = () => {
             </div>
           </div>
           <Link
-            to="/dashboard/certificates/available"
+            to="/certificates/available"
             className="flex items-center gap-2 bg-e-bosy-purple text-white px-4 py-2 rounded-md hover:bg-purple-700 transition whitespace-nowrap"
             title="Découvrir les cours disponibles pour certification"
           >
@@ -143,7 +143,7 @@ const CertificatesPage = () => {
                   </p>
                   <div className="flex justify-between items-center mt-4">
                     <Link
-                      to={`/dashboard/certificates/${certificate.certificateId}`}
+                      to={`/certificates/${certificate.verificationCode}`}
                       className="bg-e-bosy-purple text-white px-4 py-2 rounded-md hover:bg-purple-700 transition"
                     >
                       Voir

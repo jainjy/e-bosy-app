@@ -190,7 +190,7 @@ const LessonFormPage = () => {
         toast.success("Leçon créée avec succès !");
       }
 
-      navigate(`/dashboard/courses/${courseId}/lessons`);
+      navigate(`/courses/${courseId}/lessons`);
     } catch (err) {
       const errorMessage = err.errors?.Content?.[0] || err.message || "Échec de la sauvegarde de la leçon.";
       setError(errorMessage);
@@ -232,7 +232,7 @@ const LessonFormPage = () => {
     return (
       <div className="p-6 bg-gray-50 min-h-screen">
         <Link
-          to={`/dashboard/courses/${courseId}/lessons`}
+          to={`/courses/${courseId}/lessons`}
           className="flex items-center text-e-bosy-purple hover:underline mb-6"
         >
           <ArrowLeftIcon className="h-4 w-4 mr-2" />

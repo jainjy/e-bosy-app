@@ -209,7 +209,7 @@ const AdminCategoriesPage = () => {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Gestion des Catégories</h1>
         <Link
-          to="/dashboard/courses"
+          to="/courses"
           className="flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
         >
           <ArrowLeftIcon className="h-5 w-5 mr-2" />

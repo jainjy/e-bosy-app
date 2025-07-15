@@ -125,7 +125,7 @@ const ProfilePage = () => {
             </div>
             {user?.userId === parseInt(id) && (
               <Link
-                to="/dashboard/settings"
+                to="/settings"
                 className="inline-flex items-center px-6 py-3 bg-white text-purple-600 rounded-full font-semibold shadow-md hover:bg-gray-50 transition-colors"
               >
                 <CogIcon className="h-5 w-5 mr-2" />
@@ -195,7 +195,7 @@ const TeacherCourseCard = ({ course }) => (
         </span>
       </div>
       <Link
-        to={`/dashboard/courses/${course.courseId}/lessons`}
+        to={`/courses/${course.courseId}/lessons`}
         className="mt-4 inline-flex items-center px-3 py-2 bg-e-bosy-purple text-white rounded-md hover:bg-purple-700 transition-colors duration-200"
       >
         Voir le cours

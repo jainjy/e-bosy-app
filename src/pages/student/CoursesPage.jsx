@@ -143,7 +143,6 @@ const CoursesPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
-      <Navbar />
       <main className="container mx-auto p-8">
         <div className="text-center mb-10">
           <h2 className="text-4xl font-bold text-gray-800 mb-2">Explorez Nos Cours</h2>

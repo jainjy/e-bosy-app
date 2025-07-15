@@ -74,7 +74,7 @@ const CourseCard = ({ course, onDelete, onPublish, teachers }) => {
         <div className="flex justify-between items-center pt-3 border-t border-gray-100">
           <div className="flex space-x-2">
             <Link
-              to={`/dashboard/courses/${course.courseId}/lessons`}
+              to={`/courses/${course.courseId}/lessons`}
               className="flex items-center justify-center py-2 px-4 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors duration-200"
             >
               <EyeIcon className="h-4 w-4 mr-1" />
@@ -202,7 +202,7 @@ const AdminCoursesPage = () => {
           <p className="text-lg text-gray-600">Administrez les cours et gérez les catégories.</p>
         </div>
         <Link
-          to="/dashboard/categories"
+          to="/categories"
           className="bg-gradient-to-r from-purple-600 to-e-bosy-purple text-white px-6 py-3 rounded-lg shadow-lg hover:from-purple-700 hover:to-purple-800 transition transform hover:-translate-y-1 flex items-center space-x-2 text-lg font-medium"
         >
           <CogIcon className="h-6 w-6" />

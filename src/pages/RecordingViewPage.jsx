@@ -33,7 +33,7 @@ export default function RecordingViewPage() {
           {error}
         </div>
         <button
-          onClick={() => navigate('/dashboard/live-sessions')}
+          onClick={() => navigate('/live-sessions')}
           className="mt-4 flex items-center text-blue-500"
         >
           <ArrowLeft size={20} className="mr-2" />
@@ -52,7 +52,7 @@ export default function RecordingViewPage() {
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">{recording.title}</h1>
         <button
-          onClick={() => navigate('/dashboard/live-sessions')}
+          onClick={() => navigate('/live-sessions')}
           className="flex items-center text-blue-500"
         >
           <ArrowLeft size={20} className="mr-2" />

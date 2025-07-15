@@ -30,7 +30,7 @@ import AssessmentListPage from "./pages/student/AssessmentListPage";
 import StudentAssessmentsPage from "./pages/student/StudentAssessmentsPage";
 
 // Pages dashboard et rôles
-import DashboardLayout from "./layouts/DashboardLayout";
+import MenuLayout from "./layouts/DashboardLayout";
 import MyCoursesPage from "./pages/student/MyCoursesPage";
 import TeacherCoursesPage from "./pages/teacher/TeacherCoursesPage";
 import TeacherLessonsPage from "./pages/teacher/TeacherLessonsPage";
@@ -48,7 +48,6 @@ import UserManagementPage from "./pages/admin/UserManagementPage";
 import MessagesPage from "./pages/MessagesPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import Analytics from "./pages/teacher/Analytics";
-import ScheduleLiveSessionPage from "./pages/ScheduleLiveSessionPage";
 
 import CoursesToCertifyPage from "./pages/student/CoursesToCertifyPage";
 import CertificationExamPage from "./pages/student/CertificationExamPage";
@@ -72,6 +71,7 @@ import InvoicesPage from "./pages/InvoicesPage";
 import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
 import Conference from "./pages/ConferencePage";
 import RecordingViewPage from "./pages/RecordingViewPage";
+import CombinedRecorder from "./components/VideoRecorder";
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -92,7 +92,7 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!localStorage.getItem("user_token")) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   return children;
@@ -124,6 +124,17 @@ function RoleBasedCoursesPage() {
       return <MyCoursesPage />;
   }
 }
+// Page de cours selon le rôle
+function RoleBasedHomePage() {
+  const { user } = useAuth();
+    if(user){
+      return <RoleBasedDashboard/>
+    }
+    else{
+      return <HomePage/>
+    }
+  }
+
 
 // Composant principal
 function App() {
@@ -131,88 +142,32 @@ function App() {
     <>
       <Router>
         <Routes>
-          {/* Routes publiques */}
 
-          <Route path="/" element={<HomePage />} />
-          <Route path="/courses" element={<CoursesPage />} />
+          {/* Routes publiques */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/subscription" element={<SubscriptionPage />} />
-          <Route path="/teacher" element={<TeacherPage />} />
-          <Route path="/student" element={<StudentPage />} />
           <Route path="/verify" element={<CertificateVerificationPage />} />
           <Route path="/conf" element={<Conference />} />
-
-          {/* Détail cours, inscription, leçons */}
-          <Route path="/course/:courseId" element={<CourseDetailsPage />} />
-          <Route
-            path="/courses/:courseId/enroll"
-            element={<CourseEnrollPage />}
-          />
-          <Route
-            path="/course/:courseId/lesson/:lessonId"
-            element={<LessonPage />}
-          />
-          <Route
-            path="/course/:courseId/results"
-            element={<CertificationResultsPage />}
-          />
-          <Route
-            path="/course/:courseId/certification"
-            element={
-              <ProtectedRoute>
-                <CertificationInstructionsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/course/:courseId/certification/exam"
-            element={
-              <ProtectedRoute>
-                <CertificationExamPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/payment"
-            element={
-              <ProtectedRoute>
-                <PaymentPage />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Exercices et évaluations */}
-          <Route
-            path="/course/:courseId/exercise/:assessmentId"
-            element={<ExercisePage />}
-          />
-          <Route
-            path="/course/:courseId/assessments"
-            element={
-              <ProtectedRoute>
-                <AssessmentListPage />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* 404 */}
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/tests" element={<CombinedRecorder />} />
           <Route path="*" element={<NotFoundPage />} />
-
-          {/* Dashboard et sous-routes */}
           <Route
-            path="/dashboard/*"
+            path="/*"
             element={
               <ProtectedRoute>
-                <DashboardLayout />
+                <MenuLayout />
               </ProtectedRoute>
             }
           >
-            <Route index element={<RoleBasedDashboard />} />
-            <Route path="courses" element={<RoleBasedCoursesPage />} />
+            {/* Routes du dashboard */}
+
+            <Route path="dashboard" element={<RoleBasedDashboard />} />
+            <Route index element={<RoleBasedHomePage/>} />
+            <Route path="mycourses" element={<RoleBasedCoursesPage />} />
             <Route path="users/:id/profile" element={<ProfilePage />} />
+            <Route path="subscription" element={<SubscriptionPage />} />
             <Route
               path="courses/:courseId/lessons"
               element={<TeacherLessonsPage />}
@@ -226,6 +181,18 @@ function App() {
               path="courses/:courseId/assessments/:assessmentId/questions"
               element={<QuestionsPage />}
             />
+            
+            {/* Routes des cours */}
+            <Route path="course/:courseId" element={<CourseDetailsPage />} />
+            <Route path="course/:courseId/lesson/:lessonId" element={<LessonPage />} />
+            <Route path="courses" element={<CoursesPage />} />
+            <Route path="course/:courseId/results" element={<CertificationResultsPage />} />
+            <Route path="course/:courseId/certification" element={<CertificationInstructionsPage />} />
+            <Route path="course/:courseId/certification/exam" element={<CertificationExamPage />} />
+            <Route path="course/:courseId/exercise/:assessmentId" element={<ExercisePage />} />
+            <Route path="course/:courseId/assessments" element={<AssessmentListPage />} />
+            
+            {/* Autres routes */}
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="certificates" element={<CertificatesPage />} />
             <Route path="settings" element={<SettingsPage />} />
@@ -234,7 +201,6 @@ function App() {
             <Route path="analytics" element={<Analytics />} />
             <Route path="live-sessions" element={<LiveSessionsPage />} />
             <Route path="live-session/:sessionId" element={<TeacherPage />} />
-            // Modifiez les routes existantes pour les sessions live :
             <Route
               path="live-session/:sessionId"
               element={
@@ -250,10 +216,6 @@ function App() {
                   <StudentPage />
                 </ProtectedRoute>
               }
-            />
-            <Route
-              path="live-sessions/schedule"
-              element={<ScheduleLiveSessionPage />}
             />
             <Route
               path="student/live-session/:sessionId"

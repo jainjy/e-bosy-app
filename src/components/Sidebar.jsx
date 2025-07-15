@@ -22,21 +22,21 @@ const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount
 
   const navItems = [
     {
-      name: "Overview",
+      name: "Tableau de bord",
       icon: HomeIcon,
       path: "/dashboard",
       roles: ["etudiant", "enseignant", "administrateur"],
     },
     {
-      name: "My Courses",
+      name: "Mes cours",
       icon: AcademicCapIcon,
-      path: "/dashboard/courses",
+      path: "/mycourses",
       roles: ["etudiant", "enseignant", "administrateur"],
     },
     {
-      name: "Certificates",
+      name: "Certificats",
       icon: TicketIcon,
-      path: "/dashboard/certificates",
+      path: "/certificates",
       roles: ["etudiant"],
     },
     {
@@ -48,56 +48,56 @@ const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount
     {
       name: "Messages",
       icon: EnvelopeIcon,
-      path: "/dashboard/messages",
+      path: "/messages",
       roles: ["etudiant", "enseignant", "administrateur"],
       badge: unreadCount > 0 ? unreadCount : null
     },
     {
       name: "Notifications",
       icon: BellIcon,
-      path: "/dashboard/notifications",
+      path: "/notifications",
       roles: ["etudiant", "enseignant", "administrateur"],
     },
     {
-      name: "Settings",
+      name: "Paramètres",
       icon: Cog6ToothIcon,
-      path: "/dashboard/settings",
+      path: "/settings",
       roles: ["etudiant", "enseignant", "administrateur"],
     },
     {
-      name: "Users",
+      name: "Utilisateurs",
       icon: UserGroupIcon,
-      path: "/dashboard/users",
+      path: "/users",
       roles: ["administrateur"],
     },
     {
       name: "Évaluations",
       icon: ClipboardDocumentCheckIcon,
-      path: "/dashboard/assessments",
+      path: "/assessments",
       roles: ["etudiant"],
     },
     {
       name: "Factures",
       icon: DocumentTextIcon,
-      path: "/dashboard/invoices",
+      path: "/invoices",
       roles: ["etudiant"],
     },
     {
-      name: "Analytics",
+      name: "Statistiques",
       icon: ChartBarIcon,
-      path: "/dashboard/analytics",
+      path: "/analytics",
       roles: ["administrateur", "enseignant"],
     },
     {
-      name: "Live Sessions",
+      name: "Sessions en direct",
       icon: VideoCameraIcon,
-      path: "/dashboard/live-sessions",
-      roles: ["etudiant", "enseignant"], // Visible pour étudiants et enseignants
+      path: "/live-sessions",
+      roles: ["etudiant", "enseignant"],
     },
     {
       name: "Paiements",
       icon: CreditCardIcon,
-      path: "/dashboard/payments",
+      path: "/payments",
       roles: ["administrateur"],
     },
   ];
@@ -207,10 +207,10 @@ const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount
           className={`flex items-center p-3 rounded-lg text-gray-700 hover:bg-gray-100 w-full ${
             isCollapsed ? "justify-center" : ""
           }`}
-          title={isCollapsed ? "Sign out" : ""}
+          title={isCollapsed ? "Déconnexion" : ""}
         >
           <ArrowRightOnRectangleIcon className="h-5 w-5" />
-          {!isCollapsed && <span className="ml-3">Sign out</span>}
+          {!isCollapsed && <span className="ml-3">Déconnexion</span>}
         </button>
       </div>
     </div>

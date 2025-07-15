@@ -5,7 +5,7 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { BookOpenIcon, UsersIcon, AcademicCapIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL, getData } from '../services/ApiFetch';
-import Navbar from '../Components/Navbar';
+import Navbar from '../components/Navbar'
 
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
 const DEFAULT_AVATAR = "/images/default-avatar.jpg";
@@ -62,7 +62,7 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <Navbar />
+      <Navbar/>
       <main className="container mx-auto p-8 text-center mt-10">
         {/* Hero Section avec animation */}
         <motion.div

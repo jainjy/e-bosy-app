@@ -140,7 +140,7 @@ const SortableLessonItem = ({ lesson, courseId, handleDeleteLesson, onVideoClick
           </button>
         )}
         <Link
-          to={`/dashboard/courses/${courseId}/lessons/${lesson.id}/edit`}
+          to={`/courses/${courseId}/lessons/${lesson.id}/edit`}
           className="flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
         >
           <PencilIcon className="h-3 w-3 mr-1" /> Modifier
@@ -506,7 +506,7 @@ const TeacherLessonsPage = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <Link
-        to="/dashboard/courses"
+        to="/courses"
         className="flex items-center text-e-bosy-purple hover:underline mb-6"
       >
         <ArrowLeftIcon className="h-4 w-4 mr-2" />
@@ -534,7 +534,7 @@ const TeacherLessonsPage = () => {
             Ajouter une Section
           </button>
           <Link
-            to={`/dashboard/courses/${course.id}/lessons/add`}
+            to={`/courses/${course.id}/lessons/add`}
             className="flex items-center px-4 py-2 bg-e-bosy-purple text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
             <PlusIcon className="h-5 w-5 mr-2" />

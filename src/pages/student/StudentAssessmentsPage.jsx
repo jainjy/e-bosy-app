@@ -50,7 +50,7 @@ const StudentAssessmentsPage = () => {
         // Fetch certificates for each enrolled course
         const certificatePromises = enrollmentsData.map(async (enrollment) => {
           const [certificateData, certificateError] = await getData(
-            `enrollments/certificates/course/${enrollment.courseId}/${user.userId}`
+            `enrollments/certificates/course/${enrollment.courseId}/user/${user.userId}`
           );
           if (certificateError) {
             console.error(`Erreur lors de la récupération du certificat pour le cours ${enrollment.courseId}:`, certificateError);
@@ -118,7 +118,6 @@ const StudentAssessmentsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Mes Exercices</h1>

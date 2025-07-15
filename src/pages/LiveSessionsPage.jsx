@@ -10,6 +10,8 @@ import {
   PencilIcon,
   TrashIcon,
   UserGroupIcon,
+  CheckCircleIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 import LiveSessionFormModal from "../components/LiveSessionFormModal";
 import LiveSessionAttendeesModal from "../components/LiveSessionAttendeesModal";
@@ -28,7 +30,7 @@ const LiveSessionsPage = () => {
   const [attendees, setAttendees] = useState([]);
   const [selectedLiveSessionId, setSelectedLiveSessionId] = useState(null);
   const navigate = useNavigate();
-  const baseUrl = `${API_BASE_URL}/api/livesessions`;
+  const baseUrl = `livesessions`;
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -41,9 +43,24 @@ const LiveSessionsPage = () => {
           ? `${baseUrl}/host/${user.userId}`
           : `${baseUrl}/host/${user.userId}?past=true`;
       } else {
-        endpoint = filter === "upcoming"
-          ? `${baseUrl}/upcoming?attendeeId=${user.userId}&enrolled=true`
-          : `${baseUrl}/past?attendeeId=${user.userId}&enrolled=true`;
+        // Pour les étudiants, on combine upcoming et ongoing
+        if (filter === "upcoming") {
+          const [upcoming, ongoing] = await Promise.all([
+            getData(`${baseUrl}/upcoming?attendeeId=${user.userId}&enrolled=true`),
+            getData(`${baseUrl}/ongoing?attendeeId=${user.userId}&enrolled=true`)
+          ]);
+          
+          // Fusionner les résultats en excluant les doublons
+          const allSessions = [...(upcoming[0] || []), ...(ongoing[0] || [])];
+          const uniqueSessions = allSessions.filter(
+            (session, index, self) => index === self.findIndex(s => s.liveSessionId === session.liveSessionId)
+          );
+          
+          setSessions(uniqueSessions);
+          return;
+        } else {
+          endpoint = `${baseUrl}/past?attendeeId=${user.userId}&enrolled=true`;
+        }
       }
       const [data, error] = await getData(endpoint);
       if (error) throw error;
@@ -55,7 +72,6 @@ const LiveSessionsPage = () => {
       setLoading(false);
     }
   }, [filter, user, baseUrl]);
-
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);
@@ -76,18 +92,23 @@ const LiveSessionsPage = () => {
     });
   };
 
-  const isSessionOngoing = (session) => {
+  const getSessionStatus = (session) => {
+    // Priorité au statut stocké en base
+    if (session.status === "completed") return "completed";
+    if (session.status === "ongoing") return "ongoing";
+    
+    // Fallback sur la logique temporelle si pas de statut défini
     const now = new Date();
     const start = new Date(session.startTime);
     const end = new Date(session.endTime);
-    return session.status === "ongoing" && now >= start && now <= end;
+    
+    if (now >= start && now <= end) return "ongoing";
+    if (now > end) return "completed";
+    return "scheduled";
   };
 
   const canJoin = (session) => {
-    const now = new Date();
-    const start = new Date(session.startTime);
-    const end = new Date(session.endTime);
-    return now >= start && now <= end && session.status === "ongoing";
+    return getSessionStatus(session) === "ongoing";
   };
 
   const canManageSession = (session) => {
@@ -96,14 +117,12 @@ const LiveSessionsPage = () => {
   };
 
   const canEditSession = (session) => {
-    const now = new Date();
-    const start = new Date(session.startTime);
-    return start > now;
+    return getSessionStatus(session) === "scheduled";
   };
 
   const handleOpenModal = (session = null) => {
     if (session && !canEditSession(session)) {
-      toast.warn("Vous ne pouvez pas modifier une session passée.");
+      toast.warn("Vous ne pouvez pas modifier une session passée ou en cours.");
       return;
     }
     setEditingSession(session);
@@ -117,17 +136,6 @@ const LiveSessionsPage = () => {
 
   const handleSaveSession = async (sessionData) => {
     try {
-      const endpoint = editingSession 
-        ? `${baseUrl}/${editingSession.liveSessionId}`
-        : baseUrl;
-      
-      const [data, error] = editingSession
-        ? await putData(endpoint, sessionData)
-        : await postData(endpoint, sessionData);
-
-      if (error) throw error;
-      
-      handleCloseModal();
       await fetchSessions();
       toast.success(
         `Session ${editingSession ? "mise à jour" : "créée"} avec succès`
@@ -179,75 +187,114 @@ const LiveSessionsPage = () => {
 
   const handleStartSession = async (liveSessionId) => {
     try {
-      const [data, error] = await postData(`${baseUrl}/${liveSessionId}/start`);
+      const [sessionData, error] = await postData(`${baseUrl}/${liveSessionId}/start`);
       if (error) throw error;
-      
-      // Mettre à jour le statut dans la liste locale
-      setSessions(sessions.map(session => 
-        session.liveSessionId === liveSessionId 
-          ? { ...session, status: 'ongoing' }
-          : session
-      ));
-      
-      navigate(`/dashboard/live-session/${liveSessionId}`);
+      await fetchSessions();
+      navigate(`/live-session/${liveSessionId}`);
     } catch (error) {
       console.error("Error starting session:", error);
       toast.error("Erreur lors du démarrage de la session");
     }
   };
 
+  const handleEndSession = async (liveSessionId) => {
+    try {
+      const [sessionData, error] = await postData(`${baseUrl}/${liveSessionId}/end`);
+      if (error) throw error;
+      await fetchSessions();
+      toast.success("Session terminée avec succès");
+    } catch (error) {
+      console.error("Error ending session:", error);
+      toast.error("Erreur lors de la fin de la session");
+    }
+  };
+
   const handleJoinSession = async (liveSessionId) => {
     try {
-      // S'inscrire comme participant
       const [result, error] = await postData(`${baseUrl}/${liveSessionId}/attendees`);
       if (error) throw error;
-      
-      // Rediriger vers la page de session en direct
-      navigate(`/dashboard/student/live-session/${liveSessionId}`);
+      navigate(`/student/live-session/${liveSessionId}`);
     } catch (error) {
       console.error("Error joining session:", error);
       toast.error("Erreur lors de la tentative de rejoindre la session");
     }
   };
 
-  const ongoingSessions = sessions.filter(isSessionOngoing);
-  const upcomingSessions = sessions.filter(
-    (session) => !isSessionOngoing(session) && new Date(session.startTime) > new Date()
-  );
-  const pastSessions = sessions.filter(
-    (session) => !isSessionOngoing(session) && new Date(session.startTime) <= new Date()
-  );
-  const sessionsToDisplay = filter === "upcoming" ? upcomingSessions : pastSessions;
+  const getStatusBadge = (status) => {
+    const statusMap = {
+      scheduled: {
+        color: "bg-blue-100 text-blue-800",
+        icon: <ClockIcon className="h-4 w-4 mr-1" />,
+        text: "Planifiée"
+      },
+      ongoing: {
+        color: "bg-green-100 text-green-800",
+        icon: <PlayIcon className="h-4 w-4 mr-1" />,
+        text: "En cours"
+      },
+      completed: {
+        color: "bg-purple-100 text-purple-800",
+        icon: <CheckCircleIcon className="h-4 w-4 mr-1" />,
+        text: "Terminée"
+      }
+    };
+    
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusMap[status].color}`}>
+        {statusMap[status].icon}
+        {statusMap[status].text}
+      </span>
+    );
+  };
+
+  // Organiser les sessions par statut
+  const organizedSessions = sessions.reduce((acc, session) => {
+    const status = getSessionStatus(session);
+    acc[status] = acc[status] || [];
+    acc[status].push(session);
+    return acc;
+  }, {});
+
+  const sessionsToDisplay = filter === "upcoming" 
+    ? [...(organizedSessions.scheduled || []), ...(organizedSessions.ongoing || [])]
+    : organizedSessions.completed || [];
 
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Sessions en direct</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Sessions en direct</h1>
         {user?.role === "enseignant" && (
           <button
             onClick={() => handleOpenModal()}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-md"
           >
             <PlusIcon className="h-5 w-5 mr-2" />
             Planifier une session
           </button>
         )}
       </div>
-      {ongoingSessions.length > 0 && (
+
+      {/* Sessions en cours */}
+      {organizedSessions.ongoing?.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Sessions en cours</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-gray-800">Sessions en cours</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {ongoingSessions.map((session) => (
+            {organizedSessions.ongoing.map((session) => (
               <div
                 key={session.liveSessionId}
-                className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white"
+                className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white border-l-4 border-green-500"
               >
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-semibold text-gray-800">
-                      {session.title}
-                    </h3>
-                    {canManageSession(session) && !isSessionOngoing(session) && !pastSessions.some(pastSession => pastSession.liveSessionId === session.liveSessionId) && (
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-800">
+                        {session.title}
+                      </h3>
+                      <div className="mt-1">
+                        {getStatusBadge(getSessionStatus(session))}
+                      </div>
+                    </div>
+                    {canManageSession(session) && (
                       <div className="flex space-x-2">
                         <button
                           onClick={(e) => {
@@ -275,11 +322,13 @@ const LiveSessionsPage = () => {
                       </div>
                     )}
                   </div>
+                  
                   {session.course?.title && (
                     <p className="text-gray-600 mb-4 text-sm">
                       Cours: {session.course.title}
                     </p>
                   )}
+                  
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center text-gray-600 text-sm">
                       <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
@@ -299,15 +348,23 @@ const LiveSessionsPage = () => {
                       </div>
                     )}
                   </div>
+                  
                   <div className="flex space-x-2">
                     {user.role === "enseignant" && canManageSession(session) ? (
                       <>
                         <button
-                          onClick={() => handleStartSession(session.liveSessionId)}
-                          className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded flex items-center justify-center text-sm font-medium"
+                          onClick={() => navigate(`/live-session/${session.liveSessionId}`)}
+                          className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white rounded flex items-center justify-center text-sm font-medium shadow"
                         >
                           <PlayIcon className="h-4 w-4 mr-1" />
-                          Démarrer
+                          Rejoindre
+                        </button>
+                        <button
+                          onClick={() => handleEndSession(session.liveSessionId)}
+                          className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm font-medium flex items-center shadow"
+                        >
+                          <XCircleIcon className="h-4 w-4 mr-1" />
+                          Terminer
                         </button>
                         <button
                           onClick={() => handleViewAttendees(session.liveSessionId)}
@@ -321,14 +378,14 @@ const LiveSessionsPage = () => {
                       <button
                         onClick={() => handleJoinSession(session.liveSessionId)}
                         disabled={!canJoin(session)}
-                        className={`flex-1 py-2 rounded flex items-center justify-center text-sm font-medium ${
+                        className={`flex-1 py-2 rounded flex items-center justify-center text-sm font-medium shadow ${
                           canJoin(session)
-                            ? "bg-green-500 hover:bg-green-600 text-white"
+                            ? "bg-green-600 hover:bg-green-700 text-white"
                             : "bg-gray-100 text-gray-500 cursor-not-allowed"
                         }`}
                       >
                         <PlayIcon className="h-4 w-4 mr-1" />
-                        {session.status === "ongoing" ? "Rejoindre" : "En attente"}
+                        Rejoindre
                       </button>
                     )}
                   </div>
@@ -338,6 +395,8 @@ const LiveSessionsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Filtres */}
       <div className="flex border-b mb-6">
         <button
           className={`py-2 px-4 ${
@@ -360,6 +419,8 @@ const LiveSessionsPage = () => {
           Passées
         </button>
       </div>
+
+      {/* Liste des sessions */}
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -374,106 +435,127 @@ const LiveSessionsPage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sessionsToDisplay.map((session) => (
-            <div
-              key={session.liveSessionId}
-              className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white"
-            >
-              <div className="p-5">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-semibold text-gray-800">
-                    {session.title}
-                  </h3>
-                  {canManageSession(session) && !isSessionOngoing(session) && !pastSessions.some(pastSession => pastSession.liveSessionId === session.liveSessionId) && (
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenModal(session);
-                        }}
-                        className={`text-blue-500 hover:text-blue-700 transition-colors ${
-                          canEditSession(session) ? "" : "cursor-not-allowed opacity-50"
-                        }`}
-                        title="Modifier"
-                        disabled={!canEditSession(session)}
-                      >
-                        <PencilIcon className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteSession(session.liveSessionId);
-                        }}
-                        className="text-red-500 hover:text-red-700 transition-colors"
-                        title="Supprimer"
-                      >
-                        <TrashIcon className="h-5 w-5" />
-                      </button>
+          {sessionsToDisplay.map((session) => {
+            const status = getSessionStatus(session);
+            return (
+              <div
+                key={session.liveSessionId}
+                className={`border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-white ${
+                  status === "ongoing" ? "border-l-4 border-green-500" : ""
+                }`}
+              >
+                <div className="p-5">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-800">
+                        {session.title}
+                      </h3>
+                      <div className="mt-1">
+                        {getStatusBadge(status)}
+                      </div>
                     </div>
+                    {canManageSession(session) && status === "scheduled" && (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenModal(session);
+                          }}
+                          className="text-blue-500 hover:text-blue-700 transition-colors"
+                          title="Modifier"
+                        >
+                          <PencilIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSession(session.liveSessionId);
+                          }}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                          title="Supprimer"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {session.course?.title && (
+                    <p className="text-gray-600 mb-4 text-sm">
+                      Cours: {session.course.title}
+                    </p>
                   )}
-                </div>
-                {session.course?.title && (
-                  <p className="text-gray-600 mb-4 text-sm">
-                    Cours: {session.course.title}
-                  </p>
-                )}
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center text-gray-600 text-sm">
-                    <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
-                    <span>{formatDate(session.startTime)}</span>
-                  </div>
-                  <div className="flex items-center text-gray-600 text-sm">
-                    <ClockIcon className="h-4 w-4 mr-2 text-gray-400" />
-                    <span>
-                      {formatTime(session.startTime)} -{" "}
-                      {formatTime(session.endTime)}
-                    </span>
-                  </div>
-                  {session.attendeesCount > 0 && (
+                  
+                  <div className="space-y-2 mb-4">
                     <div className="flex items-center text-gray-600 text-sm">
-                      <UserGroupIcon className="h-4 w-4 mr-2 text-gray-400" />
-                      <span>{session.attendeesCount} participant(s)</span>
+                      <CalendarDaysIcon className="h-4 w-4 mr-2 text-gray-400" />
+                      <span>{formatDate(session.startTime)}</span>
                     </div>
-                  )}
-                </div>
-                <div className="flex space-x-2">
-                  {filter === "upcoming" && user.role === "etudiant" ? (
-                    <button
-                      onClick={() => handleJoinSession(session.liveSessionId)}
-                      disabled={!canJoin(session)}
-                      className={`flex-1 py-2 rounded flex items-center justify-center text-sm font-medium ${
-                        canJoin(session)
-                          ? "bg-green-500 hover:bg-green-600 text-white"
-                          : "bg-gray-100 text-gray-500 cursor-not-allowed"
-                      }`}
-                    >
-                      <PlayIcon className="h-4 w-4 mr-1" />
-                      {session.status === "ongoing" ? "Rejoindre" : "En attente"}
-                    </button>
-                  ) : filter === "past" ? (
-                    <button
-                      onClick={() => navigate(`/recordings/${session.liveSessionId}`)}
-                      className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded flex items-center justify-center text-sm font-medium"
-                    >
-                      <VideoCameraIcon className="h-4 w-4 mr-1" />
-                      Voir l'enregistrement
-                    </button>
-                  ) : null}
-                  {user.role === "enseignant" && canManageSession(session) && (
-                    <button
-                      onClick={() => handleViewAttendees(session.liveSessionId)}
-                      className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium flex items-center"
-                      title="Voir les participants"
-                    >
-                      <UserGroupIcon className="h-4 w-4" />
-                    </button>
-                  )}
+                    <div className="flex items-center text-gray-600 text-sm">
+                      <ClockIcon className="h-4 w-4 mr-2 text-gray-400" />
+                      <span>
+                        {formatTime(session.startTime)} -{" "}
+                        {formatTime(session.endTime)}
+                      </span>
+                    </div>
+                    {session.attendeesCount > 0 && (
+                      <div className="flex items-center text-gray-600 text-sm">
+                        <UserGroupIcon className="h-4 w-4 mr-2 text-gray-400" />
+                        <span>{session.attendeesCount} participant(s)</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    {status === "scheduled" && user.role === "etudiant" ? (
+                      <button
+                        onClick={() => handleJoinSession(session.liveSessionId)}
+                        disabled={!canJoin(session)}
+                        className={`flex-1 py-2 rounded flex items-center justify-center text-sm font-medium shadow ${
+                          canJoin(session)
+                            ? "bg-green-600 hover:bg-green-700 text-white"
+                            : "bg-gray-100 text-gray-500 cursor-not-allowed"
+                        }`}
+                      >
+                        <PlayIcon className="h-4 w-4 mr-1" />
+                        Rejoindre
+                      </button>
+                    ) : status === "scheduled" && user.role === "enseignant" && canManageSession(session) ? (
+                      <button
+                        onClick={() => handleStartSession(session.liveSessionId)}
+                        className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded flex items-center justify-center text-sm font-medium shadow"
+                      >
+                        <PlayIcon className="h-4 w-4 mr-1" />
+                        Démarrer
+                      </button>
+                    ) : status === "completed" ? (
+                      <button
+                        onClick={() => navigate(`/recordings/${session.liveSessionId}`)}
+                        className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded flex items-center justify-center text-sm font-medium shadow"
+                      >
+                        <VideoCameraIcon className="h-4 w-4 mr-1" />
+                        Voir l'enregistrement
+                      </button>
+                    ) : null}
+                    
+                    {canManageSession(session) && (
+                      <button
+                        onClick={() => handleViewAttendees(session.liveSessionId)}
+                        className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium flex items-center"
+                        title="Voir les participants"
+                      >
+                        <UserGroupIcon className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
+
+      {/* Modals */}
       {showModal && (
         <LiveSessionFormModal
           onClose={handleCloseModal}
@@ -481,6 +563,7 @@ const LiveSessionsPage = () => {
           session={editingSession}
         />
       )}
+      
       <LiveSessionAttendeesModal
         isOpen={showAttendeesModal}
         onClose={handleCloseAttendeesModal}

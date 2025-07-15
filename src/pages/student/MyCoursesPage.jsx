@@ -37,7 +37,7 @@ const MyCoursesPage = () => {
 
         const certificatePromises = userEnrollments.map(async (enrollment) => {
           const [certificateData, certificateError] = await getData(
-            `enrollments/certificates/course/${enrollment.courseId}/${user.userId}`
+            `enrollments/certificates/course/${enrollment.courseId}/user/${user.userId}`
           );
           if (certificateError) {
             console.error(`Erreur lors de la récupération du certificat pour le cours ${enrollment.courseId}:`, certificateError);
@@ -51,7 +51,8 @@ const MyCoursesPage = () => {
           acc[courseId] = certificate;
           return acc;
         }, {});
-        setCertificates(certificatesMap);
+        setCertificates("certificates ",certificatesMap);
+        console.log(certificatesMap)
       } catch (err) {
         setError(err.message);
         toast.error("Erreur lors du chargement de vos cours ou des catégories.");
@@ -100,7 +101,7 @@ const MyCoursesPage = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen font-sans">
-      <Navbar />
+      
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Mes Cours</h1>

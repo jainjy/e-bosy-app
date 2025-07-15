@@ -107,7 +107,7 @@ const CourseCard = ({ course, onEdit, onDelete, onPublish }) => {
 
         <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
           <Link
-            to={`/dashboard/courses/${course.courseId}/lessons`}
+            to={`/courses/${course.courseId}/lessons`}
             className="flex-1 flex items-center justify-center py-2 bg-e-bosy-purple text-white rounded-md hover:bg-purple-700 transition-colors duration-200"
           >
             <Bars3BottomLeftIcon className="h-4 w-4 mr-1" />
@@ -115,7 +115,7 @@ const CourseCard = ({ course, onEdit, onDelete, onPublish }) => {
           </Link>
 
           <Link
-            to={`/dashboard/courses/${course.courseId}/assessments`}
+            to={`/courses/${course.courseId}/assessments`}
             className="flex-1 flex items-center justify-center py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors duration-200"
           >
             <AcademicCapIcon className="h-4 w-4 mr-1" />

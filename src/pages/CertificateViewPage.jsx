@@ -5,7 +5,6 @@ import { QRCode } from 'react-qr-code';
 import { getData } from '../services/ApiFetch';
 import { toast } from 'react-hot-toast';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import Navbar from '../Components/Navbar';
 import generateCertificatePDF from '../utils/generateCertificatePDF';
 import html2canvas from 'html2canvas';
 
@@ -24,7 +23,7 @@ const CertificateViewPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const [data] = await getData(`enrollments/certificates/${id}`);
+        const [data] = await getData(`enrollments/certificates/verify/${id}`);
         if (data) {
           setCertificate({
             certificateId: data.certificateId,
@@ -108,7 +107,6 @@ const CertificateViewPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
-      <Navbar />
       <main className="container mx-auto py-8 px-4">
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden transform transition-all duration-300 hover:scale-[1.005]">
           <div className="p-8 md:p-12 text-center relative">
@@ -195,7 +193,7 @@ const CertificateViewPage = () => {
           </div>
         </div>
         <div className="text-center mt-8">
-          <Link to="/dashboard/certificates" className="text-e-bosy-purple hover:underline text-lg flex items-center justify-center">
+          <Link to="/certificates" className="text-e-bosy-purple hover:underline text-lg flex items-center justify-center">
             ← Retour à Mes Certificats
           </Link>
         </div>

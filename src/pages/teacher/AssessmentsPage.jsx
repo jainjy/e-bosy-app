@@ -120,7 +120,7 @@ const AssessmentsPage = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       <nav className="flex items-center space-x-4 mb-8">
         <Link
-          to="/dashboard/courses"
+          to="/courses"
           className="flex items-center text-e-bosy-purple hover:text-purple-700 transition-colors"
         >
           <ArrowLeftIcon className="h-5 w-5 mr-2" />
@@ -249,7 +249,7 @@ const AssessmentsPage = () => {
 
             <div className="mt-4 pt-4 border-t border-gray-100">
               <Link
-                to={`/dashboard/courses/${courseId}/assessments/${assessment.assessmentId}/questions`}
+                to={`/courses/${courseId}/assessments/${assessment.assessmentId}/questions`}
                 className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors group ${
                   assessment.type === 'exam'
                     ? 'bg-purple-50 hover:bg-purple-100 text-purple-700'
