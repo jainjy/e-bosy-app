@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { DocumentTextIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import {  ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
-import { API_BASE_URL, getData } from '../services/ApiFetch';
-import Navbar from '../Components/Navbar';
+import {  getData } from '../services/ApiFetch';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import generateInvoicePDF from '../utils/generateInvoicePDF';
 
-const InvoicesPage = () => {
+const FacturesPage = () => {
     const { user } = useAuth();
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -18,23 +18,14 @@ const InvoicesPage = () => {
 
     const fetchPayments = async () => {
         try {
-            const response = await fetch(
-                `${API_BASE_URL}/api/Payment/user/${user.userId}`, // L'URL est correcte maintenant
-                {
-                    method: 'GET', // Spécifier explicitement GET
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('user_token')}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
+            const [response,erreur] = await getData(
+                `Payment/user/${user.userId}`
             );
             
-            if (!response.ok) {
-                throw new Error('Erreur lors du chargement des factures');
+            if (erreur) {
+                throw new Error('Erreur lors du chargement des factures'+erreur);
             }
-            
-            const data = await response.json();
-            setPayments(data);
+            setPayments(response);
         } catch (error) {
             console.error('Erreur:', error);
             toast.error('Erreur lors du chargement des factures');
@@ -43,26 +34,14 @@ const InvoicesPage = () => {
         }
     };
 
-    const handleDownload = async (paymentId) => {
+    const handleDownload = async (payment) => {
         try {
-            const [response,erreur] = await getData(
-                `Invoice/${paymentId}/download`
-            );
-
-            if (!erreur) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `facture_${paymentId}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-            } else {
-                toast.error('Erreur lors du téléchargement de la facture');
-            }
+            console.log('Téléchargement de la facture pour le paiement:', payment);
+            const doc = generateInvoicePDF(payment);
+            doc.save(`facture_${payment.paymentId}.pdf`);
         } catch (error) {
-            toast.error('Erreur lors du téléchargement');
+            console.error('Erreur de téléchargement:', error);
+            toast.error('Erreur lors du téléchargement de la facture');
         }
     };
 
@@ -86,7 +65,7 @@ const InvoicesPage = () => {
                                         Montant
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Statut
+                                        État
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Action
@@ -117,7 +96,7 @@ const InvoicesPage = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {payment.status === 'complete' && (
                                                 <button
-                                                    onClick={() => handleDownload(payment.paymentId)}
+                                                    onClick={() => handleDownload(payment)}
                                                     className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
                                                 >
                                                     <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
@@ -143,4 +122,4 @@ const InvoicesPage = () => {
     );
 };
 
-export default InvoicesPage;
+export default FacturesPage;

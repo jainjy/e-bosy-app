@@ -66,12 +66,10 @@ import CertificateVerificationPage from "./pages/CertificateVerificationPage";
 import AdminCoursesPage from "./pages/admin/AdminCoursesPage";
 import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage";
 import ProfilePage from "./pages/ProfilePage";
-import PaymentPage from "./pages/PaymentPage";
-import InvoicesPage from "./pages/InvoicesPage";
+import FacturesPage from "./pages/FacturesPage";
 import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
 import Conference from "./pages/ConferencePage";
 import RecordingViewPage from "./pages/RecordingViewPage";
-import CombinedRecorder from "./components/VideoRecorder";
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -151,7 +149,6 @@ function App() {
           <Route path="/verify" element={<CertificateVerificationPage />} />
           <Route path="/conf" element={<Conference />} />
           <Route path="/home" element={<HomePage />} />
-          <Route path="/tests" element={<CombinedRecorder />} />
           <Route path="*" element={<NotFoundPage />} />
           <Route
             path="/*"
@@ -250,7 +247,7 @@ function App() {
               path="invoices"
               element={
                 <ProtectedRoute>
-                  <InvoicesPage />
+                  <FacturesPage />
                 </ProtectedRoute>
               }
             />

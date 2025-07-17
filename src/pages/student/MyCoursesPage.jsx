@@ -51,7 +51,7 @@ const MyCoursesPage = () => {
           acc[courseId] = certificate;
           return acc;
         }, {});
-        setCertificates("certificates ",certificatesMap);
+        setCertificates(certificatesMap);
         console.log(certificatesMap)
       } catch (err) {
         setError(err.message);
@@ -234,7 +234,7 @@ const MyCoursesPage = () => {
                   </div>
                   {certificates[enrollment.courseId] ? (
                     <Link
-                      to={`/certificates/${certificates[enrollment.courseId].certificateId}`}
+                      to={`/certificates/${certificates[enrollment.courseId].verificationCode}`}
                       className="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-blue-600 transition duration-300 inline-flex items-center"
                     >
                       <AcademicCapIcon className="h-5 w-5 mr-2" />
@@ -242,7 +242,7 @@ const MyCoursesPage = () => {
                     </Link>
                   ) : (
                     <Link
-                      to={`/course/${enrollment.courseId}/assessments`}
+                      to={`/course/${enrollment.courseId}/certification`}
                       className={`px-4 py-2 rounded-lg font-semibold text-sm inline-flex items-center transition duration-300
                         ${enrollment.completionRate >= 80
                           ? 'bg-yellow-500 text-white hover:bg-yellow-600'

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   CheckCircleIcon,
@@ -8,15 +8,106 @@ import {
   PlayIcon,
   ClockIcon,
   AcademicCapIcon,
-  ClipboardDocumentCheckIcon
+  ClipboardDocumentCheckIcon,
+  LockClosedIcon
 } from '@heroicons/react/24/outline';
-import { toast } from 'react-hot-toast'; // Assuming you have react-hot-toast installed for better notifications
+import { toast } from 'react-hot-toast'; 
+import { useAuth } from '../../contexts/AuthContext';
+import { getData } from '../../services/ApiFetch';
 
 const CertificationInstructionsPage = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [agreedToDeclaration, setAgreedToDeclaration] = useState(false);
+  const [canTakeExam, setCanTakeExam] = useState(true);
+  const [nextRetakeTime, setNextRetakeTime] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkExamAccess = async () => {
+      try {
+        const [examsData] = await getData(`assessments/course/${courseId}/exams`);
+        const examIds = examsData.slice(0, 2).map(exam => exam.assessmentId);
+        
+        const checks = await Promise.all(examIds.map(async (examId) => {
+          const [canRetake] = await getData(`assessments/can-retake/${examId}/${user.userId}`);
+          return { examId, canRetake };
+        }));
+
+        const cannotRetake = checks.some(check => !check.canRetake);
+        if (cannotRetake) {
+          const submissions = await Promise.all(examIds.map(async (examId) => {
+            const [submissionData] = await getData(`assessments/users/${user.userId}/submissions`);
+            return submissionData
+              .filter(s => s.assessmentId === examId)
+              .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
+          }));
+
+          const latestSubmission = submissions.reduce((latest, current) => {
+            return (!latest || new Date(current.submittedAt) > new Date(latest.submittedAt)) ? current : latest;
+          }, null);
+
+          if (latestSubmission) {
+            const lastAttemptTime = new Date(latestSubmission.submittedAt);
+            const nextAvailableTime = new Date(lastAttemptTime.getTime() + 24 * 60 * 60 * 1000);
+            setNextRetakeTime(nextAvailableTime);
+          }
+          setCanTakeExam(false);
+        } else {
+          setCanTakeExam(true);
+        }
+      } catch (error) {
+        console.error("Error checking exam access:", error);
+        toast.error("Erreur lors de la vérification de l'accès à l'examen");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user?.userId) {
+      checkExamAccess();
+    }
+  }, [courseId, user?.userId]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-e-bosy-purple"></div>
+        <p className="text-gray-700 ml-4">Vérification de l'accès...</p>
+      </div>
+    );
+  }
+
+  if (!canTakeExam) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
+        <div className="max-w-2xl bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="flex justify-center mb-6">
+            <LockClosedIcon className="h-16 w-16 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            Tentative d'examen non autorisée
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Vous avez échoué à un examen récemment. Vous devez attendre 24 heures avant de pouvoir repasser l'examen.
+          </p>
+          {nextRetakeTime && (
+            <p className="text-lg font-medium text-gray-700 mb-6">
+              Prochaine tentative possible: {nextRetakeTime.toLocaleString()}
+            </p>
+          )}
+          <button
+            onClick={() => navigate(-1)}
+            className="px-6 py-3 bg-e-bosy-purple text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+          >
+            Retour
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleStartTest = () => {
     if (agreedToTerms && agreedToDeclaration) {

@@ -61,6 +61,7 @@ const CourseDetailsPage = () => {
           const [enrollmentsData, enrollmentsError] = await getData(
             `enrollments/student/${user.userId}/${courseId}`
           );
+          console.log(user)
           if (enrollmentsError) throw enrollmentsError;
           setUserEnrollment(enrollmentsData);
 
@@ -224,7 +225,7 @@ const CourseDetailsPage = () => {
                 </Link>
                 {hasCertificate ? (
                   <Link
-                    to={`/certificates/${certificate?.certificateId}`} // Adjust the route as needed
+                    to={`/certificates/${certificate?.verificationCode}`} // Adjust the route as needed
                     className="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-blue-600 transition duration-300 inline-flex items-center animate-bounce-once"
                   >
                     <TicketIcon className="h-6 w-6 mr-2" /> Voir la
@@ -374,13 +375,12 @@ const CourseDetailsPage = () => {
                     {lessonsInSection.map((lesson, i) => {
                       const isLessonAccessible =
                         isEnrolled &&
-                        (!lesson.isSubscriberOnly || user?.IsSubscribed);
+                        (!lesson.isSubscriberOnly || user?.isSubscribed);
                       const canDownload =
                         isLessonAccessible &&
                         lesson.content &&
-                        ((lesson.contentType.toLowerCase() === "video" &&
-                          user?.IsSubscribed) ||
-                          lesson.contentType.toLowerCase() === "pdfs");
+                        (lesson.contentType.toLowerCase() === "pdfs" ||
+                         (lesson.contentType.toLowerCase().includes("video") && user?.isSubscribed));
 
                       const isPdf = lesson.contentType.toLowerCase() === "pdfs";
 
@@ -410,7 +410,7 @@ const CourseDetailsPage = () => {
                                 {getContentTypeIcon(lesson.contentType)}
                                 <span>{lesson.title}</span>
                                 {lesson.isSubscriberOnly &&
-                                  !user?.IsSubscribed && (
+                                  !user?.isSubscribed && (
                                     <LockClosedIcon className="h-4 w-4 text-yellow-500 ml-2" />
                                   )}
                               </span>
@@ -431,7 +431,7 @@ const CourseDetailsPage = () => {
                                     e.preventDefault();
                                     toast.error(
                                       lesson.isSubscriberOnly &&
-                                        !user?.IsSubscribed
+                                        !user?.isSubscribed
                                         ? "Ce contenu est réservé aux abonnés Premium"
                                         : "Veuillez vous inscrire au cours pour accéder à cette leçon"
                                     );
@@ -441,7 +441,7 @@ const CourseDetailsPage = () => {
                                 {getContentTypeIcon(lesson.contentType)}
                                 <span>{lesson.title}</span>
                                 {lesson.isSubscriberOnly &&
-                                  !user?.IsSubscribed && (
+                                  !user?.isSubscribed && (
                                     <LockClosedIcon className="h-4 w-4 text-yellow-500 ml-2" />
                                   )}
                               </Link>

@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { CreditCardIcon, DevicePhoneMobileIcon, BuildingLibraryIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
-import { API_BASE_URL } from '../services/ApiFetch';
-import Navbar from '../Components/Navbar';
+import {  postData } from '../services/ApiFetch';
+
 import { toast } from 'react-toastify';
 
 const PaymentPage = () => {
@@ -75,28 +74,13 @@ const PaymentPage = () => {
                 transactionId: Date.now().toString()
             };
 
-            const response = await fetch(`${API_BASE_URL}/api/Payment/subscription`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('user_token')}`
-                },
-                body: JSON.stringify(paymentData)
-            });
+            const [response,erreur] = await postData(`Payment/subscription`,paymentData,false);
 
-            if (!response.ok) throw new Error('Erreur de paiement');
-            
-            const result = await response.json();
+            if (erreur) throw new Error('Erreur de paiement');
             
             // Vérifier le paiement
-            await fetch(`${API_BASE_URL}/api/Payment/verify/${result.paymentId}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('user_token')}`
-                }
-            });
+            await postData(`Payment/verify/${response.paymentId}`);
 
-            // Rafraîchir les informations de l'utilisateur
             await refreshUser();
 
             toast.success('Paiement effectué avec succès! Votre abonnement est maintenant actif.');

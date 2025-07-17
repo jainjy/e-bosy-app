@@ -114,7 +114,7 @@ const CertificationResultsPage = () => {
                 Félicitations ! Vous avez réussi tous les examens de certification.
               </p>
               <button
-                onClick={() => navigate(`/certificates/${certificate?.certificateId || ''}`)}
+                onClick={() => navigate(`/certificates/${certificate?.verificationCode || ''}`)}
                 className="bg-e-bosy-purple text-white py-3 px-8 rounded-lg hover:bg-purple-700 transition-colors font-semibold text-lg flex items-center justify-center"
               >
                 <AcademicCapIcon className="h-6 w-6 mr-3" />

@@ -2,7 +2,7 @@ import React from 'react-dom';
 import { Outlet } from 'react-router-dom'; 
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
-import Navbar from '../components/Navbar';
+import Navbar from '../Components/Navbar';
 
 const MenuLayout = () => { 
   const { user } = useAuth();
@@ -12,7 +12,7 @@ const MenuLayout = () => {
       
       {user?<Sidebar
         userRole={user?.role}
-        userName={user?.name}
+        userName={user?.firstName+" "+user?.lastName}
         userEmail={user?.email}
         profilePictureUrl={user?.profilePictureUrl}
       />:<Navbar/>}

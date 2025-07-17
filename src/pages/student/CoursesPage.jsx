@@ -72,10 +72,21 @@ const CoursesPage = () => {
   };
 
   const filteredCourses = courses.filter(course => {
+    // Filtrer d'abord par recherche, catégories et niveaux
     const matchesSearchTerm = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             course.description.toLowerCase().includes(searchTerm.toLowerCase());
+                           course.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategories = selectedCategories.length === 0 || selectedCategories.includes(course.category.name);
     const matchesLevels = selectedLevels.length === 0 || selectedLevels.includes(course.level);
+    
+    // Si l'utilisateur est connecté, ne pas afficher les cours auxquels il est déjà inscrit
+    if (user) {
+      return matchesSearchTerm && 
+             matchesCategories && 
+             matchesLevels && 
+             !isEnrolled(course.courseId);
+    }
+    
+    // Si l'utilisateur n'est pas connecté, afficher tous les cours qui correspondent aux filtres
     return matchesSearchTerm && matchesCategories && matchesLevels;
   }).sort((a, b) => {
     switch(sortBy) {

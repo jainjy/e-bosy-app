@@ -18,6 +18,7 @@ import {
   StarIcon,
   PlayIcon
 } from '@heroicons/react/24/outline';
+import BackButton from '../../components/common/BackButton';
 
 const ExercisePage = () => {
   const { courseId, assessmentId } = useParams();
@@ -129,20 +130,17 @@ const ExercisePage = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  const handleGoBack = () => {
+    navigate(-1); // Retourne à la page précédente dans l'historique
+  };
+
   const currentQuestion = questions[currentQuestionIndex];
 
   if (!hasStarted) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-2xl mx-auto">
-          {/* Header avec retour */}
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center text-gray-600 hover:text-e-bosy-purple transition-colors mb-6"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-2" />
-            <span>Retour au cours</span>
-          </button>
+          <BackButton className="mb-6" />
 
           {/* Carte d'instructions */}
           <div className="bg-white rounded-xl shadow-md p-8">
@@ -237,13 +235,7 @@ const ExercisePage = () => {
       {/* Header */}
       <div className="max-w-4xl mx-auto">
         <nav className="flex items-center justify-between mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center text-gray-600 hover:text-e-bosy-purple transition-colors"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-2" />
-            <span>Retour au cours</span>
-          </button>
+          <BackButton />
 
           {timeLeft !== null && (
             <div className={`flex items-center px-4 py-2 rounded-full ${
@@ -306,19 +298,62 @@ const ExercisePage = () => {
                       ? '👍 Bon effort !'
                       : '📚 Continue d\'apprendre !'}
                 </h2>
-                <p className="text-gray-600 text-lg">
+                <p className="text-gray-600 text-lg mb-6">
                   Score : {results.score} / {assessment.totalScore} points
                 </p>
               </div>
-              
-              <div className="border-t border-gray-200 pt-6 text-center">
-                <button
-                  onClick={() => navigate(`/course/${courseId}`)}
-                  className="bg-e-bosy-purple text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  Retourner au cours
-                </button>
+
+              {/* Nouvelle section pour les corrections */}
+              <div className="space-y-6 mt-8">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Corrections et explications</h3>
+                {questions.map((question, index) => {
+                  const userAnswers = selectedAnswers[question.questionId] || [];
+                  const correctAnswers = question.answers.filter(a => a.isCorrect).map(a => a.answerId);
+                  const isCorrect = userAnswers.length === correctAnswers.length && 
+                    userAnswers.every(id => correctAnswers.includes(id));
+
+                  return (
+                    <div key={question.questionId} className={`p-6 rounded-lg border ${
+                      isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                    }`}>
+                      <div className="flex items-start space-x-3 mb-4">
+                        {isCorrect ? (
+                          <CheckCircleIcon className="h-6 w-6 text-green-600 mt-1" />
+                        ) : (
+                          <ExclamationCircleIcon className="h-6 w-6 text-red-600 mt-1" />
+                        )}
+                        <div>
+                          <h4 className="font-medium text-gray-800">
+                            Question {index + 1}: {question.questionText}
+                          </h4>
+                          {!isCorrect && (
+                            <div className="mt-3">
+                              <p className="text-sm text-red-600 mb-2">Réponse incorrecte</p>
+                              <p className="text-sm font-medium text-gray-700">Réponse(s) correcte(s):</p>
+                              <ul className="list-disc list-inside ml-4 text-sm text-gray-600">
+                                {question.answers
+                                  .filter(a => a.isCorrect)
+                                  .map(a => (
+                                    <li key={a.answerId}>{a.answerText}</li>
+                                  ))}
+                              </ul>
+                            </div>
+                          )}
+                          {question.explanation && (
+                            <div className="mt-3 p-3 bg-white rounded-lg">
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Explication : </span>
+                                {question.explanation}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+              
             </div>
           ) : (
             <>

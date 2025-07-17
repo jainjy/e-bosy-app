@@ -16,7 +16,7 @@ import {
 import LiveSessionFormModal from "../components/LiveSessionFormModal";
 import LiveSessionAttendeesModal from "../components/LiveSessionAttendeesModal";
 import { toast } from "react-toastify";
-import { getData, postData, putData } from "../services/ApiFetch";
+import { deleteData, getData, postData, putData } from "../services/ApiFetch";
 import { API_BASE_URL } from "../services/ApiFetch";
 
 const LiveSessionsPage = () => {
@@ -153,7 +153,7 @@ const LiveSessionsPage = () => {
   const handleDeleteSession = async (liveSessionId) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette session ?")) {
       try {
-        const [data, error] = await postData(`${baseUrl}/${liveSessionId}/delete`);
+        const [data, error] = await deleteData(`${baseUrl}/${liveSessionId}`);
         if (error) throw error;
         await fetchSessions();
         toast.success("Session supprimée avec succès");
