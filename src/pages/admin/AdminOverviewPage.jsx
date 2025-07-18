@@ -1,3 +1,4 @@
+// AdminOverviewPage.js
 import React from 'react';
 import { 
   UsersIcon, 
@@ -7,8 +8,47 @@ import {
   Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
+import { useAdminDashboard } from '../../hooks/useAdminDashboard';
+import {LoadingSpinner} from '../../components/LoadingSpinner';
+import ErrorMessage from '../../components/ErrorMessage';
 
 const AdminOverviewPage = () => {
+  const { dashboardData, loading, error } = useAdminDashboard();
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage message={error.message} />;
+  if (!dashboardData) return <div>Aucune donnée disponible</div>;
+
+  const getGrowthIcon = (percentage) => {
+    if (percentage > 0) {
+      return <span className="inline-block transform rotate-45 mr-1">↑</span>;
+    } else if (percentage < 0) {
+      return <span className="inline-block transform rotate-135 mr-1">↓</span>;
+    }
+    return null;
+  };
+
+  const getGrowthColor = (percentage) => {
+    if (percentage > 0) return 'text-green-500';
+    if (percentage < 0) return 'text-red-500';
+    return 'text-gray-500';
+  };
+
+  const getSeverityBadge = (severity) => {
+    switch (severity) {
+      case 'critical':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-orange-100 text-orange-800';
+      case 'low':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-2">Tableau de Bord Admin</h1>
@@ -41,9 +81,10 @@ const AdminOverviewPage = () => {
         <div className="bg-white p-6 rounded-lg shadow flex items-start justify-between">
           <div>
             <p className="text-gray-500 text-sm">Total Utilisateurs</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">2,834</p>
-            <p className="text-sm text-green-500 mt-1">
-              <span className="inline-block transform rotate-45 mr-1">↑</span> +12.5% par rapport au mois dernier
+            <p className="text-3xl font-bold text-gray-900 mt-1">{dashboardData.stats.totalUsers.toLocaleString()}</p>
+            <p className={`text-sm ${getGrowthColor(dashboardData.stats.userGrowthPercentage)} mt-1`}>
+              {getGrowthIcon(dashboardData.stats.userGrowthPercentage)}
+              {Math.abs(dashboardData.stats.userGrowthPercentage).toFixed(1)}% par rapport au mois dernier
             </p>
           </div>
           <UsersIcon className="h-8 w-8 text-gray-400" />
@@ -53,9 +94,10 @@ const AdminOverviewPage = () => {
         <div className="bg-white p-6 rounded-lg shadow flex items-start justify-between">
           <div>
             <p className="text-gray-500 text-sm">Cours Actifs</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">147</p>
-            <p className="text-sm text-green-500 mt-1">
-              <span className="inline-block transform rotate-45 mr-1">↑</span> +4.3% par rapport au mois dernier
+            <p className="text-3xl font-bold text-gray-900 mt-1">{dashboardData.stats.activeCourses}</p>
+            <p className={`text-sm ${getGrowthColor(dashboardData.stats.courseGrowthPercentage)} mt-1`}>
+              {getGrowthIcon(dashboardData.stats.courseGrowthPercentage)}
+              {Math.abs(dashboardData.stats.courseGrowthPercentage).toFixed(1)}% par rapport au mois dernier
             </p>
           </div>
           <BookOpenIcon className="h-8 w-8 text-gray-400" />
@@ -65,9 +107,10 @@ const AdminOverviewPage = () => {
         <div className="bg-white p-6 rounded-lg shadow flex items-start justify-between">
           <div>
             <p className="text-gray-500 text-sm">Revenu</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">28,419 $</p>
-            <p className="text-sm text-green-500 mt-1">
-              <span className="inline-block transform rotate-45 mr-1">↑</span> +8.2% par rapport au mois dernier
+            <p className="text-3xl font-bold text-gray-900 mt-1">${dashboardData.stats.revenue.toLocaleString()}</p>
+            <p className={`text-sm ${getGrowthColor(dashboardData.stats.revenueGrowthPercentage)} mt-1`}>
+              {getGrowthIcon(dashboardData.stats.revenueGrowthPercentage)}
+              {Math.abs(dashboardData.stats.revenueGrowthPercentage).toFixed(1)}% par rapport au mois dernier
             </p>
           </div>
           <CurrencyDollarIcon className="h-8 w-8 text-gray-400" />
@@ -77,9 +120,10 @@ const AdminOverviewPage = () => {
         <div className="bg-white p-6 rounded-lg shadow flex items-start justify-between">
           <div>
             <p className="text-gray-500 text-sm">État du Système</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">98.7%</p>
-            <p className="text-sm text-red-500 mt-1">
-              <span className="inline-block transform rotate-135 mr-1">↓</span> -0.3% par rapport au mois dernier
+            <p className="text-3xl font-bold text-gray-900 mt-1">{dashboardData.stats.systemHealth}%</p>
+            <p className={`text-sm ${getGrowthColor(dashboardData.stats.systemHealthChange)} mt-1`}>
+              {getGrowthIcon(dashboardData.stats.systemHealthChange)}
+              {Math.abs(dashboardData.stats.systemHealthChange).toFixed(1)}% par rapport au mois dernier
             </p>
           </div>
           <ComputerDesktopIcon className="h-8 w-8 text-gray-400" />
@@ -94,26 +138,35 @@ const AdminOverviewPage = () => {
           <div className="mb-4">
             <p className="text-gray-600 mb-2">Utilisateurs Actifs</p>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div className="bg-e-bosy-purple h-2.5 rounded-full" style={{ width: '76%' }}></div>
+              <div 
+                className="bg-e-bosy-purple h-2.5 rounded-full" 
+                style={{ width: `${dashboardData.userStatistics.activeUsersPercentage}%` }}
+              ></div>
             </div>
-            <span className="text-sm text-gray-500 float-right">76%</span>
+            <span className="text-sm text-gray-500 float-right">{dashboardData.userStatistics.activeUsersPercentage}%</span>
           </div>
           <div className="grid grid-cols-2 gap-4 text-center mt-6">
             <div>
-              <p className="text-xl font-bold text-gray-900">2834</p>
+              <p className="text-xl font-bold text-gray-900">{dashboardData.stats.totalUsers.toLocaleString()}</p>
               <p className="text-gray-500 text-sm">Total Utilisateurs</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-gray-900">187</p>
+              <p className="text-xl font-bold text-gray-900">{dashboardData.stats.newUsersThisMonth}</p>
               <p className="text-gray-500 text-sm">Nouveaux ce Mois-ci</p>
             </div>
           </div>
           <div className="mt-6">
             <p className="text-gray-600 mb-2">Distribution des Utilisateurs</p>
             <div className="flex flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Étudiants: 2451</span>
-              <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Professeurs: 312</span>
-              <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Admins: 71</span>
+              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                Étudiants: {dashboardData.userStatistics.distribution.students}
+              </span>
+              <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                Professeurs: {dashboardData.userStatistics.distribution.teachers}
+              </span>
+              <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                Admins: {dashboardData.userStatistics.distribution.admins}
+              </span>
             </div>
           </div>
           <div className="mt-6 text-center">
@@ -127,30 +180,35 @@ const AdminOverviewPage = () => {
           <div className="mb-4">
             <p className="text-gray-600 mb-2">Cours Actifs</p>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div className="bg-e-bosy-purple h-2.5 rounded-full" style={{ width: '92%' }}></div>
+              <div 
+                className="bg-e-bosy-purple h-2.5 rounded-full" 
+                style={{ width: `${dashboardData.courseStatistics.activeCoursesPercentage}%` }}
+              ></div>
             </div>
-            <span className="text-sm text-gray-500 float-right">92%</span>
+            <span className="text-sm text-gray-500 float-right">{dashboardData.courseStatistics.activeCoursesPercentage}%</span>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center mt-6">
             <div>
-              <p className="text-xl font-bold text-gray-900">147</p>
+              <p className="text-xl font-bold text-gray-900">{dashboardData.stats.activeCourses}</p>
               <p className="text-gray-500 text-sm">Total</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-gray-900">8</p>
+              <p className="text-xl font-bold text-gray-900">{dashboardData.courseStatistics.status.pending}</p>
               <p className="text-gray-500 text-sm">En Attente</p>
             </div>
             <div>
-              <p className="text-xl font-bold text-gray-900">4</p>
+              <p className="text-xl font-bold text-gray-900">{dashboardData.courseStatistics.status.draft}</p>
               <p className="text-gray-500 text-sm">Brouillons</p>
             </div>
           </div>
           <div className="mt-6">
             <h4 className="text-gray-600 mb-2">Cours Populaires</h4>
             <ul className="space-y-2 text-sm text-gray-800">
-              <li className="flex justify-between items-center">Bootcamp Développement Web <span>485 étudiants</span></li>
-              <li className="flex justify-between items-center">Python pour la Science des Données <span>412 étudiants</span></li>
-              <li className="flex justify-between items-center">Développement d'Applications Mobiles <span>378 étudiants</span></li>
+              {dashboardData.userStatistics.popularCourses.map((course, index) => (
+                <li key={index} className="flex justify-between items-center">
+                  {course.title} <span>{course.studentCount} étudiants</span>
+                </li>
+              ))}
             </ul>
           </div>
           <div className="mt-6 text-center">
@@ -161,42 +219,6 @@ const AdminOverviewPage = () => {
 
       {/* Recent Issues & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Issues */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Problèmes Récents</h3>
-          <div className="space-y-4">
-            {/* Issue 1 */}
-            <div className="border border-gray-200 rounded-md p-4">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-gray-800 font-medium">Lecture vidéo échouant sur les appareils iOS</span>
-                <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded-full">Élevée</span>
-              </div>
-              <p className="text-gray-600 text-sm">
-                <span className="text-e-bosy-purple mr-1">•</span> Ouvert <span className="mx-1">•</span> Il y a 2 heures
-              </p>
-            </div>
-            {/* Issue 2 */}
-            <div className="border border-gray-200 rounded-md p-4">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-gray-800 font-medium">Délai d'attente de la passerelle de paiement</span>
-                <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-0.5 rounded-full">Critique</span>
-              </div>
-              <p className="text-gray-600 text-sm">
-                <span className="text-e-bosy-purple mr-1">•</span> En Cours <span className="mx-1">•</span> Il y a 5 heures
-              </p>
-            </div>
-            {/* Issue 3 */}
-            <div className="border border-gray-200 rounded-md p-4">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-gray-800 font-medium">Erreur de génération de certificat</span>
-                <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-0.5 rounded-full">Moyenne</span>
-              </div>
-              <p className="text-gray-600 text-sm">
-                <span className="text-e-bosy-purple mr-1">•</span> Ouvert <span className="mx-1">•</span> Il y a 12 heures
-              </p>
-            </div>
-          </div>
-        </div>
 
         {/* Quick Actions */}
         <div className="bg-white p-6 rounded-lg shadow">

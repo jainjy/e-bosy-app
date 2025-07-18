@@ -1,0 +1,113 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .close-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+  
+  .tabs {
+    display: flex;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .tabs button {
+    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: 0.5rem;
+    border-bottom: 2px solid transparent;
+  }
+  
+  .tabs button.active-tab {
+    border-bottom: 2px solid #6b46c1;
+    color: #6b46c1;
+    font-weight: 500;
+  }
+  
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #4a5568;
+  }
+  
+  .input-field {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.25rem;
+  }
+  
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+  }
+  
+  .cancel-button {
+    padding: 0.5rem 1rem;
+    background: #e2e8f0;
+    border: none;
+    border-radius: 0.25rem;
+    margin-right: 1rem;
+    cursor: pointer;
+  }
+  
+  .submit-button {
+    padding: 0.5rem 1rem;
+    background: #6b46c1;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+  }
+  
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    background: #e2e8f0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+  }

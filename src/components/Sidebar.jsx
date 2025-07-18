@@ -83,12 +83,6 @@ const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount
       roles: ["etudiant"],
     },
     {
-      name: "Statistiques",
-      icon: ChartBarIcon,
-      path: "/analytics",
-      roles: ["administrateur", "enseignant"],
-    },
-    {
       name: "Sessions en direct",
       icon: VideoCameraIcon,
       path: "/live-sessions",

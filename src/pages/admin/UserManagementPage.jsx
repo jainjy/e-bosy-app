@@ -5,10 +5,9 @@ import Swal from 'sweetalert2';
 import { MagnifyingGlassIcon, PlusIcon, EllipsisVerticalIcon, PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import UserFormModal from '../../components/UserFormModal';
-
 import { getData, postData, putData, deleteData, API_BASE_URL } from '../../services/ApiFetch';
 import { useAuth } from '../../contexts/AuthContext';
-
+import "../../styles/user.css"
 const ROLES = {
   ADMIN: 'administrateur',
   TEACHER: 'enseignant',
@@ -25,8 +24,6 @@ const UserManagementPage = () => {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [currentFormMode, setCurrentFormMode] = useState('add');
   const [userToEdit, setUserToEdit] = useState(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [userToView, setUserToView] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
@@ -35,11 +32,7 @@ const UserManagementPage = () => {
   const fetchAllUsers = async () => {
     try {
       const [data, err] = await getData('users');
-      if (err) {
-        toast.error('Erreur lors de la récupération des utilisateurs');
-        console.error(err);
-        return;
-      }
+      if (err) throw err;
       setAllUsers(data);
       setFilteredUsers(data);
     } catch (err) {
@@ -56,18 +49,15 @@ const UserManagementPage = () => {
 
   useEffect(() => {
     let filtered = allUsers;
-
     if (searchTerm) {
       filtered = filtered.filter(user =>
         `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
     if (selectedRoleFilter !== ROLES.ALL) {
       filtered = filtered.filter(user => user.role === selectedRoleFilter.toLowerCase());
     }
-
     setFilteredUsers(filtered);
     setTotalPages(Math.ceil(filtered.length / pageSize));
     setPage(1);
@@ -92,56 +82,43 @@ const UserManagementPage = () => {
     return status === 'Actif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
 
+  const createFormData = (userData) => {
+    const formData = new FormData();
+    Object.keys(userData).forEach(key => {
+      if (key === 'profilePicture' && userData[key]) {
+        formData.append('ProfilePicture', userData[key]);
+      } else if (Array.isArray(userData[key])) {
+        userData[key].forEach(item => formData.append(key, item));
+      } else if (userData[key] !== undefined) {
+        formData.append(key, userData[key]);
+      }
+    });
+    return formData;
+  };
+
   const handleAddUser = async (newUserData) => {
     try {
-      const formData = new FormData();
-      Object.keys(newUserData).forEach(key => {
-        if (key === 'profilePicture' && newUserData[key]) {
-          formData.append('ProfilePicture', newUserData[key]);
-        } else if (newUserData[key] != null) {
-          formData.append(key.charAt(0).toUpperCase() + key.slice(1), newUserData[key]);
-        }
-      });
-      formData.set('Role', newUserData.role);
-
+      const formData = createFormData(newUserData);
       const [_, err] = await postData('users', formData, true);
-      if (err) {
-        toast.error(err.message || 'Erreur lors de la création de l\'utilisateur');
-        return;
-      }
+      if (err) throw err;
       fetchAllUsers();
       setIsFormModalOpen(false);
       toast.success('Utilisateur créé avec succès');
     } catch (err) {
-      toast.error('Erreur serveur lors de la création de l\'utilisateur');
-      console.error(err);
+      toast.error(err.message || 'Erreur lors de la création');
     }
   };
 
   const handleUpdateUser = async (updatedUserData) => {
     try {
-      const formData = new FormData();
-      Object.keys(updatedUserData).forEach(key => {
-        if (key === 'profilePicture' && updatedUserData[key]) {
-          formData.append('ProfilePicture', updatedUserData[key]);
-        } else if (updatedUserData[key] != null) {
-          formData.append(key.charAt(0).toUpperCase() + key.slice(1), updatedUserData[key]);
-        }
-      });
-      formData.set('Role', updatedUserData.role);
-
+      const formData = createFormData(updatedUserData);
       const [_, err] = await putData(`users/${updatedUserData.userId}`, formData, true);
-      if (err) {
-        toast.error(err.message || 'Erreur lors de la mise à jour de l\'utilisateur');
-        return;
-      }
+      if (err) throw err;
       fetchAllUsers();
       setIsFormModalOpen(false);
-      setOpenDropdownId(null);
       toast.success('Utilisateur mis à jour avec succès');
     } catch (err) {
-      toast.error('Erreur serveur lors de la mise à jour de l\'utilisateur');
-      console.error(err);
+      toast.error(err.message || 'Erreur lors de la mise à jour');
     }
   };
 
@@ -160,17 +137,9 @@ const UserManagementPage = () => {
     if (result.isConfirmed) {
       try {
         const [_, err] = await deleteData(`users/${id}`);
-        if (err) {
-          toast.error(err.message || 'Erreur lors de la suppression de l\'utilisateur');
-          return;
-        }
-        await Swal.fire(
-          'Supprimé !',
-          'L\'utilisateur a été supprimé.',
-          'success'
-        );
+        if (err) throw err;
+        await Swal.fire('Supprimé !', 'L\'utilisateur a été supprimé.', 'success');
         fetchAllUsers();
-        setOpenDropdownId(null);
       } catch (err) {
         toast.error('Erreur serveur lors de la suppression de l\'utilisateur');
         console.error(err);
@@ -201,13 +170,6 @@ const UserManagementPage = () => {
     setUserToEdit(null);
   };
 
-
-
-  const closeViewModal = () => {
-    setUserToView(null);
-    setIsViewModalOpen(false);
-  };
-
   const toggleDropdown = (userId) => {
     setOpenDropdownId(openDropdownId === userId ? null : userId);
   };
@@ -236,7 +198,6 @@ const UserManagementPage = () => {
           <span>Ajouter un Utilisateur</span>
         </button>
       </div>
-
       <div className="mb-6 bg-white p-2 rounded-lg shadow-sm flex space-x-2">
         {[ROLES.ALL, ROLES.STUDENT, ROLES.TEACHER, ROLES.ADMIN].map(role => (
           <button
@@ -249,7 +210,6 @@ const UserManagementPage = () => {
           </button>
         ))}
       </div>
-
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="flex items-center mb-4 relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -261,7 +221,6 @@ const UserManagementPage = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -320,6 +279,7 @@ const UserManagementPage = () => {
                       <button
                         onClick={() => toggleDropdown(user.userId)}
                         className="text-gray-500 hover:text-gray-900 p-1 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-e-bosy-purple focus:ring-opacity-50 transition-all duration-150"
+                        aria-label="Options"
                       >
                         <EllipsisVerticalIcon className="h-5 w-5" />
                       </button>
@@ -327,8 +287,7 @@ const UserManagementPage = () => {
                         <div className="origin-top-right absolute -top-12 right-full mr-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10 animate-fade-in-down">
                           <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                             <Link
-                            to={`${user.userId}/profile`}
-                              
+                              to={`${user.userId}/profile`}
                               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 w-full text-left transition-colors duration-150"
                               role="menuitem"
                             >
@@ -365,7 +324,6 @@ const UserManagementPage = () => {
             </tbody>
           </table>
         </div>
-
         <div className="mt-4 flex justify-between items-center">
           <button
             onClick={() => handlePageChange(page - 1)}
@@ -384,7 +342,6 @@ const UserManagementPage = () => {
           </button>
         </div>
       </div>
-
       {isFormModalOpen && (
         <UserFormModal
           mode={currentFormMode}
@@ -393,7 +350,6 @@ const UserManagementPage = () => {
           onSubmit={currentFormMode === 'add' ? handleAddUser : handleUpdateUser}
         />
       )}
-
     </div>
   );
 };

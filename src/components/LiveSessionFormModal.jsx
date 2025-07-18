@@ -154,7 +154,6 @@ const LiveSessionFormModal = ({ onClose, onSubmit, session }) => {
         const [data, error] = await postData(baseUrl, sessionData);
         if (error) throw error;
         result = data;
-        toast.success("Session planifiée avec succès");
       }
 
       // Pass the result to parent component

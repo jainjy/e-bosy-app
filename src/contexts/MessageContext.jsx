@@ -15,13 +15,35 @@ export const MessageProvider = ({ children }) => {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    if (user) {
-      initializeMessageService();
-      return () => {
-        messageService.disconnect();
-      };
-    }
-  }, [user]);
+    let isMounted = true;
+    
+    const initialize = async () => {
+      if (user?.userId) {
+        try {
+          await messageService.startConnection(user.userId);
+          if (isMounted) {
+            messageService.setMessageHandler(handleNewMessage);
+            messageService.setUserStatusHandler(handleUserStatusChange);
+            messageService.setConnectedUsersHandler(handleConnectedUsers);
+            await loadConversations();
+            await loadUsers();
+          }
+        } catch (error) {
+          console.error('Initialization error:', error);
+        }
+      }
+    };
+  
+    initialize();
+  
+    return () => {
+      isMounted = false;
+      messageService.disconnect();
+      messageService.setMessageHandler(null);
+      messageService.setUserStatusHandler(null);
+      messageService.setConnectedUsersHandler(null);
+    };
+  }, [user?.userId]);  // Dépendance plus spécifique
 
   useEffect(() => {
     if (activeConversation?.userId) {
@@ -37,20 +59,6 @@ export const MessageProvider = ({ children }) => {
     } catch (error) {
       console.error('Error loading users:', error);
       // toast.error('Erreur lors du chargement des utilisateurs');
-    }
-  };
-
-  const initializeMessageService = async () => {
-    try {
-      await messageService.startConnection(user.userId);
-      messageService.setMessageHandler(handleNewMessage);
-      messageService.setUserStatusHandler(handleUserStatusChange);
-      messageService.setConnectedUsersHandler(handleConnectedUsers);
-      await loadConversations();
-      await loadUsers();
-    } catch (error) {
-      console.log('Error initializing message service:', error);
-
     }
   };
 

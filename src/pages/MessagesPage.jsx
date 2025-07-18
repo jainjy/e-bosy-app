@@ -39,30 +39,31 @@ const MessagesPage = () => {
     }
   }, [messages, messagesEndRef]);
 
-  // Ajoutez cet effet pour écouter les nouveaux messages
   useEffect(() => {
-    if (activeConversation) {
-      messageService.setMessageHandler((newMessage) => {
-        const parsedMessage =
-          typeof newMessage === "string" ? JSON.parse(newMessage) : newMessage;
-
-        if (
-          parsedMessage.senderId === activeConversation.userId ||
-          parsedMessage.recipientId === activeConversation.userId
-        ) {
-          updateMessages((prev) =>
-            [...prev, parsedMessage].sort(
-              (a, b) => new Date(a.sentAt) - new Date(b.sentAt)
-            )
-          );
-        }
-      });
-    }
-
+    if (!activeConversation) return;
+  
+    const handler = (newMessage) => {
+      const parsedMessage = typeof newMessage === 'string' 
+        ? JSON.parse(newMessage) 
+        : newMessage;
+  
+      if (
+        parsedMessage.senderId === activeConversation.userId ||
+        parsedMessage.recipientId === activeConversation.userId
+      ) {
+        updateMessages((prev) =>
+          [...prev, parsedMessage].sort(
+            (a, b) => new Date(a.sentAt) - new Date(b.sentAt)
+        ));
+      }
+    };
+  
+    messageService.setMessageHandler(handler);
+  
     return () => {
       messageService.setMessageHandler(null);
     };
-  }, [activeConversation]);
+  }, [activeConversation?.userId]);  // Dépendance plus spécifique
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -347,12 +348,6 @@ const MessagesPage = () => {
               </p>
             </div>
             <div className="ml-auto flex space-x-3 text-gray-500">
-              <button>
-                <UserGroupIcon className="h-6 w-6 hover:text-e-bosy-purple" />
-              </button>
-              <button>
-                <BellIcon className="h-6 w-6 hover:text-e-bosy-purple" />
-              </button>
               <button>
                 <ArrowPathIcon className="h-6 w-6 hover:text-e-bosy-purple" />
               </button>

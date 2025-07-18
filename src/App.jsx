@@ -47,7 +47,6 @@ import SettingsPage from "./pages/SettingsPage";
 import UserManagementPage from "./pages/admin/UserManagementPage";
 import MessagesPage from "./pages/MessagesPage";
 import NotificationsPage from "./pages/NotificationsPage";
-import Analytics from "./pages/teacher/Analytics";
 
 import CoursesToCertifyPage from "./pages/student/CoursesToCertifyPage";
 import CertificationExamPage from "./pages/student/CertificationExamPage";
@@ -195,7 +194,6 @@ function App() {
             <Route path="settings" element={<SettingsPage />} />
             <Route path="messages" element={<MessagesPage />} />
             <Route path="users" element={<UserManagementPage />} />
-            <Route path="analytics" element={<Analytics />} />
             <Route path="live-sessions" element={<LiveSessionsPage />} />
             <Route path="live-session/:sessionId" element={<TeacherPage />} />
             <Route
