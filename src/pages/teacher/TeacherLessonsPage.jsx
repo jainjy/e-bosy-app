@@ -506,7 +506,7 @@ const TeacherLessonsPage = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <Link
-        to="/courses"
+        to="/mycourses"
         className="flex items-center text-e-bosy-purple hover:underline mb-6"
       >
         <ArrowLeftIcon className="h-4 w-4 mr-2" />

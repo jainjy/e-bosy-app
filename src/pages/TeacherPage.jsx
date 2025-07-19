@@ -72,7 +72,7 @@ export default function TeacherPage() {
     const setupConnection = async () => {
       try {
         await conn.start();
-        await conn.invoke("JoinSession", parseInt(sessionId), user.userId, user.fullName);
+        await conn.invoke("JoinSession", parseInt(sessionId), user.userId);
         setIsConnected(true);
 
         const stream = await navigator.mediaDevices.getUserMedia({ 

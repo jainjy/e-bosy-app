@@ -204,19 +204,21 @@ const MyCoursesPage = () => {
                   <span className="text-sm font-semibold text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
                     {enrollment.course.category?.name || 'Général'}
                   </span>
-                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                    enrollment.completionRate === 0
-                      ? 'bg-blue-100 text-blue-800'
-                      : enrollment.completionRate > 0 && enrollment.completionRate < 100
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-green-100 text-green-800'
-                  }`}>
-                    {enrollment.completionRate === 0 ? 'Non Commencé' : enrollment.completionRate < 100 ? 'En Cours' : 'Terminé'}
-                  </span>
                 </div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2 leading-tight">
                   {enrollment.course.title}
                 </h3>
+                <div className="flex items-center space-x-4 text-sm opacity-90 mb-4">
+                  <Link to={`/users/${enrollment.course.teacherId}/profile`} className="flex items-center group hover:text-e-bosy-purple transition-colors">
+                    {enrollment.course.teacher?.profilePictureUrl ? 
+                      <img src={`${API_BASE_URL}${enrollment.course.teacher.profilePictureUrl}`} className="h-8 w-8 rounded-full mr-2 border-2 border-transparent group-hover:border-e-bosy-purple" alt={enrollment.course.teacher.firstName} /> :
+                      <div className="h-8 w-8 rounded-full bg-e-bosy-purple text-white flex items-center justify-center mr-2">
+                        {`${enrollment.course.teacher?.firstName?.[0]}${enrollment.course.teacher?.lastName?.[0]}`}
+                      </div>
+                    }
+                    <span>Par {enrollment.course.teacher?.firstName} {enrollment.course.teacher?.lastName}</span>
+                  </Link>
+                </div>
                 <p className="text-sm text-gray-500 mb-4">
                   Dernière activité: {new Date(enrollment.lastActivityAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </p>

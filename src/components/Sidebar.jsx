@@ -31,7 +31,13 @@ const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount
       name: "Mes cours",
       icon: AcademicCapIcon,
       path: "/mycourses",
-      roles: ["etudiant", "enseignant", "administrateur"],
+      roles: ["etudiant", "enseignant"],
+    },
+    {
+      name: "Les cours",
+      icon: AcademicCapIcon,
+      path: "/mycourses",
+      roles: [ "administrateur"],
     },
     {
       name: "Certificats",
@@ -87,6 +93,12 @@ const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount
       icon: VideoCameraIcon,
       path: "/live-sessions",
       roles: ["etudiant", "enseignant"],
+    },
+    {
+      name: "Sessions en direct",
+      icon: VideoCameraIcon,
+      path: "/admin/live-sessions",
+      roles: ["administrateur"],
     },
     {
       name: "Paiements",

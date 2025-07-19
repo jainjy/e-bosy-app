@@ -4,9 +4,10 @@ export default function Chat({ connection, currentUser }) {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef(null);
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
-    if (connection) {
+    if (connection && !hasInitializedRef.current) {
       connection.on("ReceiveMessage", (userName, userId, message) => {
         setMessages(prev => [...prev, { 
           userName, 
@@ -15,6 +16,7 @@ export default function Chat({ connection, currentUser }) {
           isCurrentUser: userId === currentUser.userId.toString()
         }]);
       });
+      hasInitializedRef.current = true;
     }
   }, [connection, currentUser]);
 

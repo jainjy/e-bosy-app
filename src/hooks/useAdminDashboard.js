@@ -1,4 +1,3 @@
-// hooks/useAdminDashboard.js
 import { useEffect, useState } from 'react';
 import { getData } from '../services/ApiFetch';
 
@@ -14,7 +13,17 @@ export const useAdminDashboard = () => {
         if (err) {
           setError(err);
         } else {
-          setDashboardData(data);
+          setDashboardData({
+            ...data,
+            revenueTrend: {
+              months: Array.from({ length: 12 }, (_, i) => {
+                const date = new Date();
+                date.setMonth(date.getMonth() - 11 + i);
+                return date.toLocaleString('fr-FR', { month: 'short' });
+              }),
+              amounts: data.revenueTrend || Array(12).fill(0)
+            }
+          });
         }
       } catch (err) {
         setError(err);

@@ -139,7 +139,7 @@ const AssessmentGrid = ({ assessments, userProgress, courseId, courseTitle }) =>
                   </div>
                 )}
               </div>
-              <div className="flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="flex flex-col gap-3  transition-opacity duration-300">
                 <Link
                   to={`/course/${courseId}/exercise/${assessment.assessmentId}`}
                   className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-white ${buttonBgClass} transition-colors`}

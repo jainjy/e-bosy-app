@@ -322,12 +322,30 @@ const LessonFormPage = () => {
                 value={lesson.content}
                 onChange={handleChange}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
-                placeholder="Ex: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                placeholder="Ex: https://www.youtube.com/watch?v=..."
                 required
               />
-              <p className="mt-2 text-sm text-gray-500">
-                L'URL de la vidéo externe sera stockée dans la colonne `content`.
-              </p>
+              <input
+                type="number"
+                id="duree"
+                name="duree"
+                value={lesson.duree || ""}
+                onChange={handleChange}
+                className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-e-bosy-purple focus:border-e-bosy-purple sm:text-sm"
+                placeholder="Durée en secondes"
+                min="0"
+                required
+              />
+              {lesson.content && (
+                <div className="mt-4 aspect-video">
+                  <iframe
+                    src={lesson.content.replace('watch?v=', 'embed/')}
+                    className="w-full h-full rounded-lg"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
             </div>
           )}
   

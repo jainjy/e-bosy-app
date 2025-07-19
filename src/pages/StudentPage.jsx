@@ -68,12 +68,7 @@ export default function StudentPage() {
     const setupConnection = async () => {
       try {
         await conn.start();
-        await conn.invoke(
-          "JoinSession",
-          parseInt(sessionId),
-          user.userId,
-          user.fullName
-        );
+        await conn.invoke("JoinSession", parseInt(sessionId), user.userId);
         setIsConnected(true);
 
         const peer = new SimplePeer({
@@ -178,6 +173,7 @@ export default function StudentPage() {
         });
       } catch (err) {
         console.error("Connection error:", err);
+        setIsConnected(false);
       }
     };
 

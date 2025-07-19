@@ -1,4 +1,3 @@
-// hooks/useTeacherDashboard.js
 import { useEffect, useState } from 'react';
 import { getData } from '../services/ApiFetch';
 

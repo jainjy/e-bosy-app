@@ -19,7 +19,7 @@ import { ClockIcon, UserIcon } from "@heroicons/react/24/outline";
 import { API_BASE_URL, getData, putData } from "../../services/ApiFetch";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-hot-toast";
-import Navbar from "../../Components/Navbar";
+
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
@@ -62,7 +62,6 @@ const CourseDetailsPage = () => {
             `enrollments/student/${user.userId}/${courseId}`
           );
           console.log(user)
-          if (enrollmentsError) throw enrollmentsError;
           setUserEnrollment(enrollmentsData);
 
           setIsEnrolled(!!enrollmentsData);
@@ -193,16 +192,14 @@ const CourseDetailsPage = () => {
       <div className="bg-gradient-to-r from-e-bosy-purple to-purple-800 text-white py-12 px-6 md:px-12 mt-6 animate-fade-in">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8">
           <div className="md:w-2/3">
-            <p className="text-sm opacity-80 mb-2">
-              Formation {">"} {course.category?.name}
-            </p>
             <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
             <p className="text-lg opacity-90 mb-6">{course.description}</p>
             <div className="flex items-center space-x-4 text-sm opacity-90 mb-4">
-              <span className="flex items-center">
-                <UserIcon className="h-4 w-4 mr-1" />
+              <Link to={`/users/${course.teacherId}/profile`} className="flex items-center">
+                {course.teacher?.profilePictureUrl ?<img src={API_BASE_URL+course.teacher?.profilePictureUrl } className="h-12 w-12 mr-1 rounded-full" />:
+                <UserIcon className="h-6 w-6 mr-1" />}
                 Par {course.teacher?.firstName} {course.teacher?.lastName}
-              </span>
+              </Link>
               <span className="flex items-center">
                 <ClockIcon className="h-4 w-4 mr-1" />
                 {course.lessonsCount} leçons

@@ -152,16 +152,18 @@ const CoursesToCertifyPage = () => {
                   <h3 className="text-xl font-semibold text-gray-800 mb-2">
                     {course.title}
                   </h3>
-                  <p className="text-gray-600 mb-4 line-clamp-2">
-                    {course.description || 'Aucune description disponible'}
-                  </p>
 
-                  {/* Détails du cours */}
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="flex items-center text-gray-600">
-                      <UserIcon className="h-5 w-5 mr-2 text-e-bosy-purple" />
-                      <span className="text-sm">{course.teacher?.firstName} {course.teacher?.lastName}</span>
-                    </div>
+                  {/* Détails du professeur */}
+                  <div className="flex items-center space-x-4 text-sm opacity-90 mb-4">
+                    <Link to={`/users/${course.teacherId}/profile`} className="flex items-center group hover:text-e-bosy-purple transition-colors">
+                      {course.teacher?.profilePictureUrl ? 
+                        <img src={`${API_BASE_URL}${course.teacher.profilePictureUrl}`} className="h-8 w-8 rounded-full mr-2 border-2 border-transparent group-hover:border-e-bosy-purple" alt={course.teacher.firstName} /> :
+                        <div className="h-8 w-8 rounded-full bg-e-bosy-purple text-white flex items-center justify-center mr-2">
+                          {`${course.teacher?.firstName?.[0]}${course.teacher?.lastName?.[0]}`}
+                        </div>
+                      }
+                      <span>Par {course.teacher?.firstName} {course.teacher?.lastName}</span>
+                    </Link>
                   </div>
 
                   {/* Bouton de certification */}

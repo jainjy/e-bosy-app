@@ -26,10 +26,6 @@ const CourseCard = ({ course, onDelete, onPublish, teachers }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const teacher = teachers.find(t => t.userId === course.teacherId);
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100">
       <div className="relative h-48 bg-gray-100">
@@ -57,20 +53,21 @@ const CourseCard = ({ course, onDelete, onPublish, teachers }) => {
           <span className="text-sm font-semibold text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
             {course.category?.name || 'Général'}
           </span>
-          <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-            course.status === COURSE_STATUS.DRAFT
-              ? 'bg-gray-100 text-gray-700'
-              : 'bg-green-100 text-green-800'
-          }`}>
-            {course.status === COURSE_STATUS.DRAFT ? 'Brouillon' : 'Publié'}
-          </span>
         </div>
         <h3 className="text-xl font-bold text-gray-800 mb-2 leading-tight">
           {course.title}
         </h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Professeur: {teacher ? `${teacher.firstName} ${teacher.lastName}` : "Non assigné"}
-        </p>
+        <div className="flex items-center space-x-4 text-sm opacity-90 mb-4">
+          <Link to={`/users/${course.teacherId}/profile`} className="flex items-center group hover:text-e-bosy-purple transition-colors">
+            {teacher?.profilePictureUrl ? 
+              <img src={`${API_BASE_URL}${teacher.profilePictureUrl}`} className="h-8 w-8 rounded-full mr-2 border-2 border-transparent group-hover:border-e-bosy-purple" alt={teacher.firstName} /> :
+              <div className="h-8 w-8 rounded-full bg-e-bosy-purple text-white flex items-center justify-center mr-2">
+                {`${teacher?.firstName?.[0]}${teacher?.lastName?.[0]}`}
+              </div>
+            }
+            <span>Par {teacher?.firstName} {teacher?.lastName}</span>
+          </Link>
+        </div>
         <div className="flex justify-between items-center pt-3 border-t border-gray-100">
           <div className="flex space-x-2">
             <Link

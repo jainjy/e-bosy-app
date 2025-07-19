@@ -233,6 +233,31 @@ const LessonPage = () => {
       );
     }
 
+    if (currentLesson.contentType?.toLowerCase() === "external_video_url") {
+      const videoId = currentLesson.content.includes('youtube.com') 
+          ? new URL(currentLesson.content).searchParams.get('v')
+          : currentLesson.content.split('/').pop();
+          
+      const embedUrl = currentLesson.content.includes('youtube.com')
+          ? `https://www.youtube.com/embed/${videoId}`
+          : currentLesson.content.includes('vimeo.com')
+              ? `https://player.vimeo.com/video/${videoId}`
+              : currentLesson.content;
+
+      return (
+          <div className="space-y-4">
+              <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                  <iframe
+                      src={embedUrl}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                  />
+              </div>
+          </div>
+      );
+    }
+
     return (
       <p className="text-red-500">
         Ce contenu n'est pas une vidéo et ne peut pas être affiché ici.
