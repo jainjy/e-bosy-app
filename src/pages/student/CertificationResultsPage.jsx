@@ -34,36 +34,22 @@ const CertificationResultsPage = () => {
       if (!user?.userId || !courseId) return;
       setIsLoading(true);
       try {
-        // Un seul appel API unifié
         const [existingCertificate] = await getData(`enrollments/certificates/course/${courseId}/user/${user.userId}`);
-        
         if (existingCertificate) {
           setCertificate(existingCertificate);
-        } else if (allExamsPassed) {
-          const certificateData = {
-            userId: user.userId,
-            courseId: parseInt(courseId),
-            certificateUrl: `https://e-bosy.com/certificates/${uuidv4()}.pdf`,
-            verificationCode: `EBSY-CERT-${uuidv4().slice(0, 8).toUpperCase()}`
-          };
-          const [newCertificate] = await postData('enrollments/certificates', certificateData);
-          setCertificate(newCertificate);
-          toast.success("Certificat créé avec succès !");
         }
       } catch (error) {
-        console.error("Error checking or creating certificate:", error);
-        toast.error("Erreur lors de la gestion du certificat.");
+        console.error("Error checking certificate:", error);
+        toast.error("Erreur lors de la vérification du certificat.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (allExamsPassed || user?.userId) {
+    if (user?.userId) {
       checkCertificate();
-    } else {
-      setIsLoading(false);
     }
-  }, [user, courseId, allExamsPassed]);
+  }, [user?.userId, courseId]);
 
   if (!overallResults || !exams || !courseId) {
     return (

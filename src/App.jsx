@@ -177,6 +177,10 @@ function App() {
               element={<AssessmentsPage />}
             />
             <Route
+              path="courses/:courseId/enroll"
+              element={<CourseEnrollPage/>}
+            />
+            <Route
               path="courses/:courseId/assessments/:assessmentId/questions"
               element={<QuestionsPage />}
             />

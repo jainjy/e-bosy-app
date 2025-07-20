@@ -17,6 +17,7 @@ import {
   LockClosedIcon
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
+import { v4 as uuidv4 } from 'uuid';
 
 const CertificationExamPage = () => {
   const { courseId } = useParams();
@@ -85,6 +86,7 @@ const CertificationExamPage = () => {
           return;
         }
         setCanRetakeExam(true);
+        console.log("check an fetch")
       } catch (error) {
         console.error("Error checking exam retake:", error);
         toast.error("Erreur lors de la vérification des tentatives d'examen");
@@ -106,6 +108,7 @@ const CertificationExamPage = () => {
     };
     document.addEventListener('copy', handleCopy);
     document.addEventListener('contextmenu', handleContextMenu);
+    console.log("copy")
     return () => {
       document.removeEventListener('copy', handleCopy);
       document.removeEventListener('contextmenu', handleContextMenu);
@@ -121,6 +124,7 @@ const CertificationExamPage = () => {
   useEffect(() => {
     if (totalTimeLeft !== null) {
       localStorage.setItem(`examTimeLeft_${courseId}_${user?.userId}`, totalTimeLeft.toString());
+      console.log("examTimeLeft_")
     }
   }, [totalTimeLeft, courseId, user?.userId]);
 
@@ -145,6 +149,9 @@ const CertificationExamPage = () => {
   }, [questionsBySection]);
 
   const fetchExamsAndQuestions = useCallback(async () => {
+    // Ajout d'une vérification pour éviter les appels inutiles
+    if (hasLoadedExams) return;
+
     try {
       if (!localStorage.getItem(`examInProgress_${courseId}_${user?.userId}`)) {
         localStorage.removeItem(`examAnswers_${courseId}_${user?.userId}`);
@@ -184,13 +191,14 @@ const CertificationExamPage = () => {
       localStorage.setItem(`examInProgress_${courseId}_${user?.userId}`, 'true');
 
       startGlobalTimer();
+      console.log("fetch")
       toast.success("Examens chargés !");
     } catch (error) {
       console.error("Error loading exams and questions:", error);
       toast.error("Erreur lors du chargement des examens et des questions.");
       navigate(-1);
     }
-  }, [courseId, navigate, user?.userId, allSelectedAnswers]);
+  }, [courseId, navigate, user?.userId, hasLoadedExams, allSelectedAnswers]);
 
   useEffect(() => {
     fetchExamsAndQuestions();
@@ -215,6 +223,7 @@ const CertificationExamPage = () => {
     return () => {
       if (globalTimerRef.current) {
         clearInterval(globalTimerRef.current);
+        console.log("interval")
         globalTimerRef.current = null;
       }
     };
@@ -259,6 +268,23 @@ const CertificationExamPage = () => {
         })
       );
 
+      // Vérifier si tous les examens sont réussis (score >= 70%)
+      const allPassed = submissions.every((result, idx) => {
+        const exam = exams[idx];
+        return result && exam && result.score >= exam.totalScore * 0.7;
+      });
+
+      // Créer le certificat si tous les examens sont réussis
+      if (allPassed) {
+        const certificateData = {
+          userId: user.userId,
+          courseId: parseInt(courseId),
+          certificateUrl: `http://localhost:5173/certificates/${uuidv4()}.pdf`,
+          verificationCode: `EBoSy-CERT-${uuidv4().slice(0, 8).toUpperCase()}`
+        };
+        await postData('enrollments/certificates', certificateData);
+      }
+
       localStorage.removeItem(`examAnswers_${courseId}_${user?.userId}`);
       localStorage.removeItem(`examTimeLeft_${courseId}_${user?.userId}`);
       localStorage.removeItem(`examInProgress_${courseId}_${user?.userId}`);
@@ -290,6 +316,11 @@ const CertificationExamPage = () => {
     const sectionQuestions = questionsBySection[index] || [];
     return sectionQuestions.every(q => isQuestionAnswered(index, q.questionId));
   });
+
+  const isCurrentSectionCompleted = useCallback(() => {
+    const currentSectionQuestions = questionsBySection[currentSectionIndex] || [];
+    return currentSectionQuestions.every(q => isQuestionAnswered(currentSectionIndex, q.questionId));
+  }, [currentSectionIndex, questionsBySection, isQuestionAnswered]);
 
   const currentQuestions = questionsBySection[currentSectionIndex] || [];
   const currentQuestion = currentQuestions[currentQuestionIndex];
@@ -492,6 +523,21 @@ const CertificationExamPage = () => {
                         <span onCopy={(e) => e.preventDefault()}>{currentQuestion.questionText}</span>
                       </div>
                     </h2>
+                    
+                    {/* Ajout de l'explication de la question */}
+                    {currentQuestion.explanation && (
+                      <motion.div 
+                        className="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-6"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                      >
+                        <h3 className="text-blue-800 font-semibold mb-2">Explication :</h3>
+                        <p className="text-blue-700" onCopy={(e) => e.preventDefault()}>
+                          {currentQuestion.explanation}
+                        </p>
+                      </motion.div>
+                    )}
+                    
                     <motion.div 
                       className="bg-purple-50 border border-purple-100 rounded-xl p-6 mb-8"
                       whileHover={{ scale: 1.01 }}
@@ -533,32 +579,61 @@ const CertificationExamPage = () => {
           </motion.div>
           <motion.div 
             layout
-            className="flex justify-between mt-6 p-4 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100"
+            className="flex justify-between mt-6 p-4 bg-white rounded-xl shadow-lg border border-gray-100"
           >
             <button
               onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
               disabled={currentQuestionIndex === 0}
-              className={`flex items-center px-6 py-3 rounded-lg font-medium transition-colors shadow-sm ${
+              className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                 currentQuestionIndex === 0
-                  ? 'text-gray-500 bg-gray-100 cursor-not-allowed'
-                  : 'text-e-bosy-purple bg-purple-50 hover:bg-purple-100'
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:transform hover:scale-105 shadow-md'
               }`}
             >
               <ChevronLeftIcon className="h-5 w-5 mr-2" />
               Précédent
             </button>
-            <button
-              onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
-              disabled={currentQuestionIndex === currentQuestions.length - 1}
-              className={`flex items-center px-6 py-3 rounded-lg font-medium transition-colors shadow-sm ${
-                currentQuestionIndex === currentQuestions.length - 1
-                  ? 'text-gray-500 bg-gray-100 cursor-not-allowed'
-                  : 'text-e-bosy-purple bg-purple-50 hover:bg-purple-100'
-              }`}
-            >
-              Suivant
-              <ChevronRightIcon className="h-5 w-5 ml-2" />
-            </button>
+
+            {currentQuestionIndex === currentQuestions.length - 1 ? (
+              <button
+                onClick={() => {
+                  if (currentSectionIndex < exams.length - 1) {
+                    setCurrentSectionIndex(prev => prev + 1);
+                    setCurrentQuestionIndex(0);
+                  } else if (isCurrentSectionCompleted() && allExamsCompleted) {
+                    setIsConfirmSubmitOpen(true);
+                  }
+                }}
+                disabled={!isCurrentSectionCompleted()}
+                className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  isCurrentSectionCompleted()
+                    ? currentSectionIndex < exams.length - 1
+                      ? 'bg-green-600 text-white hover:bg-green-700 hover:transform hover:scale-105 shadow-md'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 hover:transform hover:scale-105 shadow-md'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {currentSectionIndex < exams.length - 1 ? (
+                  <>
+                    Section suivante
+                    <ChevronRightIcon className="h-5 w-5 ml-2" />
+                  </>
+                ) : (
+                  <>
+                    Valider l'examen
+                    <CheckCircleIcon className="h-5 w-5 ml-2" />
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
+                className="flex items-center px-6 py-3 rounded-lg font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all duration-200 hover:transform hover:scale-105 shadow-md"
+              >
+                Suivant
+                <ChevronRightIcon className="h-5 w-5 ml-2" />
+              </button>
+            )}
           </motion.div>
         </motion.main>
       </div>

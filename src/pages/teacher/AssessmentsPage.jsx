@@ -120,7 +120,7 @@ const AssessmentsPage = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       <nav className="flex items-center space-x-4 mb-8">
         <Link
-          to="/courses"
+          to="/mycourses"
           className="flex items-center text-e-bosy-purple hover:text-purple-700 transition-colors"
         >
           <ArrowLeftIcon className="h-5 w-5 mr-2" />

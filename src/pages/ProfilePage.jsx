@@ -27,16 +27,16 @@ const ProfilePage = () => {
   const [courses, setCourses] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [id, setId] = useState(ids || (user?.userId?.toString()));
+  const [id, setId] = useState(ids || null);
 
   useEffect(() => {
     const fetchProfileData = async () => {
-      if (!id && user?.userId) {
-        setId(user.userId.toString());
+      if (!id) {
         return;
       }
 
       try {
+        setLoading(true);
         // Récupérer les informations de l'utilisateur
         const [userData, userError] = await getData(`users/${id}`);
         if (userError) throw new Error(userError.message);
@@ -51,16 +51,23 @@ const ProfilePage = () => {
           setEnrollments(enrollmentsData || []);
         }
       } catch (error) {
-        toast.error(error.message);
+        toast.error("Utilisateur non trouvé");
+        setProfileData(null);
       } finally {
         setLoading(false);
       }
     };
 
+    if (ids) {
+      setId(ids);
+    } else if (user?.userId) {
+      setId(user.userId.toString());
+    }
+
     if (id) {
       fetchProfileData();
     }
-  }, [id, user]);
+  }, [ids, user?.userId, id]);
 
   if (loading) return <LoadingSpinner />;
   if (!profileData)
