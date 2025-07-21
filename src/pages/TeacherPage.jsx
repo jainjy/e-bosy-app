@@ -407,6 +407,9 @@ export default function TeacherPage() {
       alert('Erreur lors du téléversement de l\'enregistrement');
     }
   };
+
+
+  
  // Ajouter un état pour le chat
  const [activeTab, setActiveTab] = useState('chat');
 

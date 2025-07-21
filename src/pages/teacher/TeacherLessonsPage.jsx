@@ -38,6 +38,7 @@ import LiveSessionFormModal from "../../components/LiveSessionFormModal";
 import { getData, postData, putData, deleteData, API_BASE_URL } from "../../services/ApiFetch";
 import { toast } from "react-toastify";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
+import SearchBar from '../../components/SearchBar';
 
 // Modal Component for Video
 const VideoModal = ({ isOpen, onClose, videoUrl }) => {
@@ -222,6 +223,7 @@ const TeacherLessonsPage = () => {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
   const [isLiveSessionModalOpen, setIsLiveSessionModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -274,8 +276,14 @@ const TeacherLessonsPage = () => {
     return [...course.sections].sort((a, b) => a.order - b.order);
   }, [course]);
 
+  const filteredLessons = useMemo(() => {
+    return lessons.filter(lesson => 
+      lesson.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [lessons, searchQuery]);
+
   const getLessonsForSection = (sectionTitle) => {
-    return lessons
+    return filteredLessons
       .filter((lesson) => lesson.section_id === sectionTitle)
       .sort((a, b) => a.position_in_section - b.position_in_section);
   };
@@ -548,6 +556,15 @@ const TeacherLessonsPage = () => {
             Planifie Session Live 
           </button>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Rechercher une leçon..."
+          className="max-w-md"
+        />
       </div>
 
       <DndContext

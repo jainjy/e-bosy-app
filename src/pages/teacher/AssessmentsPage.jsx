@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeftIcon,
@@ -18,6 +18,7 @@ import { getData, deleteData } from '../../services/ApiFetch';
 import { toast } from 'react-hot-toast';
 import AssessmentFormModal from '../../components/AssessmentFormModal';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
+import SearchBar from '../../components/SearchBar';
 
 const AssessmentsPage = () => {
   const { courseId } = useParams();
@@ -27,6 +28,8 @@ const AssessmentsPage = () => {
   const [showAssessmentForm, setShowAssessmentForm] = useState(false);
   const [formType, setFormType] = useState('exercise');
   const [editingAssessment, setEditingAssessment] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState('all');
 
   const fetchQuestions = async (assessmentId) => {
     try {
@@ -112,6 +115,17 @@ const AssessmentsPage = () => {
     }
   };
 
+  const filteredAssessments = useMemo(() => {
+    return assessments.filter(assessment => {
+      const matchesSearch = assessment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        assessment.type.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesFilter = filterType === 'all' || assessment.type === filterType;
+      
+      return matchesSearch && matchesFilter;
+    });
+  }, [assessments, searchQuery, filterType]);
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -158,10 +172,53 @@ const AssessmentsPage = () => {
         </div>
       </div>
 
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Rechercher une évaluation..."
+          className="w-full sm:w-64"
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilterType('all')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              filterType === 'all'
+                ? 'bg-gray-800 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            Tout
+          </button>
+          <button
+            onClick={() => setFilterType('exam')}
+            className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+              filterType === 'exam'
+                ? 'bg-e-bosy-purple text-white'
+                : 'bg-purple-50 text-purple-600 hover:bg-purple-100'
+            }`}
+          >
+            <AcademicCapIcon className="h-4 w-4 mr-2" />
+            Examens
+          </button>
+          <button
+            onClick={() => setFilterType('exercise')}
+            className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+              filterType === 'exercise'
+                ? 'bg-yellow-500 text-white'
+                : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
+            }`}
+          >
+            <ClipboardDocumentCheckIcon className="h-4 w-4 mr-2" />
+            Exercices
+          </button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {assessments.map((assessment,index) => (
+        {filteredAssessments.map((assessment, index) => (
           <div
-            key={assessment.assessmentId+index}
+            key={assessment.assessmentId + index}
             className={`bg-white p-6 rounded-lg shadow-md border-l-4 ${
               assessment.type === 'exam'
                 ? 'border-l-purple-500 border-gray-200'
@@ -270,11 +327,15 @@ const AssessmentsPage = () => {
           </div>
         ))}
 
-        {assessments.length === 0 && (
+        {filteredAssessments.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center text-gray-500 py-12">
             <DocumentTextIcon className="h-16 w-16 mb-4" />
-            <p className="text-xl font-medium mb-2">Aucune évaluation créée</p>
-            <p className="text-sm">Commencez par créer un exercice ou un examen</p>
+            <p className="text-xl font-medium mb-2">
+              {searchQuery ? "Aucune évaluation trouvée" : "Aucune évaluation créée"}
+            </p>
+            <p className="text-sm">
+              {searchQuery ? "Essayez d'autres termes de recherche" : "Commencez par créer un exercice ou un examen"}
+            </p>
           </div>
         )}
       </div>

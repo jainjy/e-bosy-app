@@ -1,5 +1,5 @@
 // AssessmentListPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { getData } from '../../services/ApiFetch';
@@ -8,6 +8,7 @@ import { ArrowLeftIcon, AcademicCapIcon, LockClosedIcon } from '@heroicons/react
 import Navbar from '../../Components/Navbar';
 import { LoadingSpinner } from '../../components/LoadingSpinner';
 import AssessmentGrid from '../../components/AssessmentGrid';
+import SearchBar from '../../components/SearchBar';
 
 const AssessmentListPage = () => {
   const { courseId } = useParams();
@@ -21,6 +22,13 @@ const AssessmentListPage = () => {
   const [userProgress, setUserProgress] = useState({});
   const [canTakeExam, setCanTakeExam] = useState(true);
   const [nextExamTime, setNextExamTime] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredAssessments = useMemo(() => {
+    return assessments.filter(assessment =>
+      assessment.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [assessments, searchQuery]);
 
   useEffect(() => {
     const checkExamAvailability = async () => {
@@ -169,10 +177,20 @@ const AssessmentListPage = () => {
             )}
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{course?.title}</h1>
-          <p className="text-gray-600">Exercices disponibles</p>
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">
+              Exercices disponibles
+            </h2>
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Rechercher un exercice..."
+              className="w-full sm:w-64"
+            />
+          </div>
         </div>
         <AssessmentGrid
-          assessments={assessments}
+          assessments={filteredAssessments}
           userProgress={userProgress}
           courseId={courseId}
           courseTitle={course?.title}
