@@ -8,11 +8,167 @@ import { Sparklines, SparklinesLine } from 'react-sparklines';
 import { useTeacherDashboard } from "../../hooks/useTeacherDashboard";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import ErrorMessage from "../../components/ErrorMessage";
-import ProgressRadial from "../../components/ProgressRadial";
-import EngagementHeatmap from "../../components/EngagementHeatmap";
-import StudentProgressChart from "../../components/StudentProgressChart";
 import Chart from 'react-apexcharts';
 
+const StudentProgressChart = ({ courses }) => {
+  const chartData = {
+    options: {
+      chart: {
+        type: 'bar',
+        height: 350,
+        stacked: true,
+        toolbar: { show: false }
+      },
+      plotOptions: {
+        bar: {
+          horizontal: false,
+          columnWidth: '35%',
+          endingShape: 'rounded'
+        },
+      },
+      colors: ['#6B46C1', '#3182CE', '#38A169'],
+      dataLabels: { enabled: false },
+      stroke: {
+        show: true,
+        width: 2,
+        colors: ['transparent']
+      },
+      xaxis: {
+        categories: courses.map(course => course.title),
+        labels: {
+          style: { fontSize: '11px' }
+        }
+      },
+      yaxis: {
+        title: { text: 'Pourcentage' },
+        max: 100
+      },
+      fill: { opacity: 1 },
+      tooltip: {
+        y: {
+          formatter: function (val) {
+            return val + "%"
+          }
+        }
+      },
+      legend: {
+        position: 'top',
+        horizontalAlign: 'left'
+      }
+    },
+    series: [
+      {
+        name: 'Progression moyenne',
+        data: courses.map(course => course.averageProgress)
+      },
+      {
+        name: 'Réussite aux quiz',
+        data: courses.map(course => course.quizSuccessRate)
+      },
+      {
+        name: 'Taux de complétion',
+        data: courses.map(course => course.completionRate)
+      }
+    ]
+  };
+
+  return (
+    <div className="mt-4">
+      <Chart
+        options={chartData.options}
+        series={chartData.series}
+        type="bar"
+        height={350}
+      />
+    </div>
+  );
+};
+const ProgressRadial = ({ value, label, color, icon }) => {
+  const validValue = Math.min(100, Math.max(0, value));
+  const strokeDasharray = 2 * Math.PI * 40;
+  const strokeDashoffset = strokeDasharray * (1 - validValue / 100);
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative w-24 h-24">
+        <svg className="w-full h-full" viewBox="0 0 100 100">
+          <circle
+            cx="50"
+            cy="50"
+            r="40"
+            fill="none"
+            stroke="#e5e7eb"
+            strokeWidth="8"
+          />
+          <circle
+            cx="50"
+            cy="50"
+            r="40"
+            fill="none"
+            stroke={color}
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeDasharray={strokeDasharray}
+            strokeDashoffset={strokeDashoffset}
+            transform="rotate(-90 50 50)"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="text-gray-400 mb-1">
+            {icon}
+          </div>
+          <span className="text-xl font-bold" style={{ color }}>
+            {Math.round(validValue)}%
+          </span>
+        </div>
+      </div>
+      <p className="mt-2 text-center text-gray-600 text-sm">{label}</p>
+    </div>
+  );
+};
+const EngagementHeatmap = ({ data }) => {
+  const hourlyEngagement = data?.hourlyEngagement || [];
+  const maxActivityCount = Math.max(...hourlyEngagement.map(h => h.activityCount), 1);
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="flex flex-col">
+        <div className="flex">
+          <div className="flex flex-col justify-between mr-1 text-xs text-gray-500">
+            <span>Élevé</span>
+            <span className="mt-auto">Faible</span>
+          </div>
+          <div className="grid grid-cols-24 gap-1">
+            {hourlyEngagement.map((hour, index) => {
+              const intensity = hour.activityCount > 0 
+                ? Math.min(4, Math.ceil((hour.activityCount / maxActivityCount) * 4)) 
+                : 0;
+              const bgClass = [
+                'bg-gray-100',
+                'bg-green-100',
+                'bg-green-300',
+                'bg-green-500',
+                'bg-green-700'
+              ][intensity];
+              
+              return (
+                <div 
+                  key={index} 
+                  className={`w-3 h-3 rounded-sm ${bgClass} tooltip`}
+                  data-tip={`${hour.activityCount} activités à ${hour.hour}h`}
+                ></div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="flex justify-between mt-2 text-xs text-gray-500">
+          <span>0h</span>
+          <span>23h</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 const TeacherOverviewPage = () => {
   const { dashboardData, loading, error } = useTeacherDashboard();
 

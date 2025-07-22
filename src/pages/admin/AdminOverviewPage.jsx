@@ -11,10 +11,85 @@ import { Sparklines, SparklinesLine } from 'react-sparklines';
 import { useAdminDashboard } from "../../hooks/useAdminDashboard";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
 import ErrorMessage from "../../components/ErrorMessage";
-import UserDemographicsChart from "../../components/UserDemographicsChart";
-import RevenueTrendChart from "../../components/RevenueTrendChart";
-import CoursePerformanceTable from "../../components/CoursePerformanceTable";
 import Chart from 'react-apexcharts';
+
+const UserDemographicsChart = ({ data }) => {
+  const options = {
+    chart: {
+      type: 'pie',
+      height: 350
+    },
+    labels: ['Étudiants', 'Enseignants', 'Autres'],
+    colors: ['#4F46E5', '#10B981', '#F59E0B'],
+    legend: {
+      position: 'bottom'
+    }
+  };
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h3 className="text-lg font-semibold mb-4">Démographie des utilisateurs</h3>
+      <Chart options={options} series={data} type="pie" height={350} />
+    </div>
+  );
+};
+
+const RevenueTrendChart = ({ data }) => {
+  const options = {
+    chart: {
+      type: 'area',
+      height: 350
+    },
+    xaxis: {
+      categories: data.map(item => item.month)
+    },
+    stroke: {
+      curve: 'smooth'
+    },
+    title: {
+      text: 'Tendance des revenus',
+      align: 'left'
+    }
+  };
+
+  const series = [{
+    name: 'Revenus',
+    data: data.map(item => item.amount)
+  }];
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow">
+      <Chart options={options} series={series} type="area" height={350} />
+    </div>
+  );
+};
+
+const CoursePerformanceTable = ({ courses }) => {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cours</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inscriptions</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Complétion</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note moyenne</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {courses.map((course, index) => (
+            <tr key={index}>
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{course.title}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{course.enrollments}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{course.completionRate}%</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{course.averageRating}/5</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 const AdminOverviewPage = () => {
   const { dashboardData, loading, error } = useAdminDashboard();
@@ -23,10 +98,19 @@ const AdminOverviewPage = () => {
   if (error) return <ErrorMessage message={error.message} />;
   if (!dashboardData) return <div>Aucune donnée disponible</div>;
 
+  // Ajout de valeurs par défaut pour éviter les erreurs null
+  const userEngagement = dashboardData.userEngagement || [];
+  const revenueByCategory = dashboardData.revenueByCategory || [];
+  const courseCompletionRates = dashboardData.courseCompletionRates || [];
+  const revenueBreakdown = dashboardData.revenueBreakdown || [];
+  const popularCourses = dashboardData.userStatistics?.popularCourses || [];
+  const courseStatus = dashboardData.courseStatistics?.status || { published: 0, pending: 0, draft: 0 };
+  const distribution = dashboardData.userStatistics?.distribution || { students: 0, teachers: 0, admins: 0 };
+
   const engagementChartOptions = {
     chart: { type: 'line', height: 350, toolbar: { show: false } },
     xaxis: { 
-      categories: dashboardData.userEngagement.map(d => {
+      categories: userEngagement.map(d => {
         const date = new Date(d.date);
         return date.toLocaleDateString();
       })
@@ -36,26 +120,103 @@ const AdminOverviewPage = () => {
   };
   const engagementSeries = [{
     name: 'Utilisateurs actifs',
-    data: dashboardData.userEngagement.map(d => d.activeUsers)
+    data: userEngagement.map(d => d.activeUsers)
   }];
 
   const revenueByCategoryOptions = {
     chart: { type: 'pie', height: 350 },
-    labels: dashboardData.revenueByCategory.map(r => r.category),
+    labels: revenueByCategory.map(r => r.category),
     colors: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
   };
-  const revenueByCategorySeries = dashboardData.revenueByCategory.map(r => r.revenue);
+  const revenueByCategorySeries = revenueByCategory.map(r => r.revenue);
 
   const completionRatesOptions = {
     chart: { type: 'bar', height: 350, toolbar: { show: false } },
-    xaxis: { categories: dashboardData.courseCompletionRates.map(c => c.title) },
+    xaxis: { categories: courseCompletionRates.map(c => c.title) },
     yaxis: { title: { text: 'Taux de complétion (%)' } },
     colors: ['#00E396'],
   };
   const completionRatesSeries = [{
     name: 'Taux de complétion',
-    data: dashboardData.courseCompletionRates.map(c => c.completionRate)
+    data: courseCompletionRates.map(c => c.completionRate)
   }];
+
+  const revenueChartOptions = {
+    chart: {
+      type: 'area',
+      height: 350,
+      toolbar: { show: false },
+      zoom: { enabled: false }
+    },
+    stroke: { curve: 'smooth', width: 2 },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        inverseColors: false,
+        opacityFrom: 0.45,
+        opacityTo: 0.05,
+        stops: [20, 100, 100, 100]
+      }
+    },
+    xaxis: {
+      categories: revenueBreakdown.map(d => d.month),
+      labels: { style: { colors: '#64748b' } }
+    },
+    yaxis: {
+      title: { text: 'Revenus (€)', style: { color: '#64748b' } },
+      labels: { style: { colors: '#64748b' } }
+    },
+    colors: ['#8b5cf6'],
+    title: {
+      text: 'Évolution des revenus',
+      align: 'left',
+      style: { fontSize: '16px', color: '#1e293b' }
+    }
+  };
+
+  const userDistributionOptions = {
+    chart: { type: 'donut', height: 350 },
+    labels: ['Étudiants', 'Enseignants', 'Administrateurs'],
+    colors: ['#8b5cf6', '#06b6d4', '#f59e0b'],
+    legend: {
+      position: 'bottom',
+      horizontalAlign: 'center'
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) {
+        return Math.round(val) + '%';
+      }
+    }
+  };
+
+  const courseStatusOptions = {
+    chart: {
+      type: 'radialBar',
+      height: 350,
+      toolbar: { show: false }
+    },
+    plotOptions: {
+      radialBar: {
+        dataLabels: {
+          name: { fontSize: '14px', color: '#64748b' },
+          value: { fontSize: '20px', fontWeight: 600, color: '#1e293b' },
+          total: {
+            show: true,
+            label: 'Total',
+            formatter: function (w) {
+              return courseStatus.published + 
+                     courseStatus.pending + 
+                     courseStatus.draft;
+            }
+          }
+        }
+      }
+    },
+    colors: ['#8b5cf6', '#06b6d4', '#f59e0b'],
+    labels: ['Publiés', 'En attente', 'Brouillons']
+  };
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -98,73 +259,90 @@ const AdminOverviewPage = () => {
         />
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Statistiques globales</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h3 className="font-medium text-gray-800">Participation aux sessions live</h3>
-            <div className="mt-4 flex items-end">
-              <span className="text-3xl font-bold text-gray-900">
-                {Math.round(dashboardData.stats.liveSessionParticipationRate)}%
-              </span>
-              <AcademicCapIcon className="ml-4 text-gray-400 h-6 w-6" />
-            </div>
-            <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="h-2 rounded-full bg-orange-500"
-                style={{ width: `${dashboardData.stats.liveSessionParticipationRate}%` }}
-              ></div>
-            </div>
-          </div>
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h3 className="font-medium text-gray-800">Utilisateurs actifs</h3>
-            <div className="mt-4 flex items-end">
-              <span className="text-3xl font-bold text-gray-900">
-                {dashboardData.userStatistics.activeUsersPercentage}%
-              </span>
-              <DocumentCheckIcon className="ml-4 text-gray-400 h-6 w-6" />
-            </div>
-            <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="h-2n rounded-full bg-green-500"
-                style={{ width: `${dashboardData.userStatistics.activeUsersPercentage}%` }}
-              ></div>
-            </div>
-          </div>
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h3 className="font-medium text-gray-800">Cours actifs</h3>
-            <div className="mt-4 flex items-end">
-              <span className="text-3xl font-bold text-gray-900">
-                {dashboardData.courseStatistics.activeCoursesPercentage}%
-              </span>
-              <BookOpenIcon className="ml-4 text-gray-400 h-6 w-6" />
-            </div>
-            <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="h-2 rounded-full bg-blue-500"
-                style={{ width: `${dashboardData.courseStatistics.activeCoursesPercentage}%` }}
-              ></div>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">Évolution des revenus</h3>
+          <Chart
+            options={revenueChartOptions}
+            series={[{
+              name: 'Revenus',
+              data: revenueBreakdown.map(d => d.revenue)
+            }]}
+            type="area"
+            height={350}
+          />
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">Distribution des utilisateurs</h3>
+          <Chart
+            options={userDistributionOptions}
+            series={[
+              distribution.students,
+              distribution.teachers,
+              distribution.admins
+            ]}
+            type="donut"
+            height={350}
+          />
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">État des cours</h3>
+          <Chart
+            options={courseStatusOptions}
+            series={[
+              courseStatus.published,
+              courseStatus.pending,
+              courseStatus.draft
+            ]}
+            type="radialBar"
+            height={350}
+          />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Engagement des utilisateurs</h3>
-          <Chart options={engagementChartOptions} series={engagementSeries} type="line" height={350} />
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">Performance des cours populaires</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cours</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Étudiants</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progression</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {popularCourses.map((course, index) => (
+                  <tr key={index}>
+                    <td className="px-6 py-4 whitespace-nowrap">{course.title}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{course.studentCount}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div
+                            className="bg-e-bosy-purple h-2.5 rounded-full"
+                            style={{ width: `${course.averageProgress}%` }}
+                          ></div>
+                        </div>
+                        <span className="ml-2 text-sm text-gray-600">
+                          {Math.round(course.averageProgress)}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {course.rating || 'N/A'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Répartition des revenus</h3>
-          <Chart options={revenueByCategoryOptions} series={revenueByCategorySeries} type="pie" height={350} />
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Taux de complétion des cours</h3>
-          <Chart options={completionRatesOptions} series={completionRatesSeries} type="bar" height={350} />
-        </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Santé du système</h3>
           <div className="text-center">

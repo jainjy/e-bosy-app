@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getData } from '../services/ApiFetch';
 
-export const useStudentDashboard = () => {
+export const useAdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -9,12 +9,11 @@ export const useStudentDashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [data, err] = await getData('studentdashboard');
+        const [data, err] = await getData('admindashboard');
         if (err) {
-          setError(err);
-        } else {
-          setDashboardData(data);
+          throw new Error(err.message || 'Failed to fetch dashboard data');
         }
+        setDashboardData(data);
       } catch (err) {
         setError(err);
       } finally {
