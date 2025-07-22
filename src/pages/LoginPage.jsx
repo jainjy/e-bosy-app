@@ -23,7 +23,6 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const [isTyping, setIsTyping] = useState({ email: false, password: false });
   
   const navigate = useNavigate();
@@ -238,23 +237,6 @@ const LoginPage = () => {
                   {passwordError}
                 </p>
               )}
-            </div>
-
-            {/* Remember Me */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-600"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                  Se souvenir de moi
-                </label>
-              </div>
             </div>
 
             {/* Submit Button */}
