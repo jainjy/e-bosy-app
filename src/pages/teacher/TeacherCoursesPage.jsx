@@ -139,6 +139,13 @@ const CourseCard = ({ course, onEdit, onDelete, onPublish }) => {
                     <PencilIcon className="h-4 w-4 mr-2" />
                     Modifier
                   </button>
+                  <Link
+                    to={'/course/'+course.courseId}
+                    className="flex items-center justify-start w-full px-4 py-2 text-md text-gray-700 hover:bg-gray-100"
+                  >
+                    <EyeIcon className="h-4 w-4 mr-2" />
+                    Voir
+                  </Link>
                   {course.status === COURSE_STATUS.DRAFT && (
                     <button
                       onClick={() => onPublish(course)}

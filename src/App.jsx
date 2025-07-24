@@ -70,6 +70,8 @@ import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
 import Conference from "./pages/ConferencePage";
 import RecordingViewPage from "./pages/RecordingViewPage";
 import AdminLiveSessionsPage from "./pages/admin/AdminLiveSessionsPage";
+import PaymentPage from "./pages/PaymentPage";
+import TeacherStudentsPage from "./pages/teacher/TeacherStudentsPage";
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -201,6 +203,9 @@ function App() {
             <Route path="certificates" element={<CertificatesPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="messages" element={<MessagesPage />} />
+            <Route path="messages/:userId" element={<MessagesPage />} />
+            <Route path="message/:userId" element={<MessagesPage />} />
+            
             <Route path="users" element={<UserManagementPage />} />
             <Route path="live-sessions" element={<LiveSessionsPage />} />
             <Route path="live-session/:sessionId" element={<TeacherPage />} />
@@ -258,6 +263,9 @@ function App() {
               }
             />
             <Route path="payments" element={<AdminPaymentsPage />} />
+            <Route path="payment" element={<PaymentPage />} />
+            <Route path="students" element={<TeacherStudentsPage />} />
+            
            
           </Route>
           <Route path="recordings/:id" element={<RecordingViewPage />} />

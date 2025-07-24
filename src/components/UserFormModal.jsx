@@ -28,7 +28,6 @@ const UserFormModal = ({ onClose, onSubmit, user = null, mode = 'add' }) => {
       return {
         ...baseData,
         bio: user.bio || '',
-        experienceLevel: user.experienceLevel || '',
         birthDate: formatDate(user.birthDate),
         isSubscribed: user.isSubscribed || false,
         subscriptionDate: formatDate(user.subscriptionDate),
@@ -44,7 +43,6 @@ const UserFormModal = ({ onClose, onSubmit, user = null, mode = 'add' }) => {
       ...baseData,
       password: '',
       bio: '',
-      experienceLevel: '',
       birthDate: '',
       isSubscribed: false,
       subscriptionDate: '',
@@ -82,7 +80,6 @@ const UserFormModal = ({ onClose, onSubmit, user = null, mode = 'add' }) => {
   const roleFields = {
     [ROLES.STUDENT]: [
       { name: 'bio', label: 'Biographie', type: 'textarea' },
-      { name: 'experienceLevel', label: 'Niveau', type: 'select', options: ['Débutant', 'Intermédiaire', 'Avancé'] },
       { name: 'birthDate', label: 'Date de naissance', type: 'date' },
       { 
         name: 'isSubscribed', 

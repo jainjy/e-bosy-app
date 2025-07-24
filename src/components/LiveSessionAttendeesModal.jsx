@@ -1,5 +1,6 @@
 import React from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { API_BASE_URL } from '../services/ApiFetch';
 
 const LiveSessionAttendeesModal = ({ isOpen, onClose, attendees }) => {
   if (!isOpen) {
@@ -22,7 +23,20 @@ const LiveSessionAttendeesModal = ({ isOpen, onClose, attendees }) => {
             {attendees && attendees.length > 0 ? (
               <ul>
                 {attendees.map((attendee) => (
-                  <li key={attendee.userId} className="py-2">{attendee.firstName} {attendee.lastName}</li>
+                  <li key={attendee.userId} className="flex items-center gap-3 py-2">
+                    {attendee.profilePictureUrl ? (
+                      <img 
+                        src={API_BASE_URL+ attendee.profilePictureUrl} 
+                        alt={`${attendee.firstName} ${attendee.lastName}`}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                        {(attendee.firstName?.[0] || attendee.lastName?.[0] || '?').toUpperCase()}
+                      </div>
+                    )}
+                    <span>{attendee.firstName} {attendee.lastName}</span>
+                  </li>
                 ))}
               </ul>
             ) : (

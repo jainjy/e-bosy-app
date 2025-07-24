@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { CreditCardIcon, DevicePhoneMobileIcon, BuildingLibraryIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import {  postData } from '../services/ApiFetch';
-
+import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 
 const PaymentPage = () => {
@@ -52,6 +52,9 @@ const PaymentPage = () => {
 
     useEffect(() => {
         if (!location.state?.plan) {
+            if (user.role!="etudiant"){
+                navigate('/404');
+            }
             toast.error("Aucun plan sélectionné");
             navigate('/subscription');
         }

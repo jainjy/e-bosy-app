@@ -14,7 +14,6 @@ const SignupPage = () => {
     lastName: "",
     password: "",
     bio: "",
-    experienceLevel: "",
     birthDate: "",
     profilePicture: null
   });
@@ -228,24 +227,6 @@ const SignupPage = () => {
                 className="block w-full rounded-xl border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-purple-600 transition-all duration-200"
                 placeholder="Parlez-nous un peu de vous..."
               />
-            </div>
-
-            {/* Experience Level */}
-            <div>
-              <label htmlFor="experienceLevel" className="block text-sm font-medium text-gray-700 mb-1">Niveau d'experience</label>
-              <select
-                id="experienceLevel"
-                name="experienceLevel"
-                value={formData.experienceLevel}
-                onChange={handleChange}
-                className="block w-full rounded-xl border-0 py-3 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-purple-600 transition-all duration-200"
-              >
-                <option value="">Selectionnez...</option>
-                <option value="beginner">Debutant</option>
-                <option value="intermediate">Intermediaire</option>
-                <option value="advanced">Avance</option>
-                <option value="expert">Expert</option>
-              </select>
             </div>
 
             {/* Birth Date */}

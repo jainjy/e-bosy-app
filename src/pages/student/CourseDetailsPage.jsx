@@ -14,6 +14,7 @@ import {
   ChatBubbleLeftRightIcon,
   TicketIcon,
   StarIcon,
+  PencilSquareIcon,
 } from "@heroicons/react/24/solid";
 import { ClockIcon, UserIcon } from "@heroicons/react/24/outline";
 import { API_BASE_URL, getData, putData } from "../../services/ApiFetch";
@@ -21,6 +22,9 @@ import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-hot-toast";
 
 import { LoadingSpinner } from "../../components/LoadingSpinner";
+import RatingModal from "../../components/RatingModal";
+import ReviewsModal from "../../components/ReviewsModal";
+import { CogIcon } from "lucide-react";
 
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
 
@@ -32,56 +36,51 @@ const CourseDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
-  const [hasCertificate, setHasCertificate] = useState(false); // New state for certificate
-  const [certificate, setCertificate] = useState(null); // Store certificate details
+  const [hasCertificate, setHasCertificate] = useState(false);
+  const [certificate, setCertificate] = useState(null);
   const [showCourseContent, setShowCourseContent] = useState(true);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [userEnrollment, setUserEnrollment] = useState({});
   const [userRating, setUserRating] = useState(null);
+  const [userComment, setUserComment] = useState(null);
   const [isRatingSubmitting, setIsRatingSubmitting] = useState(false);
   const [totalRatings, setTotalRatings] = useState(0);
   const [averageRating, setAverageRating] = useState(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // Fetch course details
         const [courseData, courseError] = await getData(`courses/${courseId}`);
         if (courseError) throw courseError;
         setCourse(courseData);
         setLessons(courseData.lessons || []);
-
-        // Ajout: récupération des stats de notes
         setAverageRating(courseData.courseRate ?? null);
         setTotalRatings(courseData.totalReviews ?? 0);
 
         if (user?.userId) {
-          // Check enrollment
           const [enrollmentsData, enrollmentsError] = await getData(
             `enrollments/student/${user.userId}/${courseId}`
           );
-          console.log(user)
           setUserEnrollment(enrollmentsData);
-
           setIsEnrolled(!!enrollmentsData);
 
-          // Ajout: récupérer la note de l'utilisateur si elle existe
           if (enrollmentsData && enrollmentsData.rate) {
             setUserRating(enrollmentsData.rate);
+            setUserComment(enrollmentsData.comment || null);
           } else {
             setUserRating(null);
           }
 
-          // Check for certificate
           const [certificateData, certificateError] = await getData(
             `enrollments/certificates/course/${courseId}/user/${user.userId}`
           );
-          if (certificateError) {
-            console.error("Error fetching certificate:", certificateError);
-          } else {
+          if (!certificateError) {
             setHasCertificate(!!certificateData);
-            setCertificate(certificateData); // Store certificate details if exists
+            setCertificate(certificateData);
           }
         }
       } catch (err) {
@@ -95,6 +94,25 @@ const CourseDetailsPage = () => {
 
     fetchData();
   }, [courseId, user?.userId]);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const [reviewsData, reviewsError] = await getData(
+          `enrollments/reviews/${courseId}`
+        );
+        if (reviewsError) throw reviewsError;
+        setReviews(reviewsData);
+      } catch (err) {
+        console.error("Erreur lors du chargement des avis:", err);
+        toast.error("Impossible de charger les avis");
+      }
+    };
+
+    if (courseId) {
+      fetchReviews();
+    }
+  }, [courseId]);
 
   const getContentTypeIcon = (contentType) => {
     switch (contentType.toLowerCase()) {
@@ -112,48 +130,19 @@ const CourseDetailsPage = () => {
     }
   };
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-red-600">Erreur : {error}</p>
-      </div>
-    );
-  }
-
-  if (!course) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Le cours n'a pas été trouvé.</p>
-      </div>
-    );
-  }
-
-  const sectionsWithLessons =
-    course.sections?.filter((section) =>
-      lessons.some((lesson) => lesson.sectionTitle === section.title)
-    ) || [];
-
-  // Fonction pour envoyer la note
   const handleRateCourse = async (rating) => {
     if (!userEnrollment?.enrollmentId) return;
     setIsRatingSubmitting(true);
     try {
       const response = await putData(
         `enrollments/${userEnrollment.enrollmentId}`,
-        {
-          rate: rating,
-        }
+        { rate: rating }
       );
       if (!response.ok) throw new Error("Erreur lors de l'envoi de la note");
       setUserRating(rating);
       toast.success("Merci pour votre note !");
-      // Rafraîchir les stats de notes après vote
       const [courseData] = await getData(`courses/${courseId}`);
-      setAverageRating(courseData.averageRating ?? null);
+      setAverageRating(courseData.courseRate ?? null);
       setTotalRatings(courseData.totalReviews ?? 0);
     } catch (err) {
       toast.error("Impossible d'enregistrer la note.");
@@ -162,7 +151,31 @@ const CourseDetailsPage = () => {
     }
   };
 
-  // Composant d'étoiles
+  const handleRatingSubmit = async ({ rating, comment }) => {
+    setIsRatingSubmitting(true);
+    try {
+      const response = await putData(
+        `enrollments/${userEnrollment.enrollmentId}`,
+        {
+          rate: rating,
+          comment: comment,
+        }
+      );
+      if (!response.ok) throw new Error("Erreur lors de l'envoi de l'avis");
+
+      setUserRating(rating);
+      toast.success("Merci pour votre avis !");
+
+      const [courseData] = await getData(`courses/${courseId}`);
+      setAverageRating(courseData.averageRating ?? null);
+      setTotalRatings(courseData.totalReviews ?? 0);
+    } catch (err) {
+      toast.error("Impossible d'enregistrer l'avis.");
+    } finally {
+      setIsRatingSubmitting(false);
+    }
+  };
+
   const StarRating = ({ value, onChange, disabled }) => (
     <div className="flex items-center space-x-1">
       {[1, 2, 3, 4, 5].map((star) => (
@@ -186,18 +199,46 @@ const CourseDetailsPage = () => {
     </div>
   );
 
+  if (loading) return <LoadingSpinner />;
+  if (error)
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-red-600">Erreur : {error}</p>
+      </div>
+    );
+  if (!course)
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-600">Le cours n'a pas été trouvé.</p>
+      </div>
+    );
+
+  const sectionsWithLessons =
+    course.sections?.filter((section) =>
+      lessons.some((lesson) => lesson.sectionTitle === section.title)
+    ) || [];
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-e-bosy-purple to-purple-800 text-white py-12 px-6 md:px-12 mt-6 animate-fade-in">
+      <div className="bg-gradient-to-r from-e-bosy-purple to-purple-800 text-white p-6 md:px-8 animate-fade-in">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8">
           <div className="md:w-2/3">
             <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
             <p className="text-lg opacity-90 mb-6">{course.description}</p>
             <div className="flex items-center space-x-4 text-sm opacity-90 mb-4">
-              <Link to={`/users/${course.teacherId}/profile`} className="flex items-center">
-                {course.teacher?.profilePictureUrl ?<img src={API_BASE_URL+course.teacher?.profilePictureUrl } className="h-12 w-12 mr-1 rounded-full" />:
-                <UserIcon className="h-6 w-6 mr-1" />}
+              <Link
+                to={`/users/${course.teacherId}/profile`}
+                className="flex items-center"
+              >
+                {course.teacher?.profilePictureUrl ? (
+                  <img
+                    src={API_BASE_URL + course.teacher?.profilePictureUrl}
+                    className="h-12 w-12 mr-1 rounded-full"
+                  />
+                ) : (
+                  <UserIcon className="h-6 w-6 mr-1" />
+                )}
                 Par {course.teacher?.firstName} {course.teacher?.lastName}
               </Link>
               <span className="flex items-center">
@@ -205,84 +246,150 @@ const CourseDetailsPage = () => {
                 {course.lessonsCount} leçons
               </span>
             </div>
-            {!isEnrolled ? (
-              <Link
-                to={`/courses/${course.courseId}/enroll`}
-                className="bg-white text-e-bosy-purple px-6 py-3 rounded-lg font-semibold text-lg hover:bg-gray-100 transition duration-300 inline-flex items-center animate-bounce-once"
-              >
-                <PlayCircleIcon className="h-6 w-6 mr-2" /> S'inscrire au cours
-              </Link>
-            ) : (
-              <div className="flex space-x-4">
+
+            {/* Boutons pour admin/enseignant */}
+            {user?.role === "administrateur" ||
+            user?.userId === course.teacherId ? (
+              <div className="mt-4 flex space-x-4">
                 <Link
-                  to={`/course/${course.courseId}/lesson/${lessons[0]?.lessonId}`}
-                  className="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-green-600 transition duration-300 inline-flex items-center animate-bounce-once"
+                  to={`/courses/${course.courseId}/lessons`}
+                  className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-green-700 transition duration-300 inline-flex items-center"
                 >
-                  <PlayCircleIcon className="h-6 w-6 mr-2" /> Continuer le cours
+                  <CogIcon className="h-6 w-6 mr-2" />
+                  {user?.userId === course.teacherId
+                    ? "Gérer les leçons"
+                    : "voir les lessons"}
                 </Link>
-                {hasCertificate ? (
+              </div>
+            ) : (
+              <>
+                {" "}
+                {/* Boutons principaux */}
+                {!isEnrolled ? (
                   <Link
-                    to={`/certificates/${certificate?.verificationCode}`} // Adjust the route as needed
-                    className="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-blue-600 transition duration-300 inline-flex items-center animate-bounce-once"
+                    to={`/courses/${course.courseId}/enroll`}
+                    className="bg-white text-e-bosy-purple px-6 py-3 rounded-lg font-semibold text-lg hover:bg-gray-100 transition duration-300 inline-flex items-center animate-bounce-once"
                   >
-                    <TicketIcon className="h-6 w-6 mr-2" /> Voir la
-                    certification
-                  </Link>
-                ) : userEnrollment?.completionRate >= 80 ? (
-                  <Link
-                    to={`/course/${course.courseId}/assessments`} // Route to assessments or certification process
-                    className="bg-yellow-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-yellow-600 transition duration-300 inline-flex items-center animate-bounce-once"
-                  >
-                    <AcademicCapIcon className="h-6 w-6 mr-2" /> Obtenir la
-                    certification
+                    <PlayCircleIcon className="h-6 w-6 mr-2" /> S'inscrire au
+                    cours
                   </Link>
                 ) : (
-                  ""
-                )}
-              </div>
-            )}
-            {/* Bloc d'évaluation par étoiles */}
-            <div className="my-4">
-              <div className="flex items-center space-x-3">
-                <span className="font-semibold">Note moyenne :</span>
-                <StarRating value={averageRating || 0} disabled={true} />
-                <span className="text-yellow-200 font-bold">
-                  {averageRating ? averageRating.toFixed(1) : "-"}
-                  /5
-                </span>
-                <span className="text-gray-200 text-sm">
-                  ({totalRatings} avis)
-                </span>
-              </div>
-              {isEnrolled && (
-                <div className="mt-2">
-                  <h3 className="font-semibold mb-2">
-                    Votre note pour ce cours :
-                  </h3>
-                  <div className="flex items-center space-x-2">
-                    <StarRating
-                      value={userRating || 0}
-                      onChange={handleRateCourse}
-                      disabled={isRatingSubmitting}
-                    />
-                    {userRating && (
-                      <span className="text-yellow-400 font-bold">
-                        {userRating}/5
-                      </span>
-                    )}
-                    {isRatingSubmitting && (
-                      <span className="text-gray-200 text-sm ml-2">
-                        Envoi...
-                      </span>
-                    )}
+                  <div className="flex space-x-4">
+                    <Link
+                      to={
+                        "/course/" +
+                        course.courseId +
+                        "/lesson/" +
+                        (userEnrollment?.completedLessons[
+                          userEnrollment.completedLessons.length - 1
+                        ] || lessons[0]?.lessonId)
+                      }
+                      className="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-green-600 transition duration-300 inline-flex items-center animate-bounce-once"
+                    >
+                      <PlayCircleIcon className="h-6 w-6 mr-2" /> Continuer le
+                      cours
+                    </Link>
+                    {hasCertificate ? (
+                      <Link
+                        to={`/certificates/${certificate?.verificationCode}`}
+                        className="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-blue-600 transition duration-300 inline-flex items-center animate-bounce-once"
+                      >
+                        <TicketIcon className="h-6 w-6 mr-2" /> Voir la
+                        certification
+                      </Link>
+                    ) : userEnrollment?.completionRate >= 80 ? (
+                      <Link
+                        to={`/course/${course.courseId}/assessments`}
+                        className="bg-yellow-500 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:bg-yellow-600 transition duration-300 inline-flex items-center animate-bounce-once"
+                      >
+                        <AcademicCapIcon className="h-6 w-6 mr-2" /> Obtenir la
+                        certification
+                      </Link>
+                    ) : null}
                   </div>
-                  <div className="text-xs text-gray-200 mt-1">
-                    {userRating
-                      ? "Vous pouvez modifier votre note à tout moment."
-                      : "Cliquez sur une étoile pour noter ce cours."}
+                )}
+              </>
+            )}
+
+            <div className="my-4">
+              <div className="bg-purple-900/10 backdrop-blur-sm rounded-xl p-6 space-y-4">
+                <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <StarIcon className="h-6 w-6 text-yellow-400" />
+                  Évaluations et Avis
+                </h3>
+
+                <div className="flex items-center justify-between p-4 bg-white/10 rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-white">
+                        {averageRating / totalRatings
+                          ? (averageRating / totalRatings).toFixed(1)
+                          : "0.0"}
+                      </div>
+                      <div className="text-sm text-gray-300">sur 5</div>
+                    </div>
+                    <div>
+                      <StarRating
+                        value={averageRating / totalRatings || 0}
+                        disabled={true}
+                      />
+                      <div className="text-sm text-gray-300 mt-1">
+                        Basé sur {totalRatings} avis
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="hidden md:block w-1/2">
+                    {[5, 4, 3, 2, 1].map((rating) => (
+                      <div
+                        key={rating}
+                        className="flex items-center gap-2 text-sm text-gray-300"
+                      >
+                        <div className="w-8">{rating} ★</div>
+                        <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-yellow-400"
+                            style={{
+                              width: `${
+                                (reviews.filter(
+                                  (r) => Math.round(r.rating) === rating
+                                ).length /
+                                  totalRatings) *
+                                  100 || 0
+                              }%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )}
+
+                <div className="flex flex-wrap gap-3">
+                  {isEnrolled && (
+                    <button
+                      onClick={() => setShowRatingModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-white text-purple-700 rounded-lg font-medium hover:bg-purple-50 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    >
+                      <StarIcon className="h-5 w-5 text-yellow-400" />
+                      {userEnrollment?.rate
+                        ? "Modifier mon avis"
+                        : "Donner mon avis"}
+                    </button>
+                  )}
+                  {(isEnrolled ||
+                    user?.role === "administrateur" ||
+                    user?.userId === course.teacherId) && (
+                    <button
+                      onClick={() => setShowReviewsModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-700 text-white rounded-lg font-medium hover:bg-purple-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    >
+                      <ChatBubbleLeftRightIcon className="h-5 w-5" />
+                      Voir tous les avis ({totalRatings})
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
           <div className="md:w-1/3">
@@ -343,20 +450,10 @@ const CourseDetailsPage = () => {
                 const typeA = a.contentType.toLowerCase();
                 const typeB = b.contentType.toLowerCase();
 
-                if (typeA === "video" && typeB !== "video") {
-                  return -1;
-                }
-                if (typeA !== "video" && typeB === "video") {
-                  return 1;
-                }
-
-                if (typeA === "pdfs" && typeB !== "pdfs") {
-                  return -1;
-                }
-                if (typeA !== "pdfs" && typeB === "pdfs") {
-                  return 1;
-                }
-
+                if (typeA === "video" && typeB !== "video") return -1;
+                if (typeA !== "video" && typeB === "video") return 1;
+                if (typeA === "pdfs" && typeB !== "pdfs") return -1;
+                if (typeA !== "pdfs" && typeB === "pdfs") return 1;
                 return a.title.localeCompare(b.title);
               });
 
@@ -374,13 +471,16 @@ const CourseDetailsPage = () => {
                         isEnrolled &&
                         (!lesson.isSubscriberOnly || user?.isSubscribed);
                       const canDownload =
-                        isLessonAccessible &&
-                        lesson.content &&
-                        (lesson.contentType.toLowerCase() === "pdfs" ||
-                         (lesson.contentType.toLowerCase().includes("video") && user?.isSubscribed));
+                        (isLessonAccessible &&
+                          lesson.content &&
+                          (lesson.contentType.toLowerCase() === "pdfs" ||
+                            (lesson.contentType
+                              .toLowerCase()
+                              .includes("video") &&
+                              user?.isSubscribed))) ||
+                        user.role == "administrateur";
 
                       const isPdf = lesson.contentType.toLowerCase() === "pdfs";
-
                       const shouldShowPdfTitle =
                         isPdf &&
                         (i === 0 ||
@@ -511,54 +611,56 @@ const CourseDetailsPage = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 transform transition-transform duration-300 hover:scale-[1.02]">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Exercices et Évaluations
-            </h2>
+          {user?.role == "etudiant" && (
+            <div className="bg-white rounded-lg shadow-md p-6 transform transition-transform duration-300 hover:scale-[1.02]">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                Exercices et Évaluations
+              </h2>
 
-            <Link
-              to={`/course/${courseId}/assessments`}
-              className="group relative flex items-center justify-between p-4 bg-gradient-to-r from-e-bosy-purple to-purple-100 rounded-lg border border-purple-200 hover:border-purple-300 transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0">
-                  <AcademicCapIcon className="h-8 w-8 text-e-bosy-purple" />
+              <Link
+                to={`/course/${courseId}/assessments`}
+                className="group relative flex items-center justify-between p-4 bg-gradient-to-r from-e-bosy-purple to-purple-100 rounded-lg border border-purple-200 hover:border-purple-300 transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    <AcademicCapIcon className="h-8 w-8 text-e-bosy-purple" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      Accéder aux évaluations
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Exercices pratiques et examens pour valider vos
+                      connaissances
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Accéder aux évaluations
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Exercices pratiques et examens pour valider vos
-                    connaissances
-                  </p>
+                <div className="flex items-center">
+                  <span className="px-3 py-1 bg-e-bosy-purple text-white text-sm font-medium rounded-full">
+                    Commencer
+                  </span>
+                  <ChevronRightIcon className="h-5 w-5 text-e-bosy-purple ml-2 group-hover:translate-x-1 transition-transform" />
                 </div>
-              </div>
-              <div className="flex items-center">
-                <span className="px-3 py-1 bg-e-bosy-purple text-white text-sm font-medium rounded-full">
-                  Commencer
-                </span>
-                <ChevronRightIcon className="h-5 w-5 text-e-bosy-purple ml-2 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
+              </Link>
 
-            <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-              <div className="p-3 bg-purple-50 rounded-lg transition-transform duration-200 hover:scale-105">
-                <ClipboardDocumentCheckIcon className="h-6 w-6 text-e-bosy-purple mx-auto mb-1" />
-                <span className="text-sm text-gray-600">
-                  Exercices disponibles
-                </span>
-              </div>
-              <div className="p-3 bg-yellow-50 rounded-lg transition-transform duration-200 hover:scale-105">
-                <AcademicCapIcon className="h-6 w-6 text-yellow-500 mx-auto mb-1" />
-                <span className="text-sm text-gray-600">Examens finaux</span>
+              <div className="mt-4 grid grid-cols-2 gap-4 text-center">
+                <div className="p-3 bg-purple-50 rounded-lg transition-transform duration-200 hover:scale-105">
+                  <ClipboardDocumentCheckIcon className="h-6 w-6 text-e-bosy-purple mx-auto mb-1" />
+                  <span className="text-sm text-gray-600">
+                    Exercices disponibles
+                  </span>
+                </div>
+                <div className="p-3 bg-yellow-50 rounded-lg transition-transform duration-200 hover:scale-105">
+                  <AcademicCapIcon className="h-6 w-6 text-yellow-500 mx-auto mb-1" />
+                  <span className="text-sm text-gray-600">Examens finaux</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="bg-white rounded-lg shadow-md p-6 transform transition-transform duration-300 hover:scale-[1.02]">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Discuter du cours
+              Discussion du cours
             </h2>
             <button
               onClick={() => setShowCommentsModal(true)}
@@ -576,6 +678,34 @@ const CourseDetailsPage = () => {
         user={user}
         isOpen={showCommentsModal}
         onClose={() => setShowCommentsModal(false)}
+      />
+
+      <RatingModal
+        isOpen={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        onSubmit={handleRatingSubmit}
+        initialRating={userRating}
+        initialComment={userComment}
+      />
+
+      <ReviewsModal
+        isOpen={showReviewsModal}
+        onClose={() => setShowReviewsModal(false)}
+        reviews={reviews}
+        currentUserId={user?.userId}
+        onReviewUpdate={(updatedReview, deletedId) => {
+          if (deletedId) {
+            setReviews(reviews.filter((r) => r.enrollmentId !== deletedId));
+          } else {
+            setReviews(
+              reviews.map((r) =>
+                r.enrollmentId === updatedReview.enrollmentId
+                  ? updatedReview
+                  : r
+              )
+            );
+          }
+        }}
       />
     </div>
   );

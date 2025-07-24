@@ -12,7 +12,7 @@ import { API_BASE_URL, getData, postData } from "../../services/ApiFetch";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
-import Navbar from "../../Components/Navbar";
+
 
 // Default Video Player Component
 const DefaultVideoPlayer = ({ 
@@ -32,8 +32,8 @@ const DefaultVideoPlayer = ({
       const videoProgress = (video.currentTime / video.duration) * 100;
       onProgress?.({ played: videoProgress / 100 });
 
-      // Trigger onComplete when 90% of the video is watched
-      if (videoProgress >= 90 && !hasCompleted) {
+      // Trigger onComplete when 85% of the video is watched
+      if (videoProgress >= 85 && !hasCompleted) {
         onComplete?.();
         setHasCompleted(true);
       }
@@ -69,6 +69,8 @@ const DefaultVideoPlayer = ({
         poster={poster}
         className="w-full h-full"
         preload="metadata"
+        controlsList="nodownload"
+        
       >
         <source src={url} type="video/mp4" />
         Votre navigateur ne supporte pas la lecture vidéo.
@@ -121,7 +123,7 @@ const LessonPage = () => {
         );
         if (lessonError) throw lessonError;
 
-        if (lessonData.isSubscriberOnly && !user?.IsSubscribed) {
+        if (lessonData.isSubscriberOnly && !user?.isSubscribed) {
           toast.error("Cette leçon est réservée aux abonnés Premium.");
         }
 
@@ -151,12 +153,12 @@ const LessonPage = () => {
             : lesson
         )
       );
-
       // Mettre à jour la progression du cours après avoir terminé une leçon
       const [updatedCompletionData, completionError] = await getData(`progress/enrollment/${enrollment.enrollmentId}/completion-rate`);
       if (!completionError) {
         setCourseProgress(updatedCompletionData);
       }
+      
 
       toast.success("Progression enregistrée");
     } catch (err) {
@@ -190,7 +192,7 @@ const LessonPage = () => {
   const renderContent = () => {
     if (!currentLesson) return null;
 
-    const isLocked = currentLesson.isSubscriberOnly && !user?.IsSubscribed;
+    const isLocked = currentLesson.isSubscriberOnly && !user?.isSubscribed;
 
     if (isLocked) {
       return (
@@ -333,7 +335,7 @@ const LessonPage = () => {
                   const isVideo = lesson.contentType?.toLowerCase() === "video";
                   const isSubscriberOnly = lesson.isSubscriberOnly === true;
                   const isAccessible =
-                    !isSubscriberOnly || user?.IsSubscribed === true;
+                    !isSubscriberOnly || user?.isSubscribed === true;
 
                   if (!isVideo) return null;
 
@@ -399,11 +401,9 @@ const LessonPage = () => {
                             <FolderIcon className="h-3 w-3" />
                             {lesson.sectionTitle}
                           </span>
-                          <span>•</span>
-                          <span>{lesson.duration || "N/A"}</span>
-                          {lesson.completed && (
+                          <span>{parseInt(lesson.duree/60)+":"+lesson.duree%60 || "N/A"}</span>
+                          {(lesson.completed || enrollment?.completedLessons?.includes(lesson.lessonId)) && (
                             <>
-                              <span>•</span>
                               <span className="text-green-600 flex items-center gap-1">
                                 <CheckCircleIcon className="h-3 w-3" /> Complété
                               </span>

@@ -1,9 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import { UserCircleIcon, KeyIcon, CameraIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { 
+  UserCircleIcon, KeyIcon, CameraIcon, EyeIcon, EyeSlashIcon, XMarkIcon,
+  AcademicCapIcon, BriefcaseIcon, CakeIcon, EnvelopeIcon,
+  IdentificationIcon, UserIcon
+} from '@heroicons/react/24/outline';
 import { API_BASE_URL, putData } from '../services/ApiFetch';
 import { motion } from 'framer-motion';
+import classNames from 'classnames';
+
 const getInitials = (firstName, lastName, email) => {
   if (firstName && lastName) {
     return `${firstName[0]}${lastName[0]}`.toUpperCase();
@@ -20,9 +26,11 @@ const SettingsPage = () => {
     lastName: user?.lastName || '',
     email: user?.email || '',
     bio: user?.bio || '',
-    experienceLevel: user?.experienceLevel || '',
     birthDate: user?.birthDate || '',
-    role: user?.role || '' // Ajout du rôle
+    role: user?.role || '',
+    specialty: user?.specialty || '',
+    education: user?.education || '',
+    yearsOfExperience: user?.yearsOfExperience || ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -32,11 +40,22 @@ const SettingsPage = () => {
   });
 
   const [profileImage, setProfileImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null); // Ajout d'un state pour la prévisualisation de l'image
+  const [imagePreview, setImagePreview] = useState(null);
+  const [showPwd, setShowPwd] = useState(false); // show/hide password
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
+  const [pwdStrength, setPwdStrength] = useState('');
+  const fileInputRef = useRef(null);
 
-  const profileInitials = useMemo(() => 
+  const profileInitials = useMemo(() =>
     getInitials(user?.firstName, user?.lastName, user?.email),
-  [user]);
+    [user]
+  );
+
+  // Validation Helpers
+  const validateEmail = email =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isEmailValid = validateEmail(formData.email);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -50,25 +69,46 @@ const SettingsPage = () => {
       ...passwordData,
       [e.target.name]: e.target.value
     });
-  };
-
-  const handleImageSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setProfileImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if(e.target.name === "newPassword") {
+      setPwdStrength(getPwdStrength(e.target.value));
     }
   };
 
+  // Password strength logic simple
+  const getPwdStrength = (pwd) => {
+    if (!pwd) return '';
+    if (pwd.length < 6) return 'faible';
+    if (pwd.match(/[A-Z]/) && pwd.match(/[a-z]/) && pwd.match(/[0-9]/) && pwd.length >= 8) return 'fort';
+    return 'moyen';
+  };
+
+  // Drag'n'drop management
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files[0];
+    handleImageFile(file);
+  };
+  const handleDragOver = (e) => e.preventDefault();
+
+  const handleImageFile = (file) => {
+    if (file) {
+      setProfileImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+  const handleImageSelect = (e) => {
+    handleImageFile(e.target.files[0]);
+  };
   const handleRemoveImage = () => {
     setProfileImage(null);
     setImagePreview(null);
+    fileInputRef.current.value = '';
   };
 
+  // Profile update
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -84,15 +124,10 @@ const SettingsPage = () => {
           formDataToSend.append(key, formData[key]);
         }
       });
-      
       formDataToSend.append('role', user.role);
-      
-      if (profileImage) {
-        formDataToSend.append('profilePicture', profileImage);
-      }
+      if (profileImage) formDataToSend.append('profilePicture', profileImage);
 
       const [_, error] = await putData(`users/me`, formDataToSend, true);
-
       if (error) throw error;
 
       await refreshUser();
@@ -104,30 +139,26 @@ const SettingsPage = () => {
     }
   };
 
+  // Password update
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error('Les mots de passe ne correspondent pas');
       return;
     }
 
     setLoading(true);
-
     try {
       const [_, error] = await putData('password/change', {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       });
-
       if (error) throw error;
 
       toast.success('Mot de passe modifié avec succès');
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setPwdStrength('');
     } catch (error) {
       toast.error(error.message || 'Erreur lors de la modification du mot de passe');
     } finally {
@@ -142,37 +173,46 @@ const SettingsPage = () => {
       transition={{ duration: 0.3 }}
       className="max-w-4xl mx-auto px-4 py-8"
     >
-      <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-6 mb-8">
+      {/* En-tête */}
+      <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-6 mb-8 shadow-md sticky top-0 z-10">
         <h2 className="text-2xl font-bold text-gray-800">Paramètres</h2>
-        <p className="text-gray-600">Personnalisez votre expérience E-Bosy</p>
+        <p className="text-gray-700">Personnalisez votre expérience E-Bosy</p>
       </div>
 
-      <div className="flex space-x-6 border-b border-gray-200 mb-8 overflow-x-auto">
+      {/* Onglets avec indicateur dynamique */}
+      <nav className="flex space-x-6 border-b border-gray-200 mb-8 overflow-x-auto" role="tablist">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`px-6 py-3 flex items-center space-x-2 transition-colors whitespace-nowrap
-            ${activeTab === 'profile' 
-              ? 'text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold' 
+          className={classNames(
+            "px-6 py-3 flex items-center space-x-2 transition-colors whitespace-nowrap rounded-t-md",
+            activeTab === 'profile'
+              ? 'bg-purple-100 text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold'
               : 'text-gray-600 hover:text-gray-800'
-            }`}
+          )}
+          aria-selected={activeTab === 'profile'}
+          role="tab"
         >
           <UserCircleIcon className="h-5 w-5" />
           <span>Profil</span>
         </button>
         <button
           onClick={() => setActiveTab('security')}
-          className={`px-6 py-3 flex items-center space-x-2 transition-colors whitespace-nowrap
-            ${activeTab === 'security' 
-              ? 'text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold' 
+          className={classNames(
+            "px-6 py-3 flex items-center space-x-2 transition-colors whitespace-nowrap rounded-t-md",
+            activeTab === 'security'
+              ? 'bg-purple-100 text-e-bosy-purple border-b-2 border-e-bosy-purple font-semibold'
               : 'text-gray-600 hover:text-gray-800'
-            }`}
+          )}
+          aria-selected={activeTab === 'security'}
+          role="tab"
         >
           <KeyIcon className="h-5 w-5" />
           <span>Sécurité</span>
         </button>
-      </div>
+      </nav>
 
-      <motion.div 
+      {/* Contenu des onglets animés */}
+      <motion.div
         key={activeTab}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -181,182 +221,297 @@ const SettingsPage = () => {
       >
         {activeTab === 'profile' && (
           <form onSubmit={handleProfileUpdate} className="space-y-8">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative group">
-                <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-purple-50">
+            {/* Section Avatar Drag&Drop + bouton visible */}
+            <section
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              className="flex flex-col items-center space-y-2"
+            >
+              <label htmlFor="profilePicture" className="text-sm font-medium text-gray-700">
+                Photo de profil
+              </label>
+              <div className="relative group rounded-full border-4 border-purple-100 hover:shadow-lg transition">
+                <div className="w-32 h-32 rounded-full overflow-hidden flex items-center justify-center bg-e-bosy-purple text-white text-3xl font-semibold ring-4 ring-purple-50">
                   {imagePreview || user?.profilePictureUrl ? (
-                    <img 
+                    <img
                       src={imagePreview || `${API_BASE_URL}/${user.profilePictureUrl}`}
                       alt="Profile"
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-e-bosy-purple text-white text-3xl font-semibold">
-                      {profileInitials}
-                    </div>
+                    profileInitials
                   )}
-                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <label 
-                      htmlFor="profilePicture"
-                      className="cursor-pointer text-white flex items-center space-x-2"
-                    >
-                      <CameraIcon className="h-6 w-6" />
-                      <span>Modifier</span>
-                    </label>
-                  </div>
                 </div>
+                {/* Bouton modifier toujours visible en-dessous */}
+                <button
+                  type="button"
+                  className="absolute bottom-0 right-2 bg-e-bosy-purple text-white rounded-full px-3 py-1 text-xs shadow-md hover:bg-purple-700"
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  <CameraIcon className="h-5 w-5 inline-block mr-1" /> Changer
+                </button>
                 <input
+                  ref={fileInputRef}
                   type="file"
                   id="profilePicture"
                   className="hidden"
                   accept="image/*"
                   onChange={handleImageSelect}
                 />
-                {imagePreview && (
+                {imagePreview &&
                   <button
                     type="button"
                     onClick={handleRemoveImage}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                   >
                     <XMarkIcon className="h-4 w-4" />
                   </button>
-                )}
+                }
               </div>
-              <p className="text-sm text-gray-500">
-                Format recommandé: JPG, PNG. Taille max: 2MB
+              {/* Indication Drag & Drop */}
+              <p className="text-xs text-gray-500 text-center">
+                Glissez une image ou cliquez sur "Changer"<br />
+                <span>JPG/PNG, 2Mo max</span>
               </p>
-            </div>
+              {profileImage &&
+                <span className="text-green-600 text-xs">
+                  {profileImage.name} ({(profileImage.size/1024/1024).toFixed(2)}Mo)
+                </span>
+              }
+            </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Prénom</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
+            {/* Infos personnelles */}
+            <section className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-1">Informations personnelles</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <UserIcon className="h-5 w-5 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    name="firstName"
+                    autoComplete="given-name"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 pl-10"
+                    placeholder="Ex : Jean"
+                  />
+                </div>
+                <div className="relative">
+                  <IdentificationIcon className="h-5 w-5 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    name="lastName"
+                    autoComplete="family-name"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 pl-10"
+                    placeholder="Ex : Dupont"
+                  />
+                </div>
+                {/* Email avec validation */}
+                <div className="relative md:col-span-2">
+                  <EnvelopeIcon className="h-5 w-5 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className={classNames("mt-1 block w-full border rounded-md shadow-sm p-3 pl-10", 
+                      isEmailValid ? "border-gray-300" : "border-red-400")}
+                    placeholder="Ex : jean.dupont@email.com"
+                  />
+                  {!isEmailValid && (
+                    <span className="text-xs text-red-600 absolute left-0 top-full mt-1 pl-10">
+                      Email non valide
+                    </span>
+                  )}
+                </div>
+                <div className="relative md:col-span-2">
+                  <CakeIcon className="h-5 w-5 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="date"
+                    name="birthDate"
+                    value={formData.birthDate}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 pl-10"
+                    placeholder="Date de naissance"
+                  />
+                </div>
+                <div className="relative md:col-span-2">
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleInputChange}
+                    rows="4"
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+                    placeholder="Bio (max 300 caractères)"
+                    maxLength={300}
+                  />
+                </div>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Nom</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
-              </div>
+            </section>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
-              </div>
+            {/* Section enseignant visible que si enseignant */}
+            {user?.role === 'enseignant' && (
+              <section className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-1">Informations de l'enseignant</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <AcademicCapIcon className="h-5 w-5 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      name="specialty"
+                      value={formData.specialty}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 pl-10"
+                      placeholder="Spécialité (ex : Mathématiques)"
+                    />
+                  </div>
+                  <div className="relative">
+                    <AcademicCapIcon className="h-5 w-5 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      name="education"
+                      value={formData.education}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 pl-10"
+                      placeholder="Diplôme (ex : Doctorat, Master...)"
+                    />
+                  </div>
+                  <div className="relative">
+                    <BriefcaseIcon className="h-5 w-5 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="number"
+                      name="yearsOfExperience"
+                      value={formData.yearsOfExperience}
+                      min="0"
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 pl-10"
+                      placeholder="Ex : 5"
+                    />
+                  </div>
+                </div>
+              </section>
+            )}
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Bio</label>
-                <textarea
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleInputChange}
-                  rows="4"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Niveau d'expérience</label>
-                <select
-                  name="experienceLevel"
-                  value={formData.experienceLevel}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                >
-                  <option value="">Sélectionner un niveau</option>
-                  <option value="débutant">Débutant</option>
-                  <option value="intermédiaire">Intermédiaire</option>
-                  <option value="avancé">Avancé</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Date de naissance</label>
-                <input
-                  type="date"
-                  name="birthDate"
-                  value={formData.birthDate}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end">
+            {/* Bouton Enregistrer + loader/feedback */}
+            <div className="mt-8 flex justify-end">
               <button
                 type="submit"
-                disabled={loading}
-                className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50"
+                disabled={
+                  loading ||
+                  !formData.firstName || !formData.lastName || !isEmailValid
+                }
+                className="bg-e-bosy-purple text-white px-6 py-3 rounded-md hover:bg-purple-700 transition-colors duration-300 disabled:opacity-50 flex items-center space-x-2"
               >
-                {loading ? 'Enregistrement...' : 'Enregistrer'}
+                {loading ? (
+                  <>
+                    <span className="loader spinner-border spinner-border-sm mr-2" />Enregistrement...
+                  </>
+                ) : (
+                  'Enregistrer'
+                )}
               </button>
             </div>
           </form>
         )}
 
         {activeTab === 'security' && (
-          <form onSubmit={handlePasswordUpdate}>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Changer le mot de passe</h3>
-            
+          <form onSubmit={handlePasswordUpdate} autoComplete="off">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-1">Changer le mot de passe</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Mot de passe actuel</label>
-                <input
-                  type="password"
-                  name="currentPassword"
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
+                <div className="relative flex items-center">
+                  <input
+                    type={showPwd ? "text" : "password"}
+                    name="currentPassword"
+                    value={passwordData.currentPassword}
+                    onChange={handlePasswordChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 pr-10"
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPwd(!showPwd)}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    tabIndex={-1}
+                  >
+                    {showPwd ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700">Nouveau mot de passe</label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
+                <div className="relative flex items-center">
+                  <input
+                    type={showNewPwd ? "text" : "password"}
+                    name="newPassword"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 pr-10"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPwd(!showNewPwd)}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    tabIndex={-1}
+                  >
+                    {showNewPwd ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                  </button>
+                </div>
+                {/* Barre de force du mdp */}
+                {pwdStrength && (
+                  <span className={classNames(
+                    "text-xs font-semibold mt-1 ml-1",
+                    pwdStrength === "fort" ? "text-green-600" :
+                      pwdStrength === "moyen" ? "text-orange-600" :
+                        "text-red-600"
+                  )}>
+                    Force: {pwdStrength}
+                  </span>
+                )}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700">Confirmer le mot de passe</label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={passwordData.confirmPassword}
-                  onChange={handlePasswordChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
+                <div className="relative flex items-center">
+                  <input
+                    type={showConfirmPwd ? "text" : "password"}
+                    name="confirmPassword"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 pr-10"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPwd(!showConfirmPwd)}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPwd ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                  </button>
+                </div>
+                {passwordData.newPassword && passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword &&
+                  <span className="text-xs text-red-600 block mt-1 ml-1">Les mots de passe ne correspondent pas</span>
+                }
               </div>
             </div>
-
-            <div className="mt-6 flex justify-end">
+            <div className="mt-8 flex justify-end">
               <button
                 type="submit"
-                disabled={loading}
-                className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50"
+                disabled={loading || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                className="bg-e-bosy-purple text-white px-6 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50 flex items-center space-x-2"
               >
-                {loading ? 'Modification...' : 'Modifier le mot de passe'}
+                {loading ? (
+                  <>
+                    <span className="loader spinner-border spinner-border-sm mr-2" />Modification...
+                  </>
+                ) : (
+                  'Modifier le mot de passe'
+                )}
               </button>
             </div>
           </form>

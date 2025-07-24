@@ -4,7 +4,7 @@ import SimplePeer from "simple-peer";
 import { Video, VideoOff, Users, Power, Download, Upload, ArrowLeft, Mic, MicOff, ScreenShare } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { getData, postData } from "../services/ApiFetch";
+import { API_BASE_URL, getData, postData } from "../services/ApiFetch";
 import Chat from "../components/Chat";
 
 export default function TeacherPage() {
@@ -100,6 +100,7 @@ export default function TeacherPage() {
             createPeer(userId);
           }
           setParticipants(prev => [...prev, { userId, userName, isTeacher }]);
+          console.log("perticipant",participants);
         });
 
         conn.on("UserLeft", (userId, isTeacher) => {
@@ -122,7 +123,15 @@ export default function TeacherPage() {
         });
 
         conn.on("ParticipantsList", (participantsList) => {
-          setParticipants(participantsList.map(p => ({ userId: p.Item1, userName: p.Item2, isTeacher: p.Item3 })));
+          if (participantsList) {
+            const formattedParticipants = participantsList.map(p => ({
+              userId: p.Item1.toString(),
+              userName: p.Item2,
+              isTeacher: p.Item3,
+              profilePicture: p.Item4 || '/default-avatar.png'
+            }));
+            setParticipants(formattedParticipants);
+          }
         });
 
       } catch (err) {
@@ -296,6 +305,12 @@ export default function TeacherPage() {
           }
         });
         
+        // Ajouter un gestionnaire pour détecter quand l'utilisateur arrête le partage
+        screenStream.getVideoTracks()[0].onended = async () => {
+          await switchToCamera();
+          setIsScreenSharing(false);
+        };
+        
         screenStreamRef.current = screenStream;
         stopDrawing();
         if (videoRef.current) {
@@ -311,42 +326,52 @@ export default function TeacherPage() {
             sender.replaceTrack(screenStream.getVideoTracks()[0]);
           }
         });
+
+        setIsScreenSharing(true);
       } else {
-        const cameraStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            frameRate: { ideal: 30 }
-          }, 
-          audio: true 
-        });
-        
-        stopDrawing();
-        if (videoRef.current) {
-          videoRef.current.srcObject = cameraStream;
-          videoRef.current.play().then(() => {
-            startDrawing(videoRef.current);
-          }).catch(err => console.error("Error playing camera:", err));
-        }
-        
-        Object.values(peersRef.current).forEach(peer => {
-          const sender = peer._pc.getSenders().find(s => s.track && s.track.kind === 'video');
-          if (sender && cameraStream.getVideoTracks().length > 0) {
-            sender.replaceTrack(cameraStream.getVideoTracks()[0]);
-          }
-        });
-        
-        streamRef.current = cameraStream;
-        
-        if (screenStreamRef.current) {
-          screenStreamRef.current.getTracks().forEach(track => track.stop());
-          screenStreamRef.current = null;
-        }
+        await switchToCamera();
+        setIsScreenSharing(false);
       }
-      
-      setIsScreenSharing(!isScreenSharing);
     } catch (err) {
       console.error("Error toggling screen share:", err);
+      setIsScreenSharing(false);
+    }
+  };
+
+  const switchToCamera = async () => {
+    try {
+      const cameraStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30 }
+        }, 
+        audio: true 
+      });
+      
+      stopDrawing();
+      if (videoRef.current) {
+        videoRef.current.srcObject = cameraStream;
+        videoRef.current.play().then(() => {
+          startDrawing(videoRef.current);
+        }).catch(err => console.error("Error playing camera:", err));
+      }
+      
+      Object.values(peersRef.current).forEach(peer => {
+        const sender = peer._pc.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (sender && cameraStream.getVideoTracks().length > 0) {
+          sender.replaceTrack(cameraStream.getVideoTracks()[0]);
+        }
+      });
+      
+      streamRef.current = cameraStream;
+      
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(track => track.stop());
+        screenStreamRef.current = null;
+      }
+    } catch (err) {
+      console.error("Error switching to camera:", err);
     }
   };
 
@@ -366,12 +391,24 @@ export default function TeacherPage() {
       
       await postData(`/livesessions/${sessionId}/end`);
       
+      // Arrêter tous les flux
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach(track => {
+          track.stop();
+          track.enabled = false;
+        });
       }
       
       if (screenStreamRef.current) {
-        screenStreamRef.current.getTracks().forEach(track => track.stop());
+        screenStreamRef.current.getTracks().forEach(track => {
+          track.stop();
+          track.enabled = false;
+        });
+      }
+      
+      // Nettoyer la vidéo
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
       }
       
       if (connRef.current) {
@@ -396,10 +433,8 @@ export default function TeacherPage() {
       const file = new File([recordedBlob], `session-${sessionId}.webm`, { type: 'video/webm' });
       const formData = new FormData();
       formData.append('recordingFile', file);
-      const apiResponse = await postData(`livesessions/${sessionId}/upload-recording`, formData, true);
-      if (!apiResponse.ok) {
-        throw new Error(`Erreur HTTP: ${apiResponse.status}`);
-      }
+
+      await postData(`/livesessions/${sessionId}/upload-recording`, formData, true);
       alert('Enregistrement téléversé avec succès');
       navigate("/live-sessions");
     } catch (error) {
@@ -408,8 +443,6 @@ export default function TeacherPage() {
     }
   };
 
-
-  
  // Ajouter un état pour le chat
  const [activeTab, setActiveTab] = useState('chat');
 
@@ -556,26 +589,60 @@ export default function TeacherPage() {
            </div>
 
            <div className="h-[500px] overflow-y-auto">
-             {activeTab === 'chat' ? (
+             {activeTab === 'chat' && (
                <Chat connection={connRef.current} currentUser={user} />
-             ) : (
-               <div className="p-4">
-                 <h3 className="font-medium text-gray-700 mb-3">Liste des participants</h3>
-                 <ul className="space-y-3">
-                   {participants.map((p) => (
-                     <li key={p.userId} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
-                       <div className={`w-2.5 h-2.5 rounded-full ${p.isTeacher ? 'bg-blue-500' : 'bg-green-500'}`}></div>
-                       <span className="font-medium text-gray-800">
-                         {p.userName} {p.userId === user.userId && "(Vous)"}
-                       </span>
-                       <span className="text-xs text-gray-500 ml-auto">
-                         {p.isTeacher ? 'Enseignant' : 'Étudiant'}
-                       </span>
-                     </li>
-                   ))}
-                 </ul>
-               </div>
              )}
+{activeTab === 'participants' && (
+  <div className="p-4">
+    <h3 className="font-medium text-gray-700 mb-3">Liste des participants</h3>
+    <ul className="space-y-3">
+      {participants && participants.map((p) => {
+        const isCurrentUser = p.userId === user.userId.toString();
+        const isHost = p.isTeacher && session?.hostId?.toString() === p.userId;
+        
+        return (
+          <li key={p.userId} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
+            <img 
+              src={p.profilePicture ? `${API_BASE_URL}${p.profilePicture}` : '/default-avatar.png'}
+              alt={p.userName}
+              className="w-10 h-10 rounded-full object-cover"
+              onError={(e) => {
+                e.target.src = '/default-avatar.png';
+              }}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1">
+                <span className="font-medium text-gray-800 truncate">
+                  {p.userName}
+                </span>
+                {isCurrentUser && (
+                  <span className="text-xs text-blue-600 whitespace-nowrap">(Vous)</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs ${
+                  isHost ? 'text-purple-600' : 
+                  p.isTeacher ? 'text-blue-600' : 'text-green-600'
+                }`}>
+                  {isHost ? 'Hôte' : p.isTeacher ? 'Enseignant' : 'Étudiant'}
+                </span>
+                {isHost && (
+                  <span className="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded-full">
+                    Modérateur
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className={`w-2.5 h-2.5 rounded-full ${
+              isHost ? 'bg-purple-500' : 
+              p.isTeacher ? 'bg-blue-500' : 'bg-green-500'
+            }`}></div>
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+)}
            </div>
          </div>
        </div>

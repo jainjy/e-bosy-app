@@ -1,30 +1,21 @@
-/* eslint-disable react-refresh/only-export-components */
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { apiHelper } from "../services/ApiFetch";
 
-/**
- *Cree un contexte d'authentification
- */
 const AuthContext = createContext();
-
-
 export const AuthProvider = ({ children }) => {
-  // État pour stocker les informations de l'utilisateur
+
   const [user, setUser] = useState(null);
-  // État pour suivre si l'utilisateur est connecte
+
   const [logged, setLogged] = useState(false);
-  // État pour gerer le chargement
+
   const [loading, setLoading] = useState(true);
 
   const getToken = () => localStorage.getItem('user_token');
 
   const setToken = (token) => localStorage.setItem('user_token', token);
 
-  /**
-   * Supprime le token du localStorage
-   */
   const removeToken = () => localStorage.removeItem('user_token');
-
 
   const login = async (email, password) => {
     try {
@@ -51,23 +42,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  /**
-   * Deconnecte l'utilisateur
-   */
   const logout = async () => {
     try {
       await apiHelper('post', 'auth/logout');
     } finally {
-      // On nettoie toujours même si la requête echoue
+
       removeToken();
       setUser(null);
       setLogged(false);
     }
   };
 
-  /**
-   * Recupère les informations de l'utilisateur connecte
-   */
   const fetchUserInfo = async () => {
     setLoading(true);
     try {
@@ -94,10 +79,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     fetchUserInfo();
 
-    // Optionnel: verification periodique de la session
-    const sessionCheckInterval = setInterval(fetchUserInfo, 1000 * 60 * 5); // Toutes les 5 minutes
-
-    return () => clearInterval(sessionCheckInterval);
+    // const sessionCheckInterval = setInterval(fetchUserInfo, 1000 * 60 * 5); // Toutes les 5 minutes
+    // return () => clearInterval(sessionCheckInterval);
   }, []);
 
   // Valeurs exposees par le contexte
@@ -117,10 +100,6 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-/**
- * Hook personnalise pour acceder au contexte d'authentification
- * @returns {Object} Les valeurs du contexte d'authentification
- */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { getData, postData } from "../services/ApiFetch";
+import { API_BASE_URL, getData, postData } from "../services/ApiFetch";
 import Chat from "../components/Chat";
 
 export default function StudentPage() {
@@ -159,13 +159,15 @@ export default function StudentPage() {
         });
 
         conn.on("ParticipantsList", (participantsList) => {
-          setParticipants(
-            participantsList.map((p) => ({
-              userId: p.Item1,
+          if (participantsList) {
+            const formattedParticipants = participantsList.map((p) => ({
+              userId: p.Item1.toString(),
               userName: p.Item2,
               isTeacher: p.Item3,
-            }))
-          );
+              profilePicture: p.Item4 || "/default-user.png",
+            }));
+            setParticipants(formattedParticipants);
+          }
         });
 
         conn.on("ReceiveTimer", (time) => {
@@ -345,32 +347,48 @@ export default function StudentPage() {
             </div>
 
             <div className="h-[500px] overflow-y-auto">
-              {activeTab === "chat" ? (
+              {activeTab === "chat" && (
                 <Chat connection={connRef.current} currentUser={user} />
-              ) : (
+              )}
+              {activeTab === "participants" && (
                 <div className="p-4">
                   <h3 className="font-medium text-gray-700 mb-3">
                     Liste des participants
                   </h3>
                   <ul className="space-y-3">
-                    {participants.map((p) => (
-                      <li
-                        key={p.userId}
-                        className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg"
-                      >
-                        <div
-                          className={`w-2.5 h-2.5 rounded-full ${
-                            p.isTeacher ? "bg-blue-500" : "bg-green-500"
-                          }`}
-                        ></div>
-                        <span className="font-medium text-gray-800">
-                          {p.userName} {p.userId === user.userId && "(Vous)"}
-                        </span>
-                        <span className="text-xs text-gray-500 ml-auto">
-                          {p.isTeacher ? "Enseignant" : "Étudiant"}
-                        </span>
-                      </li>
-                    ))}
+                    {participants &&
+                      participants.map((p) => (
+                        <li
+                          key={p.userId}
+                          className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg"
+                        >
+                          <img
+                            src={API_BASE_URL+p.profilePicture || "/default-avatar.png"}
+                            alt={p.userName}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                          <div className="flex-1">
+                            <span className="font-medium text-gray-800">
+                              {p.userName}{" "}
+                              {p.userId === user.userId.toString() && "(Vous)"}
+                            </span>
+                            <span
+                              className={`text-xs ${
+                                p.isTeacher
+                                  ? "text-blue-600"
+                                  : "text-green-600"
+                              } block`}
+                            >
+                              {p.isTeacher ? "Enseignant" : "Étudiant"}
+                            </span>
+                          </div>
+                          <div
+                            className={`w-2.5 h-2.5 rounded-full ${
+                              p.isTeacher ? "bg-blue-500" : "bg-green-500"
+                            }`}
+                          ></div>
+                        </li>
+                      ))}
                   </ul>
                 </div>
               )}

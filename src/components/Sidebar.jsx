@@ -77,6 +77,12 @@ const Sidebar = ({ userRole, userName, userEmail, profilePictureUrl, unreadCount
       roles: ["administrateur"],
     },
     {
+      name: "Etudiants",
+      icon: UserGroupIcon,
+      path: "/students",
+      roles: ["enseignant"],
+    },
+    {
       name: "Évaluations",
       icon: ClipboardDocumentCheckIcon,
       path: "/assessments",
