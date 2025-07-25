@@ -25,6 +25,7 @@ import { LoadingSpinner } from "../../components/LoadingSpinner";
 import RatingModal from "../../components/RatingModal";
 import ReviewsModal from "../../components/ReviewsModal";
 import { CogIcon } from "lucide-react";
+import Navbar from "../../components/Navbar";
 
 const DEFAULT_COURSE_IMAGE = "/images/default-course.jpg";
 
@@ -82,6 +83,13 @@ const CourseDetailsPage = () => {
             setHasCertificate(!!certificateData);
             setCertificate(certificateData);
           }
+        } else {
+          // If no user, ensure enrollment states are reset for display purposes
+          setIsEnrolled(false);
+          setHasCertificate(false);
+          setUserEnrollment({});
+          setUserRating(null);
+          setCertificate(null);
         }
       } catch (err) {
         console.error("Error fetching course details:", err);
@@ -220,6 +228,7 @@ const CourseDetailsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
+      {!user && <Navbar/>}
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-e-bosy-purple to-purple-800 text-white p-6 md:px-8 animate-fade-in">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8">
@@ -265,13 +274,14 @@ const CourseDetailsPage = () => {
               <>
                 {" "}
                 {/* Boutons principaux */}
-                {!isEnrolled ? (
+                {!user?.userId || !isEnrolled ? ( // Changed condition here
                   <Link
-                    to={`/courses/${course.courseId}/enroll`}
+                    to={user?.userId ? `/courses/${course.courseId}/enroll` : "/login"} // Redirect to /login if no user
                     className="bg-white text-e-bosy-purple px-6 py-3 rounded-lg font-semibold text-lg hover:bg-gray-100 transition duration-300 inline-flex items-center animate-bounce-once"
                   >
-                    <PlayCircleIcon className="h-6 w-6 mr-2" /> S'inscrire au
-                    cours
+                    <PlayCircleIcon className="h-6 w-6 mr-2" />{" "}
+                    {user?.userId ? "S'inscrire au cours" : "Commencer le cours (Connexion requise)"}{" "}
+                    {/* Updated button text */}
                   </Link>
                 ) : (
                   <div className="flex space-x-4">
@@ -322,15 +332,15 @@ const CourseDetailsPage = () => {
                   <div className="flex items-center gap-4">
                     <div className="text-center">
                       <div className="text-3xl font-bold text-white">
-                        {averageRating / totalRatings
-                          ? (averageRating / totalRatings).toFixed(1)
+                        {averageRating !== null
+                          ? averageRating.toFixed(1)
                           : "0.0"}
                       </div>
                       <div className="text-sm text-gray-300">sur 5</div>
                     </div>
                     <div>
                       <StarRating
-                        value={averageRating / totalRatings || 0}
+                        value={averageRating || 0}
                         disabled={true}
                       />
                       <div className="text-sm text-gray-300 mt-1">
@@ -468,6 +478,7 @@ const CourseDetailsPage = () => {
                   <ul className="divide-y divide-gray-200">
                     {lessonsInSection.map((lesson, i) => {
                       const isLessonAccessible =
+                        user?.userId && // Lesson is accessible only if user is logged in
                         isEnrolled &&
                         (!lesson.isSubscriberOnly || user?.isSubscribed);
                       const canDownload =
@@ -478,7 +489,7 @@ const CourseDetailsPage = () => {
                               .toLowerCase()
                               .includes("video") &&
                               user?.isSubscribed))) ||
-                        user.role == "administrateur";
+                        user?.role == "administrateur";
 
                       const isPdf = lesson.contentType.toLowerCase() === "pdfs";
                       const shouldShowPdfTitle =
@@ -530,7 +541,7 @@ const CourseDetailsPage = () => {
                                       lesson.isSubscriberOnly &&
                                         !user?.isSubscribed
                                         ? "Ce contenu est réservé aux abonnés Premium"
-                                        : "Veuillez vous inscrire au cours pour accéder à cette leçon"
+                                        : "Veuillez vous connecter et vous inscrire au cours pour accéder à cette leçon"
                                     );
                                   }
                                 }}
@@ -595,13 +606,13 @@ const CourseDetailsPage = () => {
                 <span className="font-semibold mr-2">Langue:</span>{" "}
                 {course.language}
               </p>
-              {course.averageRating !== undefined &&
-                course.totalReviews !== undefined && (
-                  <p className="flex items-center">
-                    <span className="font-semibold mr-2">Évaluation:</span>{" "}
-                    {course.averageRating} ({course.totalReviews} avis)
-                  </p>
-                )}
+              {averageRating !== undefined && totalRatings !== undefined && (
+                <p className="flex items-center">
+                  <span className="font-semibold mr-2">Évaluation:</span>{" "}
+                  {averageRating !== null ? averageRating.toFixed(1) : "0.0"} (
+                  {totalRatings} avis)
+                </p>
+              )}
               {course.isSubscriberOnly && (
                 <p className="flex items-center text-blue-600 font-medium">
                   <LockClosedIcon className="h-5 w-5 mr-2" /> Réservé aux
@@ -658,7 +669,7 @@ const CourseDetailsPage = () => {
             </div>
           )}
 
-          <div className="bg-white rounded-lg shadow-md p-6 transform transition-transform duration-300 hover:scale-[1.02]">
+{user &&          <div className="bg-white rounded-lg shadow-md p-6 transform transition-transform duration-300 hover:scale-[1.02]">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               Discussion du cours
             </h2>
@@ -669,7 +680,7 @@ const CourseDetailsPage = () => {
               <ChatBubbleLeftRightIcon className="h-6 w-6 mr-2" /> Ouvrir le
               Forum
             </button>
-          </div>
+          </div>}
         </div>
       </div>
 

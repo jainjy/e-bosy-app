@@ -72,6 +72,7 @@ import RecordingViewPage from "./pages/RecordingViewPage";
 import AdminLiveSessionsPage from "./pages/admin/AdminLiveSessionsPage";
 import PaymentPage from "./pages/PaymentPage";
 import TeacherStudentsPage from "./pages/teacher/TeacherStudentsPage";
+import AboutPage from "./pages/AboutPage";
 
 // Route protégée
 const ProtectedRoute = ({ children }) => {
@@ -142,7 +143,6 @@ function App() {
     <>
       <Router>
         <Routes>
-
           {/* Routes publiques */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
@@ -153,6 +153,9 @@ function App() {
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="*" element={<NotFoundPage />} />
+          <Route path="teacher/:id" element={<ProfilePage />} />
+          <Route path="course/:courseId" element={<CourseDetailsPage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route
             path="/*"
             element={
@@ -167,6 +170,7 @@ function App() {
             <Route index element={<RoleBasedHomePage/>} />
             <Route path="mycourses" element={<RoleBasedCoursesPage />} />
             <Route path="users/:id/profile" element={<ProfilePage />} />
+            
             <Route path="subscription" element={<SubscriptionPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route

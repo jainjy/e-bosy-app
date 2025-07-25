@@ -1,9 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { 
-  BookOpenIcon, UsersIcon, ClockIcon, CurrencyDollarIcon,
-  DocumentCheckIcon, AcademicCapIcon, ChartBarIcon, 
-  LightBulbIcon, ChatBubbleLeftIcon, CalendarIcon
+  BookOpenIcon, UsersIcon, ClockIcon,
+  DocumentCheckIcon, AcademicCapIcon, LightBulbIcon, ChatBubbleLeftIcon, CalendarIcon
 } from "@heroicons/react/24/outline";
 import { useTeacherDashboard } from "../../hooks/useTeacherDashboard";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
@@ -16,67 +15,83 @@ const EngagementHeatmap = ({ data }) => {
   const maxActivityCount = Math.max(...hourlyEngagement.map(h => h.activityCount), 1);
 
   return (
-    <div className="p-4">
-      <h4 className="text-sm font-medium text-gray-600 mb-3">
+    <div className="p-4 bg-white rounded-xl shadow-lg">
+      <h4 className="text-sm font-semibold text-gray-700 mb-4">
         Activité des étudiants par heure
       </h4>
       
-      <div className="flex flex-col space-y-4">
-        {/* Légende */}
-        <div className="flex items-center justify-end space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-gray-100 rounded"></div>
-            <span className="text-xs text-gray-500">Faible activité</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-green-500 rounded"></div>
-            <span className="text-xs text-gray-500">Forte activité</span>
-          </div>
+      {/* Légende */}
+      <div className="flex items-center justify-end space-x-6 mb-3 select-none">
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 border rounded bg-gray-100" />
+          <span className="text-xs text-gray-500">Faible activité</span>
         </div>
-
-        {/* Grille des heures */}
-        <div className="grid grid-cols-12 gap-2">
-          {hourlyEngagement.map((hour, index) => {
-            const intensity = hour.activityCount > 0 
-              ? Math.min(4, Math.ceil((hour.activityCount / maxActivityCount) * 4)) 
-              : 0;
-            
-            const bgClass = [
-              'bg-gray-100',           // Aucune activité
-              'bg-green-200',          // Faible activité
-              'bg-green-300',          // Activité moyenne
-              'bg-green-400',          // Activité élevée
-              'bg-green-500',          // Activité très élevée
-            ][intensity];
-
-            return (
-              <div key={index} className="flex flex-col items-center">
-                <motion.div 
-                  className={`w-full h-12 ${bgClass} rounded-lg cursor-pointer`}
-                  whileHover={{ scale: 1.1 }}
-                  title={`${hour.activityCount} étudiants actifs à ${hour.hour}h`}
-                >
-                  <div className="flex items-center justify-center h-full">
-                    <span className="text-xs font-medium text-gray-700">
-                      {hour.activityCount}
-                    </span>
-                  </div>
-                </motion.div>
-                <span className="text-xs text-gray-500 mt-1">
-                  {hour.hour}h
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Informations complémentaires */}
-        <div className="text-xs text-gray-500 mt-2">
-          <p>Cette visualisation montre le nombre d'étudiants actifs par heure de la journée.</p>
-          <p>Plus la couleur est foncée, plus l'activité est importante.</p>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 rounded bg-purple-500" />
+          <span className="text-xs text-gray-500">Forte activité</span>
         </div>
       </div>
+
+      {/* Grille des heures */}
+      <div className="grid grid-cols-12 gap-2">
+        {hourlyEngagement.map((hour, index) => {
+          const intensity = hour.activityCount > 0 
+            ? Math.min(4, Math.ceil((hour.activityCount / maxActivityCount) * 4)) 
+            : 0;
+          
+          const bgClass = [
+            'bg-gray-100',             // Aucune activité
+            'bg-purple-200',           // Faible activité
+            'bg-purple-300',           // Activité moyenne
+            'bg-purple-400',           // Activité élevée
+            'bg-purple-600',           // Activité très élevée
+          ][intensity];
+
+          return (
+            <div key={index} className="flex flex-col items-center" >
+              <motion.div 
+                className={`w-full h-12 ${bgClass} rounded-lg cursor-pointer`}
+                whileHover={{ scale: 1.1, boxShadow: '0 0 10px rgba(124, 58, 237, 0.5)' }}
+                title={`${hour.activityCount} étudiants actifs à ${hour.hour}h`}
+                aria-label={`${hour.activityCount} étudiants actifs à ${hour.hour} heures`}
+              >
+                <div className="flex items-center justify-center h-full">
+                  <span className="text-xs font-semibold text-gray-800">
+                    {hour.activityCount}
+                  </span>
+                </div>
+              </motion.div>
+              <span className="text-xs text-gray-500 mt-1 select-none">
+                {hour.hour}h
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="text-xs text-gray-500 mt-3 select-none">
+        Cette visualisation montre le nombre d'étudiants actifs par heure de la journée.<br />
+        Plus la couleur est foncée, plus l'activité est importante.
+      </p>
     </div>
+  );
+};
+
+const StatCard = ({ icon, label, value, info }) => {
+  return (
+    <motion.div 
+      className="bg-white p-6 rounded-xl shadow-md flex items-center gap-6 cursor-default select-none"
+      whileHover={{ y: -5, boxShadow: '0 10px 15px rgba(124, 58, 237, 0.3)' }}
+    >
+      <div className="mr-4 text-purple-600 bg-purple-100 p-3 rounded-full flex items-center justify-center">
+        {icon}
+      </div>
+      <div>
+        <p className="text-gray-600 text-sm font-semibold">{label}</p>
+        <p className="text-2xl font-extrabold text-gray-900">{value}</p>
+        {info && <p className="text-xs text-gray-500 mt-1">{info}</p>}
+      </div>
+    </motion.div>
   );
 };
 
@@ -85,11 +100,11 @@ const ProgressRadial = ({ value, label, color, icon }) => {
   
   return (
     <motion.div 
-      className="flex flex-col items-center p-4"
-      whileHover={{ scale: 1.05 }}
+      className="flex flex-col items-center p-4 bg-white rounded-xl shadow-md select-none"
+      whileHover={{ scale: 1.05, boxShadow: `0 0 15px ${color}88` }}
     >
       <div className="relative w-24 h-24">
-        <svg className="w-full h-full" viewBox="0 0 100 100">
+        <svg className="w-full h-full" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
           <circle
             cx="50"
             cy="50"
@@ -120,7 +135,7 @@ const ProgressRadial = ({ value, label, color, icon }) => {
           </span>
         </div>
       </div>
-      <p className="mt-2 text-center text-gray-600 text-sm font-medium">{label}</p>
+      <p className="mt-2 text-center text-gray-700 text-sm font-medium">{label}</p>
     </motion.div>
   );
 };
@@ -130,8 +145,8 @@ const TeacherOverviewPage = () => {
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error.message} />;
+  if (!dashboardData) return <div className="p-6 text-center text-gray-500">Aucune donnée disponible</div>;
 
-  // Configuration des graphiques
   const coursePerformanceOptions = {
     chart: {
       type: 'bar',
@@ -141,26 +156,27 @@ const TeacherOverviewPage = () => {
     },
     plotOptions: {
       bar: {
-        borderRadius: 4,
+        borderRadius: 6,
         horizontal: false,
-        columnWidth: '35%',
+        columnWidth: '40%',
         endingShape: 'rounded'
       },
     },
-    colors: ['#6366f1', '#8b5cf6', '#ec4899'],
+    colors: ['#7C3AED', '#8B5CF6', '#4F46E5'], // violet / indigo / bleu foncé
     dataLabels: { enabled: false },
     xaxis: {
       categories: dashboardData?.courses?.map(c => c.title) || [],
-      labels: { style: { fontSize: '12px' } }
+      labels: { style: { fontSize: '12px', fontWeight: '600' } }
     },
     yaxis: { 
-      title: { text: 'Pourcentage' },
+      title: { text: 'Pourcentage', style: { fontWeight: '600' } },
       min: 0,
       max: 100
     },
     legend: {
       position: 'top',
-      horizontalAlign: 'center'
+      horizontalAlign: 'center',
+      fontSize: '14px',
     }
   };
 
@@ -173,86 +189,91 @@ const TeacherOverviewPage = () => {
     },
     xaxis: { 
       categories: dashboardData?.assessmentPerformance?.scoreDistributions?.map(a => a.title) || [],
-      labels: { style: { fontSize: '12px' } }
+      labels: { style: { fontSize: '12px', fontWeight: '600' } }
     },
     yaxis: { 
-      title: { text: 'Nombre d’étudiants' },
+      title: { text: 'Nombre d’étudiants', style: { fontWeight: '600' } },
       min: 0
     },
-    colors: ['#f59e0b'],
+    colors: ['#4F46E5'], // bleu foncé au lieu du rose
     plotOptions: {
       bar: {
-        borderRadius: 4,
+        borderRadius: 6,
         horizontal: false,
       }
     }
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+    <div className="p-6 bg-gray-50 min-h-screen max-w-full">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Tableau de bord enseignant</h1>
-          <p className="text-gray-600 mt-2">Analyse de la progression des étudiants et performance de vos cours</p>
+          <h1 className="text-3xl font-extrabold text-gray-900">Tableau de bord enseignant</h1>
+          <p className="text-gray-600 mt-2 max-w-xl select-none">Analyse de la progression des étudiants et performance de vos cours</p>
         </div>
-        <div className="mt-4 md:mt-0">
-          <div className="flex items-center bg-white px-4 py-2 rounded-full shadow-sm">
-            <LightBulbIcon className="h-5 w-5 text-yellow-500 mr-2" />
-            <span className="text-sm font-medium text-gray-700">
+        
+        <div>
+          <div className="flex items-center bg-white px-5 py-3 rounded-full shadow-sm select-none">
+            <LightBulbIcon className="h-6 w-6 text-indigo-500 mr-3" aria-hidden="true" />
+            <span className="text-lg font-semibold text-gray-700">
               {dashboardData?.stats?.certificatesIssued || 0} certificats délivrés
             </span>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      {/* StatCards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
         <StatCard 
-          icon={<BookOpenIcon className="h-8 w-8" />} 
+          icon={<BookOpenIcon className="h-10 w-10" aria-hidden="true" />} 
           label="Cours publiés" 
           value={dashboardData?.stats?.publishedCourses || 0} 
           info="Votre portefeuille pédagogique"
         />
         <StatCard 
-          icon={<UsersIcon className="h-8 w-8" />} 
+          icon={<UsersIcon className="h-10 w-10" aria-hidden="true" />} 
           label="Étudiants actifs" 
           value={dashboardData?.stats?.totalStudents || 0} 
           info="Apprenants engagés"
         />
         <StatCard 
-          icon={<ClockIcon className="h-8 w-8" />} 
+          icon={<ClockIcon className="h-10 w-10" aria-hidden="true" />} 
           label="Heures enseignées" 
           value={dashboardData?.stats?.teachingHours || 0} 
           info="Temps investi"
         />
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-lg mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Indicateurs pédagogiques</h2>
+      {/* Indicateurs pédagogiques */}
+      <div className="bg-white p-6 rounded-xl shadow-lg mb-10">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6 select-none">Indicateurs pédagogiques</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <ProgressRadial 
             value={dashboardData?.stats?.averageCompletion || 0} 
             label="Complétion moyenne" 
-            color="#6366f1" 
-            icon={<DocumentCheckIcon className="h-6 w-6" />} 
+            color="#7C3AED" 
+            icon={<DocumentCheckIcon className="h-6 w-6" />}
           />
           <ProgressRadial 
             value={dashboardData?.stats?.averageQuizSuccess || 0} 
             label="Réussite aux quiz" 
-            color="#8b5cf6" 
-            icon={<AcademicCapIcon className="h-6 w-6" />} 
+            color="#8B5CF6" 
+            icon={<AcademicCapIcon className="h-6 w-6" />}
           />
           <ProgressRadial 
             value={dashboardData?.stats?.liveSessionParticipationRate || 0} 
             label="Participation sessions live" 
-            color="#ec4899" 
-            icon={<UsersIcon className="h-6 w-6" />} 
+            color="#4F46E5" 
+            icon={<UsersIcon className="h-6 w-6" />}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Performance des cours</h3>
+      {/* Graphiques performances */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+        <div className="bg-white p-6 rounded-xl shadow-lg overflow-x-auto">
+          <h3 className="text-xl font-semibold text-gray-900 mb-6 select-none">Performance des cours</h3>
           <Chart 
             options={coursePerformanceOptions}
             series={[
@@ -271,10 +292,11 @@ const TeacherOverviewPage = () => {
             ]}
             type="bar"
             height={350}
+            aria-label="Graphique performance des cours"
           />
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Performance des évaluations</h3>
+        <div className="bg-white p-6 rounded-xl shadow-lg overflow-x-auto">
+          <h3 className="text-xl font-semibold text-gray-900 mb-6 select-none">Performance des évaluations</h3>
           <Chart 
             options={assessmentPerformanceOptions}
             series={[{
@@ -284,107 +306,108 @@ const TeacherOverviewPage = () => {
             }]}
             type="bar"
             height={350}
+            aria-label="Graphique performance des évaluations"
           />
         </div>
-
       </div>
 
-
-      <div className="bg-white p-6 rounded-xl shadow-lg mb-8">
+      {/* Étudiants nécessitant une attention */}
+      <div className="bg-white p-6 rounded-xl shadow-lg mb-10 overflow-x-auto">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-800">Étudiants nécessitant une attention</h3>
+          <h3 className="text-xl font-semibold text-gray-900 select-none">Étudiants nécessitant une attention</h3>
           <Link to="/students" className="text-indigo-600 hover:underline flex items-center text-sm">
-            <UsersIcon className="h-4 w-4 mr-1" /> Voir tous
+            <UsersIcon className="h-4 w-4 mr-1" aria-hidden="true" /> Voir tous
           </Link>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Étudiant</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cours</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progression</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dernière activité</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {(dashboardData?.studentsNeedingAttention || []).map((student, index) => (
-                <motion.tr 
-                  key={index}
-                  className="hover:bg-gray-50"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                        <div className="text-sm text-gray-500">{student.email}</div>
-                      </div>
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Étudiant</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Cours</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Progression</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Dernière activité</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(dashboardData?.studentsNeedingAttention || []).map((student, index) => (
+              <motion.tr 
+                key={index}
+                className="hover:bg-gray-50 transition-colors duration-200"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+              >
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900 truncate">{student.name}</div>
+                      <div className="text-sm text-gray-500 truncate">{student.email}</div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.courseTitle}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{student.progress}%</div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div 
-                        className="h-2 rounded-full transition-all duration-1000 ease-out"
-                        style={{ 
-                          width: `${student.progress}%`,
-                          backgroundColor: student.progress < 30 ? '#ef4444' : 
-                                          student.progress < 60 ? '#f59e0b' : '#10b981'
-                        }}
-                      ></div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {student.lastActivity ? 
-                      new Date(student.lastActivity).toLocaleDateString('fr-FR', { 
-                        day: 'numeric', month: 'short' 
-                      }) : 
-                      'Jamais'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Link 
-                      to={`/messages/${student.userId}`} 
-                      className="text-indigo-600 hover:text-indigo-900 mr-3 flex items-center"
-                    >
-                      <ChatBubbleLeftIcon className="h-4 w-4 mr-1" /> Message
-                    </Link>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.courseTitle}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{student.progress}%</div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-1000 ease-out`}
+                      style={{ 
+                        width: `${student.progress}%`,
+                        backgroundColor: student.progress < 30 ? '#dc2626' : (student.progress < 60 ? '#fbbf24' : '#7c3aed') // rouge / jaune / violet
+                      }}
+                    ></div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {student.lastActivity ? 
+                    new Date(student.lastActivity).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : 
+                    'Jamais'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <Link 
+                    to={`/messages/${student.userId}`} 
+                    className="text-purple-700 hover:text-purple-900 flex items-center"
+                    aria-label={`Envoyer un message à ${student.name}`}
+                  >
+                    <ChatBubbleLeftIcon className="h-4 w-4 mr-1" aria-hidden="true" /> Message
+                  </Link>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-lg">
+
+      {/* Derniers retours + sessions live */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+        <div className="bg-white p-6 rounded-xl shadow-lg overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-gray-800">Derniers retours sur les cours</h3>
-            <Link to="/assessments" className="text-indigo-600 hover:underline flex items-center text-sm">
-              <DocumentCheckIcon className="h-4 w-4 mr-1" /> Voir tous
+            <h3 className="text-xl font-semibold text-gray-900 select-none">Derniers retours sur les cours</h3>
+            <Link to="/assessments" className="text-purple-700 hover:underline flex items-center text-sm font-semibold">
+              <DocumentCheckIcon className="h-4 w-4 mr-1" aria-hidden="true" /> Voir tous
             </Link>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[480px] overflow-y-auto pr-1">
             {(dashboardData?.courseReviews || []).map((review, index) => (
               <motion.div 
                 key={index}
-                className="border border-gray-200 rounded-xl p-4 bg-gradient-to-r from-indigo-50 to-purple-50"
-                whileHover={{ y: -5 }}
+                className="border border-gray-200 rounded-xl p-4 bg-gradient-to-r from-purple-50 to-indigo-50 cursor-pointer select-none"
+                whileHover={{ y: -5, boxShadow: '0 5px 15px rgba(124, 58, 237, 0.15)' }}
+                aria-label={`Retour sur ${review.title} avec note ${review.rating}`}
               >
                 <div className="flex justify-between items-start">
-                  <h4 className="font-medium text-gray-800">{review.title}</h4>
-                  <div className="flex items-center">
+                  <h4 className="font-semibold text-gray-800 truncate">{review.title}</h4>
+                  <div className="flex items-center" aria-label={`Note ${review.rating} étoiles`}>
                     {[...Array(5)].map((_, i) => (
                       <svg
                         key={i}
                         className={`h-5 w-5 ${i < (review.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}`}
                         fill="currentColor"
                         viewBox="0 0 20 20"
+                        aria-hidden="true"
+                        focusable="false"
                       >
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
@@ -394,7 +417,8 @@ const TeacherOverviewPage = () => {
                 <p className="text-sm text-gray-600 mt-2 line-clamp-2">{review.feedback}</p>
                 <Link 
                   to={`/course/${review.courseId}`} 
-                  className="inline-block mt-3 text-indigo-600 text-sm font-medium hover:underline"
+                  className="inline-block mt-3 text-purple-700 text-sm font-semibold hover:underline"
+                  aria-label={`Voir le cours ${review.title}`}
                 >
                   Voir le cours
                 </Link>
@@ -402,22 +426,22 @@ const TeacherOverviewPage = () => {
             ))}
           </div>
         </div>
-        
-        <div className="bg-white p-6 rounded-xl shadow-lg">
+        <div className="bg-white p-6 rounded-xl shadow-lg overflow-y-auto max-h-[560px]">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-gray-800">Prochaines sessions live</h3>
-            <Link to="/live-sessions" className="text-indigo-600 hover:underline flex items-center text-sm">
-              <CalendarIcon className="h-4 w-4 mr-1" /> Voir calendrier
+            <h3 className="text-xl font-semibold text-gray-900 select-none">Prochaines sessions live</h3>
+            <Link to="/live-sessions" className="text-purple-700 hover:underline flex items-center text-sm font-semibold">
+              <CalendarIcon className="h-4 w-4 mr-1" aria-hidden="true" /> Voir calendrier
             </Link>
           </div>
           <div className="space-y-4">
             {(dashboardData?.upcomingSessions || []).map((session, index) => (
               <motion.div 
                 key={index}
-                className="border-l-4 border-indigo-500 pl-4 py-3 bg-indigo-50 rounded-r-lg"
-                whileHover={{ x: 5 }}
+                className="border-l-4 border-purple-700 pl-4 py-3 bg-purple-50 rounded-r-lg select-none cursor-default"
+                whileHover={{ x: 5, boxShadow: '0 2px 10px rgba(124, 58, 237, 0.2)' }}
+                aria-label={`${session.title}, ${new Date(session.startTime).toLocaleString('fr-FR')}, ${session.attendeeCount} inscrits`}
               >
-                <p className="font-medium text-gray-800">{session.title}</p>
+                <p className="font-semibold text-gray-800 truncate">{session.title}</p>
                 <p className="text-sm text-gray-600 mt-1">
                   {new Date(session.startTime).toLocaleDateString('fr-FR', { 
                     weekday: 'short', 
@@ -428,12 +452,13 @@ const TeacherOverviewPage = () => {
                   })}
                 </p>
                 <div className="flex justify-between items-center mt-2">
-                  <span className="text-xs bg-white px-2 py-1 rounded-full">
-                    {session.attendeeCount} inscrits
+                  <span className="text-xs bg-white px-2 py-1 rounded-full select-none">
+                    {session.attendeeCount} inscrit{session.attendeeCount > 1 ? 's' : ''}
                   </span>
                   <Link 
                     to={`/sessions/${session.courseId}`} 
-                    className="text-sm text-indigo-600 font-medium hover:underline"
+                    className="text-sm text-purple-700 font-medium hover:underline"
+                    aria-label={`Voir détails de la session ${session.title}`}
                   >
                     Détails
                   </Link>
@@ -443,72 +468,7 @@ const TeacherOverviewPage = () => {
           </div>
         </div>
       </div>
-
-      <div className="bg-white p-6 rounded-xl shadow-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-800">
-            Analyse de l'activité quotidienne
-          </h3>
-          <div className="text-sm text-gray-500">
-            Dernières 24 heures
-          </div>
-        </div>
-        <EngagementHeatmap data={dashboardData?.engagementHeatmap} />
-      </div>
-
-      <div className="bg-white p-6 rounded-xl shadow-lg">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">Actions rapides</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link 
-            to="/ajouter-cours" 
-            className="bg-indigo-50 p-4 rounded-xl flex flex-col items-center text-center hover:bg-indigo-100 transition-colors group"
-          >
-            <div className="bg-white p-3 rounded-full shadow mb-3 group-hover:scale-110 transition-transform">
-              <BookOpenIcon className="h-6 w-6 text-indigo-600" />
-            </div>
-            <span className="font-medium text-gray-800">Créer un cours</span>
-          </Link>
-          
-          <Link 
-            to="/sessions" 
-            className="bg-indigo-50 p-4 rounded-xl flex flex-col items-center text-center hover:bg-indigo-100 transition-colors group"
-          >
-            <div className="bg-white p-3 rounded-full shadow mb-3 group-hover:scale-110 transition-transform">
-              <UsersIcon className="h-6 w-6 text-indigo-600" />
-            </div>
-            <span className="font-medium text-gray-800">Planifier une session</span>
-          </Link>
-          
-          <Link 
-            to="/evaluations" 
-            className="bg-indigo-50 p-4 rounded-xl flex flex-col items-center text-center hover:bg-indigo-100 transition-colors group"
-          >
-            <div className="bg-white p-3 rounded-full shadow mb-3 group-hover:scale-110 transition-transform">
-              <DocumentCheckIcon className="h-6 w-6 text-indigo-600" />
-            </div>
-            <span className="font-medium text-gray-800">Créer une évaluation</span>
-          </Link>
-        </div>
-      </div>
     </div>
-  );
-};
-
-const StatCard = ({ icon, label, value, info }) => {
-  return (
-    <motion.div 
-      className="bg-white p-6 rounded-xl shadow flex items-center"
-      whileHover={{ y: -5 }}
-    >
-      <div className="mr-4 text-indigo-600 bg-indigo-100 p-3 rounded-full">
-        {icon}
-      </div>
-      <div>
-        <p className="text-gray-500 text-sm">{label}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-        {info && <p className="text-xs text-gray-500 mt-1">{info}</p>}
-      </div>
-    </motion.div>
   );
 };
 
